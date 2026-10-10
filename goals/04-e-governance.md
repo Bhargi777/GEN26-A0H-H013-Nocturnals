@@ -39,12 +39,12 @@ You build the administrative request module end to end: requesting a bonafide ce
 
 ### Phase E: admin reports
 
-- [ ] `/admin/reports`, admin only, built from plain SQL queries (add new `<timestamp>_gov_report_views.sql` views if needed):
-  - [ ] Service tickets by status and by category (simple bar charts or tables using the single accent color)
-  - [ ] Overdue tickets list, using the same priority limits as Dev 3's config (import it, do not copy it)
-  - [ ] Repeated issues: rooms with 3 or more tickets in the same category in the last 30 days
-  - [ ] Admin requests: counts by type and status, and median days from submission to decision
-- [ ] Every number on the page comes from a query. No hard-coded or invented figures.
+- [x] `/admin/reports`, admin only, built from plain SQL queries (add new `<timestamp>_gov_report_views.sql` views if needed):
+  - [x] Service tickets by status and by category (simple bar charts or tables using the single accent color)
+  - [x] Overdue tickets list, using the same priority limits as Dev 3's config (import it, do not copy it)
+  - [x] Repeated issues: rooms with 3 or more tickets in the same category in the last 30 days
+  - [x] Admin requests: counts by type and status, and median days from submission to decision
+- [x] Every number on the page comes from a query. No hard-coded or invented figures.
 
 ### Phase F: finish
 
