@@ -65,6 +65,7 @@ export type TicketListItem = TicketRow & {
   building_name: string;
   room_name: string | null;
   department_name: string | null;
+  assignee_name: string | null;
 };
 
 export type TicketEvent = {
@@ -130,18 +131,20 @@ type JoinedTicket = TicketRow & {
   building: { name: string } | null;
   room: { name: string } | null;
   department: { name: string } | null;
+  assignee_profile: { full_name: string } | null;
 };
 
 const TICKET_LIST_SELECT =
-  "*, building:buildings(name), room:rooms(name), department:departments!assigned_department_id(name)";
+  "*, building:buildings(name), room:rooms(name), department:departments!assigned_department_id(name), assignee_profile:profiles!assigned_to(full_name)";
 
 function flattenTicket(row: JoinedTicket): TicketListItem {
-  const { building, room, department, ...ticket } = row;
+  const { building, room, department, assignee_profile, ...ticket } = row;
   return {
     ...ticket,
     building_name: building?.name ?? "",
     room_name: room?.name ?? null,
     department_name: department?.name ?? null,
+    assignee_name: assignee_profile?.full_name ?? null,
   };
 }
 
