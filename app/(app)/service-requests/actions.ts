@@ -276,3 +276,32 @@ export async function moveToDepartmentAction(
   // The ticket now belongs to another department, so this admin may no longer see it.
   redirect(`/service-requests/queue?moved=${encodeURIComponent(code)}`);
 }
+
+const startSchema = z.object(ticketRef);
+
+/** Technician starts work: ASSIGNED to IN_PROGRESS. */
+export async function startWorkAction(input: z.input<typeof startSchema>): Promise<ActionResult> {
+  const parsed = startSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: "That ticket could not be found. Refresh and try again." };
+  const { ticketId, code } = parsed.data;
+  return runTransition(code, { ticketId, toStatus: "IN_PROGRESS" });
+}
+
+const resolveSchema = z.object({
+  ...ticketRef,
+  note: z
+    .string()
+    .trim()
+    .min(5, "Describe what was fixed in at least 5 characters.")
+    .max(1000, "Keep the resolution note under 1000 characters."),
+});
+
+/** Technician resolves the ticket: IN_PROGRESS to RESOLVED with a resolution note. */
+export async function resolveTicketAction(
+  input: z.input<typeof resolveSchema>,
+): Promise<ActionResult> {
+  const parsed = resolveSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, note } = parsed.data;
+  return runTransition(code, { ticketId, toStatus: "RESOLVED", note });
+}

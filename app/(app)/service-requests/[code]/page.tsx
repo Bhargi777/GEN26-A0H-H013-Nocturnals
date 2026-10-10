@@ -4,6 +4,7 @@ import { AdminActions } from "@/components/service-requests/admin-actions";
 import { PageHeader } from "@/components/service-requests/page-header";
 import { RequesterActions } from "@/components/service-requests/requester-actions";
 import { StatusBadge } from "@/components/service-requests/status-badge";
+import { TechnicianActions } from "@/components/service-requests/technician-actions";
 import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
 import { Toast } from "@/components/service-requests/toast";
 import { formatAgo, formatDateTime } from "../_lib/format";
@@ -83,6 +84,11 @@ export default async function TicketPage({
               departments={departments}
             />
           )}
+          {profile.role === "technician" &&
+            ticket.assigned_to === profile.id &&
+            (ticket.status === "ASSIGNED" || ticket.status === "IN_PROGRESS") && (
+              <TechnicianActions ticketId={ticket.id} code={ticket.code} status={ticket.status} />
+            )}
           {ticket.status === "RESOLVED" && ticket.requester_id === profile.id && (
             <RequesterActions
               ticketId={ticket.id}
