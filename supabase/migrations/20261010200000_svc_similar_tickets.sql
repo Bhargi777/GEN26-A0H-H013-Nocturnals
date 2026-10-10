@@ -1,7 +1,8 @@
 -- Service requests: duplicate detection for the report form.
 -- Owner: Dev 3. Adds a function and an index only; core tables belong to Dev 1.
 
-create extension if not exists pg_trgm with schema extensions;
+-- pg_trgm is enabled by the init migration; this keeps the file safe to run alone.
+create extension if not exists pg_trgm;
 
 -- Narrows the scan to one building's recent tickets before scoring.
 create index if not exists service_tickets_building_created_idx
@@ -23,26 +24,24 @@ returns table (
 language sql
 stable
 security definer
-set search_path = public, extensions
+set search_path = public
 as $$
   select t.id, t.code, t.title, t.status::text, t.created_at, s.score
   from public.service_tickets t
+  -- Overall overlap between the two complaints. Comparing whole complaints,
+  -- not titles alone, stops a shared room name ("in Lecture Hall 2") from
+  -- making unrelated faults look alike.
   cross join lateral (
-    select greatest(
-      -- Overall overlap between the two complaints.
-      extensions.similarity(t.title || ' ' || t.description, p_text),
-      -- How closely the existing title appears somewhere in the new text.
-      extensions.word_similarity(t.title, p_text)
-    ) as score
+    select similarity(t.title || ' ' || t.description, p_text) as score
   ) s
   where auth.uid() is not null
     and length(trim(coalesce(p_text, ''))) >= 10
     and t.building_id = p_building_id
     and t.status::text in ('OPEN', 'ASSIGNED', 'IN_PROGRESS', 'REOPENED')
     and t.created_at >= now() - interval '14 days'
-    -- 0.4 keeps paraphrases (0.5 and up in testing) and drops tickets that only
-    -- share filler such as "in the room" (up to 0.37).
-    and s.score >= 0.4
+    -- In testing, real duplicates scored 0.39 to 0.54 and different faults in
+    -- the same rooms 0.13 to 0.25; 0.32 sits between the two.
+    and s.score >= 0.32
   order by s.score desc, t.created_at desc
   limit 3;
 $$;
