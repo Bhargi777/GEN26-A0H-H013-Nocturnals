@@ -14,6 +14,9 @@ export async function classifyWithModel(
   input: TriageInput,
   options: { signal: AbortSignal; timeoutMs: number },
 ): Promise<unknown> {
+  if (typeof window !== "undefined") {
+    throw new Error("Triage must run on the server so the API key stays private");
+  }
   const apiKey = process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
