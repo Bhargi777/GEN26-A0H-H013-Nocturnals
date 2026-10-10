@@ -4,17 +4,23 @@ import { useState } from "react";
 import { Badge, Button, Card, DataTable, Dialog, EmptyState, FileInput, FilterBar, FormField, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, ToastProvider, emptyFilters, filterSchema, useToast } from "@/components/ui";
 import { CATEGORIES, STATUS_LABELS, TICKET_STATUS, type Status } from "./preview-contract";
 import { previewEvents, previewTickets } from "./fixtures";
+import { ROLES, ROLE_LABELS, type Role } from "./preview-contract";
+import { previewEnabled, startPreview } from "./preview-adapter";
+import { useFrontend } from "@/components/layout/frontend-provider";
 
 function Gallery() {
   const [filters, setFilters] = useState(emptyFilters);
   const [dialog, setDialog] = useState(false);
   const [imageName, setImageName] = useState<string>();
   const toast = useToast();
+  const { refresh } = useFrontend();
+  const [role, setRole] = useState<Role>(ROLES.student);
   const parsed = filterSchema.safeParse(filters);
   const rows = parsed.success ? previewTickets.filter((ticket) => (!filters.search || `${ticket.code} ${ticket.title}`.toLowerCase().includes(filters.search.toLowerCase())) && (!filters.status || ticket.status === filters.status) && (!filters.category || ticket.category === filters.category) && (!filters.from || ticket.created_at.slice(0, 10) >= filters.from) && (!filters.to || ticket.created_at.slice(0, 10) <= filters.to)) : [];
   return <div className="space-y-6">
     <PageHeader title="UI reference" context="Shared components and sample data for frontend integration." />
     <Card><p>This gallery uses sample records. It does not submit campus requests.</p></Card>
+    {previewEnabled && <Card className="space-y-3"><h2>Role preview</h2><FormField label="Preview role">{(control) => <Select {...control} value={role} onChange={(event) => setRole(event.target.value as Role)}>{Object.values(ROLES).map((item) => <option key={item} value={item}>{ROLE_LABELS[item]}</option>)}</Select>}</FormField><Button onClick={async () => { try { await startPreview(role); await refresh(); toast({ message: "Sample role selected. Open Dashboard to inspect it." }); } catch { toast({ tone: "error", message: "Preview could not start. Allow session storage and try again." }); } }}>Use preview role</Button></Card>}
     <Card className="space-y-4"><h2>Buttons</h2>
       {(["sm", "md"] as const).map((size) => <div key={size} className="flex flex-wrap gap-3">{(["primary", "secondary", "ghost", "danger"] as const).map((variant) => <Button key={variant} size={size} variant={variant} onClick={() => toast({ message: `${variant} button selected.` })}>{variant} · {size}</Button>)}</div>)}
       <div className="flex flex-wrap gap-3"><Button loading>Save changes</Button><Button disabled>Unavailable</Button></div>
