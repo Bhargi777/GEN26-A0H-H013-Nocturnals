@@ -89,4 +89,30 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 ## Summary
 
-(write when done, include the real triage eval result)
+24 of 25 items are done. The open one is the seeded demo story, which needs Dev 1's seed file (BLOCKERS 1). Work is on branch `Bhargava`, as the developer asked, instead of `feat/service-requests`.
+
+**What works**
+
+- **Requester flow.** `/service-requests/new` suggests a category and priority while the user types (debounced, server side). It lists similar open issues in the same building, with "I have this issue too", and creates the ticket with a photo. It saves both the suggestion and the final choice and opens the ticket with a toast. `/service-requests` lists the user's tickets with sortable columns and status and category filters. `/service-requests/[code]` shows details, photo, department, assignee, followers and an events timeline. On a resolved ticket the requester can confirm with a 1 to 5 rating or reopen with a note.
+- **Staff flow.** `/service-requests/queue` lists department tickets for technicians and dept admins, sorted by priority then age. It has status, category, priority and building filters and marks overdue rows using one config object (4h, 24h, 72h, 7 days). Dept admins can assign, reassign, or send a ticket to another department with a note. Technicians can start work and resolve with a note. Every change goes through `transitionTicket`, and a refusal shows the database message.
+- **AI triage (`lib/ai/`).** `triage()` asks one model (`claude-opus-5-5` through `@anthropic-ai/sdk`) for JSON only, validated with zod against the allowed lists. It sends only title, description and building name, and has a 4 second timeout. It falls back to keyword rules on a missing key, timeout, error, refusal or invalid output. A production build confirmed no client bundle contains the key name, the API host or the prompt.
+- **Duplicates and followers.** `find_similar_tickets` (pg_trgm, same building, open, last 14 days, top 3 at a score of 0.4 or more) and a trigger that copies requester notifications to followers. Both were tested on local Postgres 16 against a stand-in core schema.
+- **Hook.** AV tickets call `onAvTicketChange` (marked `TODO(reservation)`) when opened and closed.
+
+**Triage eval:** `npm run eval:triage` gets **26/28 categories correct (92.9%)**. No API key was available, so all 28 were answered by the keyword rules; the model path has not been measured yet.
+
+**How to test**
+
+- **Checks.** Run `npm run typecheck`, `npm run lint` and `npm test` once Dev 1 adds the scripts. There are 90 Vitest tests: overdue rule, rules fallback for every category and urgent word, prompt and output validation, privacy, timeout and fixture shape. Then run `npm run eval:triage`, with `ANTHROPIC_API_KEY` set to measure the model.
+- **Demo.** Apply the three `_svc_` migrations and call `select public.svc_seed_demo_story();` after seeding. Then sign in as the seeded student and open the closed projector ticket.
+- **Manual pass.**
+  1. As a student, report a projector issue in a building with an open projector ticket: the suggestion and the similar-issues list appear.
+  2. As the ELEC dept admin, assign it from the queue.
+  3. As that technician, start and resolve it.
+  4. As the student, confirm it and rate it.
+- **Browser checks already done.** All pages were checked at 375px and 1280px with no horizontal scroll and no axe WCAG 2.1 AA violations. Loading skeletons, empty states, not-found and the error boundary were each seen in a browser.
+
+**Still blocked**
+
+- The seeded demo story (BLOCKERS 1).
+- Running inside the real app needs Dev 1's scaffold, dependencies, env, `next.config`, storage bucket, RLS and `transition_ticket` details (BLOCKERS 2 to 11) and Dev 2's shell and shared UI (BLOCKERS 12). After that, swap the stubs in `_stubs/` for the real modules.
