@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
 import { PageHeader } from "@/components/service-requests/page-header";
+import { RequesterActions } from "@/components/service-requests/requester-actions";
 import { StatusBadge } from "@/components/service-requests/status-badge";
 import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
 import { Toast } from "@/components/service-requests/toast";
@@ -54,6 +55,14 @@ export default async function TicketPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {ticket.status === "RESOLVED" && ticket.requester_id === profile.id && (
+            <RequesterActions
+              ticketId={ticket.id}
+              code={ticket.code}
+              category={ticket.category}
+              roomId={ticket.room_id}
+            />
+          )}
           <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
             <h2 className="text-base font-semibold text-slate-900">Details</h2>
             <p className="text-sm whitespace-pre-line text-slate-900">{ticket.description}</p>

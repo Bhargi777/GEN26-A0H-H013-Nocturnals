@@ -1,5 +1,6 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { CATEGORY_DEPARTMENT } from "@/lib/ai/routing";
@@ -14,8 +15,10 @@ import {
   getBuilding,
   getCurrentProfile,
   listDepartments,
+  transitionTicket,
   uploadTicketPhoto,
   type SimilarTicket,
+  type TransitionInput,
 } from "./_stubs/db";
 
 export type TriageSuggestion = {
@@ -169,4 +172,69 @@ export async function createTicketAction(formData: FormData): Promise<CreateTick
   }
 
   redirect(`/service-requests/${encodeURIComponent(created.data.code)}?created=1`);
+}
+
+export type ActionResult = { ok: true } | { ok: false; error: string };
+
+/**
+ * Every status change goes through transitionTicket. The database checks the
+ * role and the allowed transition; its message is passed on when it refuses.
+ */
+async function runTransition(code: string, input: TransitionInput): Promise<ActionResult> {
+  const profile = await getCurrentProfile();
+  if (!profile) return { ok: false, error: "Your session has ended. Sign in again and retry." };
+  const result = await transitionTicket(input);
+  if (!result.ok) return { ok: false, error: `The update was refused: ${result.error}` };
+  revalidatePath(`/service-requests/${code}`);
+  revalidatePath("/service-requests");
+  return { ok: true };
+}
+
+const ticketRef = { ticketId: z.string().min(1), code: z.string().min(1) };
+
+const confirmFixedSchema = z.object({
+  ...ticketRef,
+  category: z.string(),
+  roomId: z.string().nullable(),
+  rating: z.coerce.number().int().min(1, "Choose a rating from 1 to 5.").max(5, "Choose a rating from 1 to 5."),
+  feedback: z.string().trim().max(1000, "Keep the feedback under 1000 characters.").optional(),
+});
+
+/** Requester confirms the fix: RESOLVED to CLOSED with a rating. */
+export async function confirmFixedAction(
+  input: z.input<typeof confirmFixedSchema>,
+): Promise<ActionResult> {
+  const parsed = confirmFixedSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, rating, feedback, category, roomId } = parsed.data;
+  const result = await runTransition(code, {
+    ticketId,
+    toStatus: "CLOSED",
+    rating,
+    feedback: feedback || null,
+  });
+  if (result.ok && category === "AV_EQUIPMENT") {
+    // TODO(reservation): room link hook for AV tickets.
+    onAvTicketChange({ ticketId, roomId, change: "closed" });
+  }
+  return result;
+}
+
+const stillBrokenSchema = z.object({
+  ...ticketRef,
+  note: z
+    .string()
+    .trim()
+    .min(5, "Say what is still wrong in at least 5 characters.")
+    .max(1000, "Keep the note under 1000 characters."),
+});
+
+/** Requester reports the fix did not work: RESOLVED to REOPENED with a note. */
+export async function stillBrokenAction(
+  input: z.input<typeof stillBrokenSchema>,
+): Promise<ActionResult> {
+  const parsed = stillBrokenSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, note } = parsed.data;
+  return runTransition(code, { ticketId, toStatus: "REOPENED", note });
 }
