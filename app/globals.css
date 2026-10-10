@@ -1,0 +1,26 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { @apply border-border; }
+  body { margin: 0; }
+  :focus-visible { outline: 2px solid #0F766E; outline-offset: 3px; }
+  button, input, textarea, select { font: inherit; }
+  button, a, input, select, textarea { touch-action: manipulation; }
+  button:disabled { cursor: not-allowed; }
+  h1 { @apply text-title; }
+  h2, h3 { @apply text-section; }
+  input, select, textarea { min-width: 0; }
+  ::selection { background: #F0FDFA; color: #0F172A; }
+}
+
+@layer components {
+  .control { @apply w-full rounded-control border border-secondary bg-surface px-3 py-2 text-primary disabled:opacity-60; }
+  .control[aria-invalid="true"] { @apply border-status-red-dark; }
+  .text-link { @apply text-accent underline underline-offset-4 hover:text-accent-hover; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
