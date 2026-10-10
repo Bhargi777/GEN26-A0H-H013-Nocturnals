@@ -36,7 +36,7 @@ export default async function OfficePage({ searchParams }: { searchParams: { rol
         </p>
       </div>
 
-      <ReviewList requests={requests} />
+      <ReviewList requests={requests} role={role} />
     </div>
   );
 }

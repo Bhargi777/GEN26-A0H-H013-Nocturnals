@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { AdminRequest } from "../../lib/db/admin-requests";
 import { processDecision } from "../../app/(app)/office/actions";
 
-export function ReviewList({ requests }: { requests: AdminRequest[] }) {
+export function ReviewList({ requests, role }: { requests: AdminRequest[], role: string }) {
   const [selectedRequest, setSelectedRequest] = useState<AdminRequest | null>(null);
   const [decision, setDecision] = useState<"APPROVED" | "REJECTED" | null>(null);
   const [note, setNote] = useState("");
@@ -81,7 +81,7 @@ export function ReviewList({ requests }: { requests: AdminRequest[] }) {
                       onClick={() => openDialog(request, "APPROVED")}
                       className="text-teal-600 hover:text-teal-900"
                     >
-                      Approve
+                      {role === "dept_admin" ? "Forward" : "Approve"}
                     </button>
                     <button
                       onClick={() => openDialog(request, "REJECTED")}
@@ -104,11 +104,11 @@ export function ReviewList({ requests }: { requests: AdminRequest[] }) {
             <div className="relative transform overflow-hidden rounded-lg bg-white px-4 pb-4 pt-5 text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-lg sm:p-6">
               <div>
                 <h3 className="text-base font-semibold leading-6 text-slate-900">
-                  Confirm {decision === "APPROVED" ? "Approval" : "Rejection"}
+                  Confirm {decision === "APPROVED" ? (role === "dept_admin" ? "Forward" : "Approval") : "Rejection"}
                 </h3>
                 <div className="mt-2">
                   <p className="text-sm text-slate-500">
-                    Are you sure you want to {decision.toLowerCase()} request {selectedRequest.code}?
+                    Are you sure you want to {decision === "APPROVED" ? (role === "dept_admin" ? "forward" : "approve") : "reject"} request {selectedRequest.code}?
                   </p>
                   <div className="mt-4">
                     <label className="block text-sm font-medium text-slate-900">Note {decision === "REJECTED" && "(Required)"}</label>

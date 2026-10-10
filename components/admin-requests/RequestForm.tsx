@@ -53,78 +53,34 @@ export function RequestForm({ type }: { type: RequestType }) {
       <h2 className="text-xl font-semibold">{config.label}</h2>
       <p className="text-slate-600">{config.description}</p>
       
-      {type === "BONAFIDE" && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">Purpose</label>
-            <input
-              name="purpose"
-              type="text"
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
-            />
-            {errors.purpose && <p className="text-red-600 text-sm mt-1">{errors.purpose}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">Addressed To (Optional)</label>
-            <input
-              name="addressedTo"
-              type="text"
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
-            />
-          </div>
-        </>
-      )}
-
-      {type === "NOC" && (
-        <>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">Purpose</label>
+      {/* Dynamic Fields */}
+      {config.uiFields && config.uiFields.map((field) => (
+        <div key={field.name}>
+          <label className="block text-sm font-medium text-slate-900">{field.label}</label>
+          
+          {field.type === "select" ? (
             <select
-              name="purpose"
+              name={field.name}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
             >
-              <option value="">Select purpose...</option>
-              <option value="internship">Internship</option>
-              <option value="competition">Competition</option>
-              <option value="other">Other</option>
+              <option value="">Select...</option>
+              {field.options?.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
             </select>
-            {errors.purpose && <p className="text-red-600 text-sm mt-1">{errors.purpose}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">Organisation Name</label>
+          ) : (
             <input
-              name="organisationName"
-              type="text"
+              name={field.name}
+              type={field.type}
               onChange={handleChange}
               className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
             />
-            {errors.organisationName && <p className="text-red-600 text-sm mt-1">{errors.organisationName}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">Start Date</label>
-            <input
-              name="startDate"
-              type="date"
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
-            />
-            {errors.startDate && <p className="text-red-600 text-sm mt-1">{errors.startDate}</p>}
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-slate-900">End Date</label>
-            <input
-              name="endDate"
-              type="date"
-              onChange={handleChange}
-              className="mt-1 block w-full rounded-md border-slate-300 shadow-sm focus:border-teal-500 focus:ring-teal-500 sm:text-sm"
-            />
-            {errors.endDate && <p className="text-red-600 text-sm mt-1">{errors.endDate}</p>}
-          </div>
-        </>
-      )}
+          )}
+          
+          {errors[field.name] && <p className="text-red-600 text-sm mt-1">{errors[field.name]}</p>}
+        </div>
+      ))}
 
       <button
         type="submit"
