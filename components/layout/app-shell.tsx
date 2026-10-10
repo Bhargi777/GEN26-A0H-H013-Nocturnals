@@ -7,6 +7,7 @@ import { Bell } from "lucide-react";
 import { ROLE_LABELS } from "@/app/(app)/ui/preview-contract";
 import { Button, EmptyState, Skeleton, buttonStyles, useToast } from "@/components/ui";
 import { useFrontend } from "./frontend-provider";
+import { Navigation } from "./navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { profile, ready, error, refresh, notifications, signOut } = useFrontend();
@@ -19,7 +20,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:p-3">Skip to content</a>
     <aside className="fixed inset-y-0 left-0 hidden w-64 border-r bg-surface p-6 md:block">
       <Link href="/dashboard" className="font-semibold text-primary">CampusConnect</Link>
-      <nav aria-label="Main navigation" className="mt-6"><Link href="/dashboard" className="text-link">Dashboard</Link></nav>
+      <div className="mt-6"><Navigation role={profile?.role} /></div>
     </aside>
     <div className="min-w-0 md:pl-64">
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b bg-surface px-4 py-3 md:px-6">
