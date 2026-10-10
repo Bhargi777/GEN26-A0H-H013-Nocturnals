@@ -32,7 +32,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 ### Phase B: app shell
 
 - [x] `app/(app)/layout.tsx`: left sidebar, top bar with user name, role, notification bell with unread count, and sign-out.
-- [ ] Sidebar links depend on role:
+- [x] Sidebar links depend on role:
   - student and faculty: Dashboard, My service requests, Report an issue, My certificates, Request a certificate
   - technician and dept_admin: Dashboard, Department queue, plus the student links for their own requests
   - office_staff: Dashboard, Office review queue
