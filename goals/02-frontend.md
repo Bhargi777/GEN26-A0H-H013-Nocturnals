@@ -48,7 +48,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 
 ### Phase D: dashboards and notifications
 
-- [ ] `/dashboard` changes by role:
+- [x] `/dashboard` changes by role:
   - requester: counts of open service requests and pending certificates, and their five most recent items with status badges
   - technician and dept_admin: counts by status for their department queue, and the oldest unresolved tickets
   - office_staff: count waiting for review, and the oldest pending requests
