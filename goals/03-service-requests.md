@@ -57,11 +57,35 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 ## BLOCKERS
 
-(none yet)
+1. **Seeded demo story (Dev 1).** `supabase/migrations/20261010200200_svc_demo_story.sql` adds `svc_seed_demo_story()`, tested against a stand-in schema. It still needs Dev 1 to add `select public.svc_seed_demo_story();` at the end of `supabase/seed.sql`, after seeding a student, an ELEC `dept_admin`, an ELEC `technician` and at least one room. That is why the Phase E seed item is still open.
+2. **No project scaffold on main (Dev 1, Dev 2).** `package.json`, `tsconfig.json`, `next.config.*`, `middleware.ts`, `app/layout.tsx`, `app/(app)/layout.tsx` and the Tailwind setup do not exist yet, so `npm run typecheck` and `npm run lint` cannot run. Until they land, each commit was checked from a toolchain outside the repo: `tsc --strict` with the standard Next.js tsconfig, ESLint `next/core-web-vitals` + `next/typescript` at zero warnings, and Vitest. Pages were also driven in a browser through a local harness with an in-memory data layer.
+3. **Dependencies and scripts for `package.json` (Dev 1).** Runtime: `@anthropic-ai/sdk`, `zod`, `@supabase/ssr`, `@supabase/supabase-js`, `lucide-react`. Dev: `vitest`, `tsx`. Scripts: `"test": "vitest run"` and `"eval:triage": "tsx lib/ai/eval-triage.ts"`.
+4. **`.env.example` (Dev 1).** Add `ANTHROPIC_API_KEY=` (server only, never `NEXT_PUBLIC_`) and optionally `TRIAGE_MODEL=` (defaults to `claude-opus-5-5`).
+5. **`next.config.*` (Dev 1).** Set `experimental.serverActions.bodySizeLimit` to `"6mb"`. Photos up to 5 MB are uploaded through a server action, and the default limit is 1 MB.
+6. **Stubs to swap once Dev 1's code is on main.** `app/(app)/service-requests/_stubs/constants.ts` maps to `lib/constants/*`, `_stubs/supabase.ts` to `lib/supabase/server`, and `_stubs/db.ts` to `lib/db/service-requests.ts`. Change the imports, then delete `_stubs/`.
+7. **`transition_ticket` contract (Dev 1).** The data layer calls it with named parameters `p_ticket_id, p_to_status, p_note, p_assigned_to, p_department_id, p_rating, p_feedback`. The UI relies on these behaviours:
+   - A dept admin can reassign within `ASSIGNED` (`ASSIGNED` to `ASSIGNED` with a new `p_assigned_to`).
+   - A dept admin can move any open ticket to another department as `OPEN` with `p_department_id`, clearing `assigned_to`.
+   - `RESOLVED` and `REOPENED` take a note.
+   - `CLOSED` stores `p_rating` and `p_feedback`.
+   - The requester's notification uses the link `/service-requests/<code>`.
+8. **Ticket insert (Dev 1).** `createTicket` leaves `code` to the database (a default or trigger producing `SR-000123`) and does not write the first `events` row. The demo story adds a `created` event only if none exists.
+9. **Storage (Dev 1).** A private `ticket-photos` bucket. Authenticated users upload under `<their user id>/`, and reads are allowed for whoever can read the ticket.
+10. **RLS (Dev 1).**
+    - Users can insert their own `ticket_followers` rows.
+    - Followers can read the tickets they follow; otherwise "I have this issue too" opens a ticket the follower cannot see.
+    - A dept admin can read technician profiles in their department.
+    - `events` are readable by anyone who can read the ticket.
+11. **Follower notifications trigger (Dev 1 sign-off).** `20261010200100_svc_follower_notifications.sql` adds a trigger on the core `notifications` table that copies requester notifications to followers. If Dev 1 prefers, `transition_ticket` can do the same fan-out, and this migration can be dropped.
+12. **Shared UI (Dev 2).** `components/ui/` is missing, so local versions live in `components/service-requests/`: `button`, `form-field`, `status-badge`, `page-header`, `empty-state`, `toast`. Pages redirect to `/login` when signed out, so that route is assumed to exist.
 
 ## SUGGESTIONS
 
-(none yet)
+- Run `npm run eval:triage` once with `ANTHROPIC_API_KEY` set. The number in the summary only measures the keyword fallback, because no key was available here.
+- The keyword rules missed 2 of 28 fixtures (a projector complaint mentioning "power" and "light", and "geyser"). They were left untuned on purpose so the eval stays honest. A larger labelled set would show whether AV words should weigh more.
+- Triage uses `claude-opus-5-5` with low effort and a 4 second timeout. If timeouts show up often in logs, consider a faster model through `TRIAGE_MODEL`.
+- The contract lists no AV department, so `AV_EQUIPMENT` routes to `ELEC` in `lib/ai/routing.ts`. If an AV team exists, add its code to the contract and change that one line.
+- Show tickets the user follows on `/service-requests`, next to the ones they reported.
 
 ## Summary
 
