@@ -15,7 +15,7 @@ const CATEGORY_KEYWORDS: { category: TicketCategory; weight: number; words: stri
   {
     category: "NETWORK",
     weight: 1,
-    words: ["wifi", "wi-fi", "internet", "lan", "ethernet", "network", "router", "access point", "no signal"],
+    words: ["wifi", "wi-fi", "internet", "lan", "ethernet", "network", "router", "access point"],
   },
   {
     category: "AV_EQUIPMENT",
