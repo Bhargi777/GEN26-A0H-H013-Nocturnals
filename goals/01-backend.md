@@ -16,11 +16,11 @@ You build the foundation everyone else depends on: project setup, database, auth
 - [x] `.env.example` lists every variable with a comment: Supabase URL and keys, `ALLOWED_EMAIL_DOMAINS`, LLM key and model name, app URL.
 - [x] `lib/supabase/server.ts`, `lib/supabase/client.ts` and `middleware.ts` handle sessions; unauthenticated users are redirected to `/sign-in` from every `(app)` route.
 - [x] `lib/constants/` exports roles, ticket statuses, admin request statuses, categories, priorities, request types and allowed transitions, exactly as in the team rules.
-- [ ] `lib/types/` exports TypeScript types for every table and for the inputs and outputs of every data function.
-- [ ] `lib/db/service-requests.ts` and `lib/db/admin-requests.ts` exist with all function signatures listed below, typed, even if bodies are not finished yet.
-- [ ] Folder skeleton exists for every owner path in the team rules, with a placeholder `page.tsx` in each module route so others have somewhere to build.
-- [ ] `goals/` folder committed on `main` with all five goal files.
-- [ ] README explains setup, env vars, scripts, branch names and the ownership table.
+- [x] `lib/types/` exports TypeScript types for every table and for the inputs and outputs of every data function.
+- [x] `lib/db/service-requests.ts` and `lib/db/admin-requests.ts` exist with all function signatures listed below, typed, even if bodies are not finished yet.
+- [x] Folder skeleton exists for every owner path in the team rules, with a placeholder `page.tsx` in each module route so others have somewhere to build.
+- [x] `goals/` folder committed on `main` with all five goal files.
+- [x] README explains setup, env vars, scripts, branch names and the ownership table.
 
 ### Phase B: database
 
