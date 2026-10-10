@@ -21,7 +21,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 ### Phase B: staff flow
 
-- [ ] `/service-requests/queue` for technician and dept_admin: department tickets in a table, filters for status, category, priority, building; sorted by priority then age; overdue rows marked.
+- [x] `/service-requests/queue` for technician and dept_admin: department tickets in a table, filters for status, category, priority, building; sorted by priority then age; overdue rows marked.
 - [ ] Overdue rule in one config object: `URGENT` 4h, `HIGH` 24h, `MEDIUM` 72h, `LOW` 7 days, counted from creation until resolved.
 - [ ] Dept admin can assign a ticket to a technician in their department and reassign it to another department with a note.
 - [ ] Technician can move `ASSIGNED` to `IN_PROGRESS` and `IN_PROGRESS` to `RESOLVED` with a resolution note.
