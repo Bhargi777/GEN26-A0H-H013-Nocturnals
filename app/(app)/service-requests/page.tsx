@@ -29,7 +29,7 @@ export default async function MyTicketsPage({
 }) {
   const params = listParamsSchema.parse(await searchParams);
   const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/sign-in");
 
   const sort = params.sort ?? "updated";
   const dir = params.dir ?? (params.sort ? "asc" : "desc");

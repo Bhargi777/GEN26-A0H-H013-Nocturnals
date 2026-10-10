@@ -69,7 +69,7 @@ export default async function QueuePage({
   const params = listParamsSchema.parse(raw);
   const moved = typeof raw.moved === "string" && /^SR-\d+$/.test(raw.moved) ? raw.moved : null;
   const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/sign-in");
 
   if (!STAFF_ROLES.includes(profile.role)) {
     return (

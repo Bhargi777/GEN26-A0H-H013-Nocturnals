@@ -10,7 +10,7 @@ export const metadata = { title: "Report an issue" };
 
 export default async function NewServiceRequestPage() {
   const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/sign-in");
 
   const [buildings, rooms] = await Promise.all([listBuildings(), listRooms()]);
 

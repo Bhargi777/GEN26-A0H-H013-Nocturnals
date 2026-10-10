@@ -36,7 +36,7 @@ export default async function TicketPage({
 }) {
   const [{ code }, flags] = await Promise.all([params, searchParams]);
   const profile = await getCurrentProfile();
-  if (!profile) redirect("/login");
+  if (!profile) redirect("/sign-in");
 
   const ticket = await loadTicketDetail(decodeURIComponent(code), profile.id);
   if (!ticket) notFound();
