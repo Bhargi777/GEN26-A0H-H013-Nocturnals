@@ -24,7 +24,7 @@ function Gallery() {
     <Card className="space-y-4"><h2>Buttons</h2>
       {(["sm", "md"] as const).map((size) => <div key={size} className="flex flex-wrap gap-3">{(["primary", "secondary", "ghost", "danger"] as const).map((variant) => <Button key={variant} size={size} variant={variant} onClick={() => toast({ message: `${variant} button selected.` })}>{variant} · {size}</Button>)}</div>)}
       <div className="flex flex-wrap gap-3"><Button loading>Save changes</Button><Button disabled>Unavailable</Button></div>
-      <pre className="overflow-x-auto rounded-control bg-background p-3"><code>{'<Button variant="secondary" size="sm" onClick={save}>Save</Button>'}</code></pre>
+      <pre tabIndex={0} className="overflow-x-auto rounded-control bg-background p-3"><code>{'<Button variant="secondary" size="sm" onClick={save}>Save</Button>'}</code></pre>
     </Card>
     <Card className="space-y-4"><h2>Form controls</h2><div className="grid gap-4 md:grid-cols-2">
       <FormField label="Issue title" help="Describe the equipment or facility.">{(control) => <Input {...control} defaultValue="Library Wi-Fi disconnects" />}</FormField>
@@ -32,7 +32,7 @@ function Gallery() {
       <FormField label="Description">{(control) => <Textarea {...control} />}</FormField>
       <FileInput label="Issue image" onChange={(file) => setImageName(file?.name)} />
     </div>{imageName && <p role="status">Selected: {imageName}</p>}
-      <pre className="overflow-x-auto rounded-control bg-background p-3"><code>{'<FormField label="Title" error={error}>\n  {(control) => <Input {...control} name="title" />}\n</FormField>'}</code></pre>
+      <pre tabIndex={0} className="overflow-x-auto rounded-control bg-background p-3"><code>{'<FormField label="Title" error={error}>\n  {(control) => <Input {...control} name="title" />}\n</FormField>'}</code></pre>
     </Card>
     <Card className="space-y-4"><h2>Status badges</h2><div className="flex flex-wrap gap-2">{(Object.keys(STATUS_LABELS) as Status[]).map((status) => <StatusBadge key={status} status={status} />)}<Badge>General label</Badge></div></Card>
     <section className="space-y-4" aria-labelledby="table-heading"><h2 id="table-heading">Filters and table</h2>
@@ -50,8 +50,9 @@ function Gallery() {
       <Button variant="secondary" onClick={() => toast({ tone: "error", message: "Changes could not be saved. Try again." })}>Show error</Button>
     </div><Dialog open={dialog} title="Confirm sample change" description="This changes only the gallery preview." confirmLabel="Confirm change" onClose={() => setDialog(false)} onConfirm={() => toast({ message: "Sample change confirmed." })} /></Card>
     <section className="space-y-4"><h2>Empty and loading states</h2><EmptyState message="No requests match these filters." action={<Button variant="secondary" onClick={() => setFilters({ ...emptyFilters })}>Clear filters</Button>} /><Skeleton /></section>
-    <Card className="space-y-3"><h2>Component imports</h2><p>Import from <code>components/ui</code>. This page contains working examples for every component.</p><pre className="overflow-x-auto bg-background p-3"><code>{'import { Button, DataTable, FormField, StatusBadge } from "@/components/ui";'}</code></pre></Card>
+    <Card className="space-y-3"><h2>Component imports</h2><p>Import from <code>components/ui</code>. This page contains working examples for every component.</p><pre tabIndex={0} className="overflow-x-auto bg-background p-3"><code>{'import { Button, DataTable, FormField, StatusBadge } from "@/components/ui";'}</code></pre></Card>
   </div>;
 }
 
 export default function UIPage() { return <Gallery />; }
+
