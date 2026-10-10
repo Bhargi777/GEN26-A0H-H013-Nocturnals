@@ -76,6 +76,9 @@ function toTimeline(
     created_at: ticket.created_at,
   };
   const rest = events.map((event): TimelineEvent => {
+    if (event.action === "CREATED") {
+      return { ...reported, id: event.id, actor_name: people.get(event.actor_id), created_at: event.created_at };
+    }
     const moved = event.action === "REASSIGN_DEPARTMENT";
     const toStatus = moved ? null : asStatus(event.to_status);
     return {
@@ -93,7 +96,9 @@ function toTimeline(
       created_at: event.created_at,
     };
   });
-  return [reported, ...rest];
+  // No creation event is written when a ticket is inserted, so add one unless
+  // the history already has it (the seeded demo story writes one).
+  return events.some((event) => event.action === "CREATED") ? rest : [reported, ...rest];
 }
 
 export async function loadTicketDetail(codeOrId: string, viewerId: string): Promise<TicketDetail | null> {
