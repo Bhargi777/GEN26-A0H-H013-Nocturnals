@@ -58,7 +58,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 ### Phase E: quality pass
 
 - [x] Every page checked at 375px and 1280px wide.
-- [ ] Keyboard-only walk-through of sign-in, dashboard and notifications works.
+- [x] Keyboard-only walk-through of sign-in, dashboard and notifications works.
 - [ ] Contrast checked against AA.
 - [ ] No banned patterns from the team rules anywhere.
 - [ ] Review Dev 3 and Dev 4 pages after they merge and open small `style(ui): ...` pull requests only inside your own paths, or list fixes for them under SUGGESTIONS.
