@@ -6,7 +6,7 @@ import {
 } from "@/app/(app)/service-requests/_stubs/constants";
 import { TRIAGE_SYSTEM_PROMPT, buildTriageUserMessage } from "./prompt";
 import type { TriageInput } from "./schema";
-import { triage, type Classifier } from "./triage";
+import { TRIAGE_TIMEOUT_MS, triage, type Classifier } from "./triage";
 
 const input = {
   title: "Projector not turning on",
@@ -85,5 +85,60 @@ describe("privacy", () => {
     expect(message).toContain(input.description);
     expect(message).toContain(input.buildingName);
     expect(message).not.toMatch(/Ananya|ananya\.rao@campus\.edu|21CS1042/);
+  });
+});
+
+describe("fallback to rules", () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("waits a few seconds at most", () => {
+    expect(TRIAGE_TIMEOUT_MS).toBeGreaterThanOrEqual(2000);
+    expect(TRIAGE_TIMEOUT_MS).toBeLessThanOrEqual(6000);
+  });
+
+  it("aborts a slow model at the timeout and uses rules", async () => {
+    vi.useFakeTimers();
+    let aborted = false;
+    const pending = triage(input, {
+      classify: (_input, { signal }) =>
+        new Promise((_resolve, reject) => {
+          signal.addEventListener("abort", () => {
+            aborted = true;
+            reject(new Error("aborted"));
+          });
+        }),
+    });
+    await vi.advanceTimersByTimeAsync(TRIAGE_TIMEOUT_MS - 1);
+    expect(aborted).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(pending).resolves.toMatchObject({ source: "rules", category: "AV_EQUIPMENT" });
+    expect(aborted).toBe(true);
+  });
+
+  it("does not wait for a model that ignores the abort signal", async () => {
+    vi.useFakeTimers();
+    const pending = triage(input, { classify: () => new Promise(() => {}) });
+    await vi.advanceTimersByTimeAsync(TRIAGE_TIMEOUT_MS);
+    await expect(pending).resolves.toMatchObject({ source: "rules" });
+  });
+
+  it("uses rules when the model call fails", async () => {
+    const result = await triage(input, {
+      classify: async () => {
+        throw new Error("529 overloaded");
+      },
+    });
+    expect(result.source).toBe("rules");
+  });
+
+  it("uses rules without calling any model when no API key is set", async () => {
+    vi.stubEnv("ANTHROPIC_API_KEY", "");
+    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const result = await triage(input);
+    expect(result).toMatchObject({ source: "rules", category: "AV_EQUIPMENT", departmentCode: "ELEC" });
+    expect(fetchSpy).not.toHaveBeenCalled();
+    vi.unstubAllEnvs();
   });
 });
