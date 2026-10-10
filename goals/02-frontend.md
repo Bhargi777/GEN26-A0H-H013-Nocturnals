@@ -24,7 +24,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
   - [x] `DataTable` (columns, sorting, empty state, row link, simple pagination)
   - [x] `FilterBar` (status, category, date range, search text)
   - [x] `Timeline` (renders `events` rows: actor, action, status change, note, relative time)
-  - [ ] `Dialog` for confirmations, `Toast` for success and error feedback
+  - [x] `Dialog` for confirmations, `Toast` for success and error feedback
   - [ ] `EmptyState` (one sentence, one action)
   - [ ] `Skeleton` loading rows
 - [ ] A gallery page at `/ui` showing every component and every badge state, so teammates can copy usage.
