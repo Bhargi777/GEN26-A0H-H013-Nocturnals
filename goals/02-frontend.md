@@ -38,7 +38,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 ### Phase B: app shell and auth
 
 - [x] `app/(app)/layout.tsx`: left sidebar, top bar with user name, role, notification bell with unread count, sign-out. Sidebar collapses behind a menu button under 768px. Toast provider lives here.
-- [ ] Sidebar links come from one array keyed by role, not conditionals scattered in markup:
+- [x] Sidebar links come from one array keyed by role, not conditionals scattered in markup:
   - student, faculty: Dashboard, My service requests, Report an issue, My certificates, Request a certificate
   - technician, dept_admin: Dashboard, Department queue, plus the student links
   - office_staff: Dashboard, Office review queue
