@@ -32,11 +32,11 @@ You build the foundation everyone else depends on: project setup, database, auth
 
 ### Phase C: rules in the database
 
-- [ ] RLS enabled on every table, with the visibility rules from the team rules. Default deny.
-- [ ] `transition_ticket(ticket_id, to_status, note, assigned_to)` as a security definer function: checks the caller's role and the allowed transition, updates the ticket, sets `resolved_at` or `closed_at`, writes an `events` row and notifies the requester (and the assignee when assigned), all in one transaction. Illegal transitions raise a clear error.
-- [ ] `decide_admin_request(request_id, decision, note)`: dept admin can move `NOC` from `PENDING_DEPT` to `PENDING_OFFICE` or `REJECTED`; office staff can move from `PENDING_OFFICE` to `APPROVED` or `REJECTED`. Writes events and notifications.
-- [ ] Direct `update` of `status` columns is blocked for normal users; only these functions change status.
-- [ ] Storage buckets `ticket-photos` and `admin-documents`, both private, with policies matching the table visibility. Photo uploads limited to images under 5 MB.
+- [x] RLS enabled on every table, with the visibility rules from the team rules. Default deny.
+- [x] `transition_ticket(ticket_id, to_status, note, assigned_to)` as a security definer function: checks the caller's role and the allowed transition, updates the ticket, sets `resolved_at` or `closed_at`, writes an `events` row and notifies the requester (and the assignee when assigned), all in one transaction. Illegal transitions raise a clear error.
+- [x] `decide_admin_request(request_id, decision, note)`: dept admin can move `NOC` from `PENDING_DEPT` to `PENDING_OFFICE` or `REJECTED`; office staff can move from `PENDING_OFFICE` to `APPROVED` or `REJECTED`. Writes events and notifications.
+- [x] Direct `update` of `status` columns is blocked for normal users; only these functions change status.
+- [x] Storage buckets `ticket-photos` and `admin-documents`, both private, with policies matching the table visibility. Photo uploads limited to images under 5 MB.
 
 ### Phase D: data layer
 
