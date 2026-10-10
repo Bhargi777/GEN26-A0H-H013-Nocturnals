@@ -24,11 +24,11 @@ You build the foundation everyone else depends on: project setup, database, auth
 
 ### Phase B: database
 
-- [ ] Migrations create every core table in the team rules, with foreign keys, `not null` where it makes sense, check constraints on enums, and `updated_at` triggers.
-- [ ] Human-readable codes (`SR-000123`, `AR-000123`) come from sequences, set by the database.
-- [ ] A trigger creates a `profiles` row on sign-up, and rejects any email whose domain is not in the allowed list.
-- [ ] Indexes on every foreign key and on `status`, `assigned_department_id`, `requester_id`, `created_at`.
-- [ ] `pg_trgm` extension enabled (Dev 3 uses it for duplicate detection).
+- [x] Migrations create every core table in the team rules, with foreign keys, `not null` where it makes sense, check constraints on enums, and `updated_at` triggers.
+- [x] Human-readable codes (`SR-000123`, `AR-000123`) come from sequences, set by the database.
+- [x] A trigger creates a `profiles` row on sign-up, and rejects any email whose domain is not in the allowed list.
+- [x] Indexes on every foreign key and on `status`, `assigned_department_id`, `requester_id`, `created_at`.
+- [x] `pg_trgm` extension enabled (Dev 3 uses it for duplicate detection).
 
 ### Phase C: rules in the database
 
