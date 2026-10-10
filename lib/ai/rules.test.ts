@@ -1,8 +1,6 @@
 import { describe, expect, it } from "vitest";
-import {
-  TICKET_CATEGORIES,
-  type TicketCategory,
-} from "@/app/(app)/service-requests/_stubs/constants";
+import type { TicketCategory } from "../constants";
+import { CATEGORY_VALUES } from "./values";
 import { CATEGORY_DEPARTMENT } from "./routing";
 import { triageByRules, URGENT_KEYWORDS } from "./rules";
 
@@ -32,7 +30,7 @@ const CATEGORY_CASES: Record<TicketCategory, string[]> = {
 
 describe("triageByRules categories", () => {
   it("has a case for every category", () => {
-    expect(Object.keys(CATEGORY_CASES).sort()).toEqual([...TICKET_CATEGORIES].sort());
+    expect(Object.keys(CATEGORY_CASES).sort()).toEqual([...CATEGORY_VALUES].sort());
   });
 
   for (const [category, titles] of Object.entries(CATEGORY_CASES)) {

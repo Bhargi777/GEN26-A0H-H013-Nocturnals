@@ -6,7 +6,7 @@ import {
   startWorkAction,
   type ActionResult,
 } from "@/app/(app)/service-requests/actions";
-import type { TicketStatus } from "@/app/(app)/service-requests/_stubs/constants";
+import type { TicketStatus } from "@/app/(app)/service-requests/_lib/labels";
 import { Button } from "./button";
 import { Field, inputClass } from "./form-field";
 

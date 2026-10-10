@@ -1,7 +1,7 @@
 import {
   TICKET_STATUS_LABELS,
   type TicketStatus,
-} from "@/app/(app)/service-requests/_stubs/constants";
+} from "@/app/(app)/service-requests/_lib/labels";
 
 // Muted pairs from the team UI rules: light background, dark text.
 const tones: Record<TicketStatus, string> = {

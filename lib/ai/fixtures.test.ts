@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TICKET_CATEGORIES } from "@/app/(app)/service-requests/_stubs/constants";
+import { CATEGORY_VALUES } from "./values";
 import fixtures from "./fixtures.json";
 
 describe("triage fixtures", () => {
@@ -11,7 +11,7 @@ describe("triage fixtures", () => {
 
   it("uses only known categories and covers every one", () => {
     const used = new Set(fixtures.map((f) => f.expectedCategory));
-    for (const category of used) expect(TICKET_CATEGORIES).toContain(category);
-    expect([...used].sort()).toEqual([...TICKET_CATEGORIES].sort());
+    for (const category of used) expect(CATEGORY_VALUES).toContain(category);
+    expect([...used].sort()).toEqual([...CATEGORY_VALUES].sort());
   });
 });

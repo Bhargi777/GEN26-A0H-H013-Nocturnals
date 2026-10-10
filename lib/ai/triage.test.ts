@@ -1,9 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  DEPARTMENT_CODES,
-  TICKET_CATEGORIES,
-  TICKET_PRIORITIES,
-} from "@/app/(app)/service-requests/_stubs/constants";
+import { DEPARTMENT_CODES } from "./routing";
+import { CATEGORY_VALUES, PRIORITY_VALUES } from "./values";
 import { TRIAGE_SYSTEM_PROMPT, buildTriageUserMessage } from "./prompt";
 import type { TriageInput } from "./schema";
 import { TRIAGE_TIMEOUT_MS, triage, type Classifier } from "./triage";
@@ -28,7 +25,7 @@ describe("triage prompt", () => {
     expect(TRIAGE_SYSTEM_PROMPT).toMatch(/JSON only/);
   });
 
-  it.each([...TICKET_CATEGORIES, ...TICKET_PRIORITIES, ...DEPARTMENT_CODES])(
+  it.each([...CATEGORY_VALUES, ...PRIORITY_VALUES, ...DEPARTMENT_CODES])(
     "lists the allowed value %s",
     (value) => {
       expect(TRIAGE_SYSTEM_PROMPT).toContain(value);

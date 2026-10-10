@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TICKET_CATEGORIES, TICKET_PRIORITIES } from "../_stubs/constants";
+import { CATEGORY_VALUES, PRIORITY_VALUES } from "../_lib/labels";
 
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
 export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
@@ -26,10 +26,10 @@ export const newTicketSchema = z.object({
   buildingId: z.string().min(1, "Choose the building where the problem is."),
   roomId: optionalText(64),
   locationNote: optionalText(200),
-  category: z.enum(TICKET_CATEGORIES, { message: "Choose a category." }),
-  priority: z.enum(TICKET_PRIORITIES, { message: "Choose a priority." }),
-  aiSuggestedCategory: z.enum(TICKET_CATEGORIES).optional().catch(undefined),
-  aiSuggestedPriority: z.enum(TICKET_PRIORITIES).optional().catch(undefined),
+  category: z.enum(CATEGORY_VALUES, { message: "Choose a category." }),
+  priority: z.enum(PRIORITY_VALUES, { message: "Choose a priority." }),
+  aiSuggestedCategory: z.enum(CATEGORY_VALUES).optional().catch(undefined),
+  aiSuggestedPriority: z.enum(PRIORITY_VALUES).optional().catch(undefined),
   aiConfidence: z.coerce.number().min(0).max(1).optional().catch(undefined),
 });
 

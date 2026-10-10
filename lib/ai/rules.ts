@@ -1,7 +1,9 @@
-import type {
-  TicketCategory,
-  TicketPriority,
-} from "@/app/(app)/service-requests/_stubs/constants";
+import {
+  TICKET_CATEGORIES,
+  TICKET_PRIORITIES,
+  type TicketCategory,
+  type TicketPriority,
+} from "../constants";
 import { CATEGORY_DEPARTMENT } from "./routing";
 import type { TriageInput, TriageResult } from "./schema";
 
@@ -13,37 +15,37 @@ import type { TriageInput, TriageResult } from "./schema";
  */
 const CATEGORY_KEYWORDS: { category: TicketCategory; weight: number; words: string[] }[] = [
   {
-    category: "NETWORK",
+    category: TICKET_CATEGORIES.NETWORK,
     weight: 1,
     words: ["wifi", "wi-fi", "internet", "lan", "ethernet", "network", "router", "access point"],
   },
   {
-    category: "AV_EQUIPMENT",
+    category: TICKET_CATEGORIES.AV_EQUIPMENT,
     weight: 1,
     words: ["projector", "speaker", "mic", "microphone", "hdmi", "vga", "audio", "sound system", "smart board", "smartboard"],
   },
   {
-    category: "CLEANLINESS",
+    category: TICKET_CATEGORIES.CLEANLINESS,
     weight: 1,
     words: ["dirty", "garbage", "trash", "dustbin", "litter", "smell", "stink", "unclean", "cockroach", "rat", "pest", "mosquito", "not cleaned", "cleaning"],
   },
   {
-    category: "PLUMBING",
+    category: TICKET_CATEGORIES.PLUMBING,
     weight: 1,
     words: ["leak", "leaking", "leakage", "tap", "flush", "toilet", "pipe", "drain", "clogged", "blocked", "sink", "washbasin", "cistern", "no water", "water supply", "overflow", "flooding", "flooded", "drip", "dripping", "seepage"],
   },
   {
-    category: "ELECTRICAL",
+    category: TICKET_CATEGORIES.ELECTRICAL,
     weight: 1,
     words: ["fan", "light", "tube light", "bulb", "switch", "socket", "plug point", "power", "wiring", "mcb", "electricity", "voltage", "ac", "air conditioner", "air conditioning"],
   },
   {
-    category: "FURNITURE",
+    category: TICKET_CATEGORIES.FURNITURE,
     weight: 1,
     words: ["chair", "desk", "bench", "table", "cupboard", "almirah", "shelf", "rack", "wardrobe", "bed", "mattress", "drawer", "locker", "whiteboard"],
   },
   {
-    category: "HOSTEL",
+    category: TICKET_CATEGORIES.HOSTEL,
     weight: 0.5,
     words: ["hostel", "mess", "warden", "laundry", "dorm", "dormitory"],
   },
@@ -91,16 +93,16 @@ function mentions(text: string, word: string) {
 }
 
 function priorityFor(text: string): TicketPriority {
-  if (URGENT_KEYWORDS.some((word) => mentions(text, word))) return "URGENT";
-  if (HIGH_KEYWORDS.some((word) => mentions(text, word))) return "HIGH";
-  if (LOW_KEYWORDS.some((word) => mentions(text, word))) return "LOW";
-  return "MEDIUM";
+  if (URGENT_KEYWORDS.some((word) => mentions(text, word))) return TICKET_PRIORITIES.URGENT;
+  if (HIGH_KEYWORDS.some((word) => mentions(text, word))) return TICKET_PRIORITIES.HIGH;
+  if (LOW_KEYWORDS.some((word) => mentions(text, word))) return TICKET_PRIORITIES.LOW;
+  return TICKET_PRIORITIES.MEDIUM;
 }
 
 export function triageByRules(input: TriageInput): TriageResult {
   const text = `${input.title}\n${input.description}`.toLowerCase();
 
-  let best: { category: TicketCategory; score: number } = { category: "OTHER", score: 0 };
+  let best: { category: TicketCategory; score: number } = { category: TICKET_CATEGORIES.OTHER, score: 0 };
   for (const rule of CATEGORY_KEYWORDS) {
     const score = rule.words.filter((word) => mentions(text, word)).length * rule.weight;
     if (score > best.score) best = { category: rule.category, score };

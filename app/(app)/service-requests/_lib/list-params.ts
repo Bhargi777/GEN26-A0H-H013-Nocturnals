@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { TICKET_CATEGORIES, TICKET_PRIORITIES, TICKET_STATUSES } from "../_stubs/constants";
+import { CATEGORY_VALUES, PRIORITY_VALUES, STATUS_VALUES } from "../_lib/labels";
 import type { TicketListItem } from "../_stubs/db";
 
 export const SORT_KEYS = ["code", "title", "category", "location", "status", "priority", "created", "updated"] as const;
@@ -11,9 +11,9 @@ const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
 
 /** Parses list filters from the URL. Unknown values are ignored instead of failing the page. */
 export const listParamsSchema = z.object({
-  status: optionalEnum(TICKET_STATUSES),
-  category: optionalEnum(TICKET_CATEGORIES),
-  priority: optionalEnum(TICKET_PRIORITIES),
+  status: optionalEnum(STATUS_VALUES),
+  category: optionalEnum(CATEGORY_VALUES),
+  priority: optionalEnum(PRIORITY_VALUES),
   building: z.string().max(64).optional().catch(undefined),
   sort: optionalEnum(SORT_KEYS),
   dir: z.enum(["asc", "desc"]).optional().catch(undefined),

@@ -2,7 +2,7 @@
 // puts in the expected category. Uses the model when ANTHROPIC_API_KEY is set,
 // otherwise the keyword rules, and says which one answered.
 import { z } from "zod";
-import { TICKET_CATEGORIES } from "@/app/(app)/service-requests/_stubs/constants";
+import { CATEGORY_VALUES } from "./values";
 import fixtures from "./fixtures.json";
 import { triage } from "./triage";
 
@@ -13,7 +13,7 @@ export const fixtureSchema = z
       title: z.string().min(1),
       description: z.string().min(1),
       buildingName: z.string().min(1),
-      expectedCategory: z.enum(TICKET_CATEGORIES),
+      expectedCategory: z.enum(CATEGORY_VALUES),
     }),
   )
   .min(25)

@@ -1,9 +1,6 @@
 import { z } from "zod";
-import {
-  DEPARTMENT_CODES,
-  TICKET_CATEGORIES,
-  TICKET_PRIORITIES,
-} from "@/app/(app)/service-requests/_stubs/constants";
+import { DEPARTMENT_CODES } from "./routing";
+import { CATEGORY_VALUES, PRIORITY_VALUES } from "./values";
 
 /** The only fields triage ever sees. No name, email or roll number. */
 export const triageInputSchema = z.object({
@@ -15,8 +12,8 @@ export type TriageInput = z.infer<typeof triageInputSchema>;
 
 /** What the model must return. Anything outside these lists is rejected. */
 export const modelOutputSchema = z.object({
-  category: z.enum(TICKET_CATEGORIES),
-  priority: z.enum(TICKET_PRIORITIES),
+  category: z.enum(CATEGORY_VALUES),
+  priority: z.enum(PRIORITY_VALUES),
   departmentCode: z.enum(DEPARTMENT_CODES),
   confidence: z.number().min(0).max(1),
 });

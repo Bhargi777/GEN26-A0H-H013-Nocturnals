@@ -9,11 +9,11 @@ import { StatusBadge } from "@/components/service-requests/status-badge";
 import { formatAgo, formatDateTime } from "./_lib/format";
 import { listParamsSchema, sortTickets } from "./_lib/list-params";
 import {
-  TICKET_CATEGORIES,
+  CATEGORY_VALUES,
   TICKET_CATEGORY_LABELS,
-  TICKET_STATUSES,
+  STATUS_VALUES,
   TICKET_STATUS_LABELS,
-} from "./_stubs/constants";
+} from "./_lib/labels";
 import { getCurrentProfile, listMyTickets } from "./_stubs/db";
 
 export const metadata = { title: "My service requests" };
@@ -54,7 +54,7 @@ export default async function MyTicketsPage({
           </label>
           <select id="status" name="status" defaultValue={params.status ?? ""} className={inputClass}>
             <option value="">All statuses</option>
-            {TICKET_STATUSES.map((status) => (
+            {STATUS_VALUES.map((status) => (
               <option key={status} value={status}>
                 {TICKET_STATUS_LABELS[status]}
               </option>
@@ -67,7 +67,7 @@ export default async function MyTicketsPage({
           </label>
           <select id="category" name="category" defaultValue={params.category ?? ""} className={inputClass}>
             <option value="">All categories</option>
-            {TICKET_CATEGORIES.map((category) => (
+            {CATEGORY_VALUES.map((category) => (
               <option key={category} value={category}>
                 {TICKET_CATEGORY_LABELS[category]}
               </option>

@@ -1,13 +1,8 @@
 // TEMPORARY STUB for Dev 1's `lib/db/service-requests.ts`, coded against the
 // data contract in goals/00-team-rules.md section 5. Swap the imports to the
 // real module once it lands on main, then delete this file.
-import type {
-  DepartmentCode,
-  Role,
-  TicketCategory,
-  TicketPriority,
-  TicketStatus,
-} from "./constants";
+import type { DepartmentCode } from "@/lib/ai/routing";
+import type { Role, TicketCategory, TicketPriority, TicketStatus } from "@/lib/constants";
 import { createClient } from "./supabase";
 
 export const TICKET_PHOTO_BUCKET = "ticket-photos";

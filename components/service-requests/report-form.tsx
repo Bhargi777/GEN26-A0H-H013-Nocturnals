@@ -9,13 +9,13 @@ import {
   type TriageSuggestion,
 } from "@/app/(app)/service-requests/actions";
 import {
-  TICKET_CATEGORIES,
+  CATEGORY_VALUES,
   TICKET_CATEGORY_LABELS,
-  TICKET_PRIORITIES,
+  PRIORITY_VALUES,
   TICKET_PRIORITY_LABELS,
   type TicketCategory,
   type TicketPriority,
-} from "@/app/(app)/service-requests/_stubs/constants";
+} from "@/app/(app)/service-requests/_lib/labels";
 import type { Building, Room, SimilarTicket } from "@/app/(app)/service-requests/_stubs/db";
 import { MAX_PHOTO_BYTES } from "@/app/(app)/service-requests/_lib/schema";
 import { Button, ButtonLink } from "./button";
@@ -304,7 +304,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
               className={inputClass}
             >
               <option value="">Choose a category</option>
-              {TICKET_CATEGORIES.map((category) => (
+              {CATEGORY_VALUES.map((category) => (
                 <option key={category} value={category}>
                   {TICKET_CATEGORY_LABELS[category]}
                 </option>
@@ -339,7 +339,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
               className={inputClass}
             >
               <option value="">Choose a priority</option>
-              {TICKET_PRIORITIES.map((priority) => (
+              {PRIORITY_VALUES.map((priority) => (
                 <option key={priority} value={priority}>
                   {TICKET_PRIORITY_LABELS[priority]}
                 </option>

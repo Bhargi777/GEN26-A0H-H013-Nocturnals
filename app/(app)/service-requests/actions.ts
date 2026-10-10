@@ -7,7 +7,7 @@ import { CATEGORY_DEPARTMENT } from "@/lib/ai/routing";
 import { triage } from "@/lib/ai/triage";
 import { onAvTicketChange } from "./_lib/reservation-hook";
 import { newTicketSchema, photoError, type NewTicketInput } from "./_lib/schema";
-import type { TicketCategory, TicketPriority } from "./_stubs/constants";
+import type { TicketCategory, TicketPriority } from "./_lib/labels";
 import {
   createTicket,
   findSimilarTickets,

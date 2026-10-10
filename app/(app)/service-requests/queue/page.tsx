@@ -12,14 +12,14 @@ import { formatAgo, formatDateTime } from "../_lib/format";
 import { listParamsSchema, sortTickets } from "../_lib/list-params";
 import { isOverdue, OVERDUE_AFTER_HOURS } from "../_lib/overdue";
 import {
-  TICKET_CATEGORIES,
+  CATEGORY_VALUES,
   TICKET_CATEGORY_LABELS,
-  TICKET_PRIORITIES,
+  PRIORITY_VALUES,
   TICKET_PRIORITY_LABELS,
-  TICKET_STATUSES,
+  STATUS_VALUES,
   TICKET_STATUS_LABELS,
   type Role,
-} from "../_stubs/constants";
+} from "../_lib/labels";
 import { getCurrentProfile, listBuildings, listDepartmentQueue } from "../_stubs/db";
 
 export const metadata = { title: "Department queue" };
@@ -133,21 +133,21 @@ export default async function QueuePage({
           label="Status"
           value={params.status}
           allLabel="Any status"
-          options={TICKET_STATUSES.map((s) => ({ value: s, label: TICKET_STATUS_LABELS[s] }))}
+          options={STATUS_VALUES.map((s) => ({ value: s, label: TICKET_STATUS_LABELS[s] }))}
         />
         <FilterSelect
           id="category"
           label="Category"
           value={params.category}
           allLabel="All categories"
-          options={TICKET_CATEGORIES.map((c) => ({ value: c, label: TICKET_CATEGORY_LABELS[c] }))}
+          options={CATEGORY_VALUES.map((c) => ({ value: c, label: TICKET_CATEGORY_LABELS[c] }))}
         />
         <FilterSelect
           id="priority"
           label="Priority"
           value={params.priority}
           allLabel="All priorities"
-          options={TICKET_PRIORITIES.map((p) => ({ value: p, label: TICKET_PRIORITY_LABELS[p] }))}
+          options={PRIORITY_VALUES.map((p) => ({ value: p, label: TICKET_PRIORITY_LABELS[p] }))}
         />
         <FilterSelect
           id="building"

@@ -1,4 +1,4 @@
-import type { TicketPriority, TicketStatus } from "../_stubs/constants";
+import type { TicketPriority, TicketStatus } from "../_lib/labels";
 
 const HOUR_MS = 60 * 60 * 1000;
 

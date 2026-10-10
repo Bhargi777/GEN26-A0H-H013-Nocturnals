@@ -8,7 +8,7 @@ import { TechnicianActions } from "@/components/service-requests/technician-acti
 import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
 import { Toast } from "@/components/service-requests/toast";
 import { formatAgo, formatDateTime } from "../_lib/format";
-import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_stubs/constants";
+import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_lib/labels";
 import {
   getCurrentProfile,
   getPhotoUrl,
