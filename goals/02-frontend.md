@@ -44,7 +44,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
   - office_staff: Dashboard, Office review queue
   - admin: all of the above plus Reports
   - Routes: `/dashboard`, `/service-requests`, `/service-requests/new`, `/service-requests/queue`, `/requests`, `/requests/new`, `/office`, `/admin/reports`. You only link to them.
-- [ ] `/sign-in` and `/sign-up`: email and password, server error shown in plain words, a note that only campus accounts are accepted. Signed-in users hitting these routes go to `/dashboard`.
+- [x] `/sign-in` and `/sign-up`: email and password, server error shown in plain words, a note that only campus accounts are accepted. Signed-in users hitting these routes go to `/dashboard`.
 
 ### Phase C: dashboard and notifications
 
