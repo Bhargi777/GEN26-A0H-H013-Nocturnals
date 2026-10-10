@@ -37,7 +37,7 @@ export async function classifyWithModel(
 
   const client = new Anthropic({ apiKey, maxRetries: 0, timeout: options.timeoutMs });
   const request: TriageRequest = {
-    model: process.env.TRIAGE_MODEL || DEFAULT_TRIAGE_MODEL,
+    model: process.env.AI_MODEL_NAME || DEFAULT_TRIAGE_MODEL,
     max_tokens: 2048,
     system: TRIAGE_SYSTEM_PROMPT,
     messages: [{ role: "user", content: buildTriageUserMessage(input) }],
