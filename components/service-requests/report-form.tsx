@@ -1,19 +1,88 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  suggestTriageAction,
+  type TriageSuggestion,
+} from "@/app/(app)/service-requests/actions";
 import {
   TICKET_CATEGORIES,
   TICKET_CATEGORY_LABELS,
   TICKET_PRIORITIES,
   TICKET_PRIORITY_LABELS,
+  type TicketCategory,
+  type TicketPriority,
 } from "@/app/(app)/service-requests/_stubs/constants";
 import type { Building, Room } from "@/app/(app)/service-requests/_stubs/db";
 import { Button, ButtonLink } from "./button";
 import { Field, inputClass } from "./form-field";
 
+const TRIAGE_DEBOUNCE_MS = 800;
+const MIN_TRIAGE_CHARS = 15;
+
+function SuggestionHint({
+  label,
+  value,
+  current,
+  onAccept,
+}: {
+  label: string;
+  value: string;
+  current: string;
+  onAccept: () => void;
+}) {
+  return (
+    <span className="flex flex-wrap items-center gap-x-2">
+      <span>
+        Suggested {label}: <span className="font-medium text-slate-900">{value}</span>
+      </span>
+      {current !== value && (
+        <button
+          type="button"
+          onClick={onAccept}
+          className="rounded-md font-medium text-teal-700 underline-offset-2 hover:text-teal-800 hover:underline focus-visible:outline-2 focus-visible:outline-teal-700"
+        >
+          Use suggestion
+        </button>
+      )}
+    </span>
+  );
+}
+
 export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms: Room[] }) {
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
   const [buildingId, setBuildingId] = useState("");
   const [roomId, setRoomId] = useState("");
+  const [category, setCategory] = useState<TicketCategory | "">("");
+  const [priority, setPriority] = useState<TicketPriority | "">("");
+  // Set once the user picks a value themselves; suggestions then stop overwriting it.
+  const categoryChosen = useRef(false);
+  const priorityChosen = useRef(false);
+  const [suggestion, setSuggestion] = useState<TriageSuggestion | null>(null);
+  const [triaging, setTriaging] = useState(false);
+  const latestRequest = useRef(0);
+
+  // Triage runs on the server, debounced while the user types the description.
+  useEffect(() => {
+    if (description.trim().length < MIN_TRIAGE_CHARS) return;
+    const requestId = ++latestRequest.current;
+    const timer = setTimeout(async () => {
+      setTriaging(true);
+      try {
+        const result = await suggestTriageAction({ title, description, buildingId });
+        if (requestId !== latestRequest.current || !result) return;
+        setSuggestion(result);
+        if (!categoryChosen.current) setCategory(result.category);
+        if (!priorityChosen.current) setPriority(result.priority);
+      } catch {
+        // A failed suggestion never blocks the report; the fields stay editable.
+      } finally {
+        if (requestId === latestRequest.current) setTriaging(false);
+      }
+    }, TRIAGE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [title, description, buildingId]);
 
   const buildingRooms = useMemo(
     () => rooms.filter((room) => room.building_id === buildingId),
@@ -32,6 +101,8 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             minLength={5}
             maxLength={120}
             autoComplete="off"
+            value={title}
+            onChange={(event) => setTitle(event.target.value)}
             className={inputClass}
           />
         </Field>
@@ -43,6 +114,9 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             minLength={10}
             maxLength={2000}
             rows={5}
+            value={description}
+            onChange={(event) => setDescription(event.target.value)}
+            aria-describedby="triage-status"
             className={inputClass}
           />
         </Field>
@@ -117,9 +191,39 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
 
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900">Category and priority</h2>
+        <p id="triage-status" aria-live="polite" className="text-sm text-slate-600">
+          {triaging
+            ? "Checking the description for a suggested category and priority..."
+            : suggestion
+              ? "Suggestions are based on your description. You can change them."
+              : "A category and priority will be suggested once you describe the problem."}
+        </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="category" label="Category">
-            <select id="category" name="category" required defaultValue="" className={inputClass}>
+          <Field
+            id="category"
+            label="Category"
+            hint={
+              suggestion && (
+                <SuggestionHint
+                  label="category"
+                  value={TICKET_CATEGORY_LABELS[suggestion.category]}
+                  current={category ? TICKET_CATEGORY_LABELS[category] : ""}
+                  onAccept={() => setCategory(suggestion.category)}
+                />
+              )
+            }
+          >
+            <select
+              id="category"
+              name="category"
+              required
+              value={category}
+              onChange={(event) => {
+                setCategory(event.target.value as TicketCategory | "");
+                categoryChosen.current = true;
+              }}
+              className={inputClass}
+            >
               <option value="">Choose a category</option>
               {TICKET_CATEGORIES.map((category) => (
                 <option key={category} value={category}>
@@ -128,8 +232,31 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
               ))}
             </select>
           </Field>
-          <Field id="priority" label="Priority">
-            <select id="priority" name="priority" required defaultValue="" className={inputClass}>
+          <Field
+            id="priority"
+            label="Priority"
+            hint={
+              suggestion && (
+                <SuggestionHint
+                  label="priority"
+                  value={TICKET_PRIORITY_LABELS[suggestion.priority]}
+                  current={priority ? TICKET_PRIORITY_LABELS[priority] : ""}
+                  onAccept={() => setPriority(suggestion.priority)}
+                />
+              )
+            }
+          >
+            <select
+              id="priority"
+              name="priority"
+              required
+              value={priority}
+              onChange={(event) => {
+                setPriority(event.target.value as TicketPriority | "");
+                priorityChosen.current = true;
+              }}
+              className={inputClass}
+            >
               <option value="">Choose a priority</option>
               {TICKET_PRIORITIES.map((priority) => (
                 <option key={priority} value={priority}>
@@ -139,6 +266,10 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             </select>
           </Field>
         </div>
+        {/* The suggestion is saved next to the final choice. */}
+        <input type="hidden" name="aiSuggestedCategory" value={suggestion?.category ?? ""} />
+        <input type="hidden" name="aiSuggestedPriority" value={suggestion?.priority ?? ""} />
+        <input type="hidden" name="aiConfidence" value={suggestion?.confidence ?? ""} />
       </section>
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
