@@ -3,6 +3,7 @@ import { triageByRules } from "./rules";
 import {
   modelOutputSchema,
   triageInputSchema,
+  triageResultSchema,
   type TriageInput,
   type TriageResult,
 } from "./schema";
@@ -32,7 +33,7 @@ export async function triage(
   });
 
   const classify = options.classify ?? (hasModelKey() ? classifyWithModel : undefined);
-  if (!classify) return triageByRules(input);
+  if (!classify) return triageResultSchema.parse(triageByRules(input));
 
   const timeoutMs = options.timeoutMs ?? TRIAGE_TIMEOUT_MS;
   const controller = new AbortController();
@@ -50,12 +51,12 @@ export async function triage(
       timeout,
     ]);
     const parsed = modelOutputSchema.safeParse(output);
-    if (parsed.success) return { ...parsed.data, source: "model" };
+    if (parsed.success) return triageResultSchema.parse({ ...parsed.data, source: "model" });
     console.warn("triage: model output rejected, using rules", parsed.error.issues);
   } catch (error) {
     console.warn("triage: model unavailable, using rules:", (error as Error).message);
   } finally {
     clearTimeout(timer);
   }
-  return triageByRules(input);
+  return triageResultSchema.parse(triageByRules(input));
 }
