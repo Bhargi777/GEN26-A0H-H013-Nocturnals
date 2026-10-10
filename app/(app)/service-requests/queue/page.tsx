@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/service-requests/page-header";
 import { SortHeader } from "@/components/service-requests/sort-header";
 import { StatusBadge } from "@/components/service-requests/status-badge";
 import { Toast } from "@/components/service-requests/toast";
-import { formatAgo, formatDateTime } from "../_lib/format";
+import { formatAgo, formatDateTime, requestTime } from "../_lib/format";
 import { listParamsSchema, sortTickets } from "../_lib/list-params";
 import { isOverdue, OVERDUE_AFTER_HOURS } from "../_lib/overdue";
 import {
@@ -20,7 +20,10 @@ import {
   TICKET_STATUS_LABELS,
   type Role,
 } from "../_lib/labels";
-import { getCurrentProfile, listBuildings, listDepartmentQueue } from "../_stubs/db";
+import { getCurrentProfile } from "@/lib/db/shared";
+import { listDepartmentTickets } from "@/lib/db/service-requests";
+import { listBuildings } from "../_lib/queries";
+import { withNames } from "../_lib/tickets";
 
 export const metadata = { title: "Department queue" };
 
@@ -98,12 +101,13 @@ export default async function QueuePage({
   }
 
   const [all, buildings] = await Promise.all([
-    listDepartmentQueue(profile.department_id, {
-      status: params.status,
-      category: params.category,
-      priority: params.priority,
-      buildingId: params.building,
-    }),
+    listDepartmentTickets({
+      assigned_department_id: profile.department_id,
+      ...(params.status && { status: params.status }),
+      ...(params.category && { category: params.category }),
+      ...(params.priority && { priority: params.priority }),
+      ...(params.building && { building_id: params.building }),
+    }).then(withNames),
     listBuildings(),
   ]);
   const visible =
@@ -111,7 +115,7 @@ export default async function QueuePage({
   const sort = params.sort ?? "priority";
   const dir = params.dir ?? "asc";
   const tickets = sortTickets(visible, sort, dir);
-  const now = Date.now();
+  const now = requestTime();
   const overdueCount = tickets.filter((t) => isOverdue(t, now)).length;
   const filtered = Boolean(
     params.status || params.category || params.priority || params.building || params.show,

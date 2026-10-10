@@ -16,7 +16,8 @@ import {
   type TicketCategory,
   type TicketPriority,
 } from "@/app/(app)/service-requests/_lib/labels";
-import type { Building, Room, SimilarTicket } from "@/app/(app)/service-requests/_stubs/db";
+import type { SimilarTicket } from "@/app/(app)/service-requests/_lib/queries";
+import type { Building, Room } from "@/lib/types";
 import { MAX_PHOTO_BYTES } from "@/app/(app)/service-requests/_lib/schema";
 import { Button, ButtonLink } from "./button";
 import { Field, inputClass } from "./form-field";
@@ -100,12 +101,10 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   }, [title, description, buildingId]);
 
   // Possible duplicates in the chosen building, checked before the user submits.
+  const similarReady = Boolean(buildingId) && `${title} ${description}`.trim().length >= MIN_TRIAGE_CHARS;
   useEffect(() => {
     const requestId = ++latestSimilarRequest.current;
-    if (!buildingId || `${title} ${description}`.trim().length < MIN_TRIAGE_CHARS) {
-      setSimilar([]);
-      return;
-    }
+    if (!similarReady) return;
     const timer = setTimeout(async () => {
       try {
         const matches = await findSimilarAction({ buildingId, title, description });
@@ -115,7 +114,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
       }
     }, TRIAGE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
-  }, [title, description, buildingId]);
+  }, [title, description, buildingId, similarReady]);
 
   const buildingRooms = useMemo(
     () => rooms.filter((room) => room.building_id === buildingId),
@@ -155,7 +154,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             name="title"
             required
             minLength={5}
-            maxLength={120}
+            maxLength={100}
             autoComplete="off"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
@@ -353,7 +352,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
         <input type="hidden" name="aiConfidence" value={suggestion?.confidence ?? ""} />
       </section>
 
-      <SimilarTickets matches={similar} />
+      <SimilarTickets matches={similarReady ? similar : []} />
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
         <ButtonLink href="/service-requests" variant="secondary">

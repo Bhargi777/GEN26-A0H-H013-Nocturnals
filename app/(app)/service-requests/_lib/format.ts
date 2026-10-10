@@ -26,3 +26,8 @@ const dateTime = new Intl.DateTimeFormat("en-IN", {
 export function formatDateTime(iso: string): string {
   return dateTime.format(new Date(iso));
 }
+
+/** The time a server page is rendered at, read once per request. */
+export function requestTime(): number {
+  return Date.now();
+}

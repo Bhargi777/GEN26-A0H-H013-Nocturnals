@@ -14,7 +14,9 @@ import {
   STATUS_VALUES,
   TICKET_STATUS_LABELS,
 } from "./_lib/labels";
-import { getCurrentProfile, listMyTickets } from "./_stubs/db";
+import { getCurrentProfile } from "@/lib/db/shared";
+import { listMyTickets } from "@/lib/db/service-requests";
+import { withNames } from "./_lib/tickets";
 
 export const metadata = { title: "My service requests" };
 
@@ -32,7 +34,13 @@ export default async function MyTicketsPage({
   const sort = params.sort ?? "updated";
   const dir = params.dir ?? (params.sort ? "asc" : "desc");
   const tickets = sortTickets(
-    await listMyTickets(profile.id, { status: params.status, category: params.category }),
+    await withNames(
+      (await listMyTickets()).filter(
+        (t) =>
+          (!params.status || t.status === params.status) &&
+          (!params.category || t.category === params.category),
+      ),
+    ),
     sort,
     dir,
   );

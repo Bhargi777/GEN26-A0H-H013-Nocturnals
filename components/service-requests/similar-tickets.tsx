@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useState, useTransition } from "react";
 import { followTicketAction } from "@/app/(app)/service-requests/actions";
 import { formatAgo } from "@/app/(app)/service-requests/_lib/format";
-import type { SimilarTicket } from "@/app/(app)/service-requests/_stubs/db";
+import type { SimilarTicket } from "@/app/(app)/service-requests/_lib/queries";
 import { Button } from "./button";
 import { StatusBadge } from "./status-badge";
 

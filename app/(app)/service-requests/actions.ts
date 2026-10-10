@@ -5,21 +5,28 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { CATEGORY_DEPARTMENT } from "@/lib/ai/routing";
 import { triage } from "@/lib/ai/triage";
-import { onAvTicketChange } from "./_lib/reservation-hook";
-import { newTicketSchema, photoError, type NewTicketInput } from "./_lib/schema";
-import type { TicketCategory, TicketPriority } from "./_lib/labels";
+import { TICKET_CATEGORIES, TICKET_STATUSES, type TicketStatus } from "@/lib/constants";
+import { getCurrentProfile } from "@/lib/db/shared";
 import {
   createTicket,
-  findSimilarTickets,
   followTicket,
-  getBuilding,
-  getCurrentProfile,
-  listDepartments,
+  rateTicket,
+  reassignTicketDepartment,
   transitionTicket,
   uploadTicketPhoto,
+} from "@/lib/db/service-requests";
+import type { TicketCategory, TicketPriority } from "./_lib/labels";
+import {
+  findSimilarTickets,
+  getBuilding,
+  listDepartments,
+  saveTriageAndRouting,
   type SimilarTicket,
-  type TransitionInput,
-} from "./_stubs/db";
+} from "./_lib/queries";
+import { onAvTicketChange } from "./_lib/reservation-hook";
+import { newTicketSchema, photoError, type NewTicketInput } from "./_lib/schema";
+
+const errorMessage = (error: unknown) => (error instanceof Error ? error.message : String(error));
 
 export type TriageSuggestion = {
   category: TicketCategory;
@@ -77,9 +84,13 @@ export async function followTicketAction(input: {
   const profile = await getCurrentProfile();
   if (!profile) return { error: "Your session has ended. Sign in again to follow this ticket." };
 
-  const result = await followTicket(parsed.data.ticketId, profile.id);
-  if (!result.ok) {
-    return { error: `Could not follow ${parsed.data.code}: ${result.error}` };
+  try {
+    await followTicket(parsed.data.ticketId);
+  } catch (error) {
+    // Following twice hits the primary key; the user is already following.
+    if (!/duplicate key/i.test(errorMessage(error))) {
+      return { error: `Could not follow ${parsed.data.code}: ${errorMessage(error)}. Try again.` };
+    }
   }
   redirect(`/service-requests/${encodeURIComponent(parsed.data.code)}?followed=1`);
 }
@@ -134,64 +145,88 @@ export async function createTicketAction(formData: FormData): Promise<CreateTick
   }
   const input = parsed.data;
 
-  let photoPath: string | null = null;
-  if (hasPhoto) {
-    const upload = await uploadTicketPhoto(profile.id, photo);
-    if (!upload.ok) {
-      return {
-        error: `The photo could not be uploaded (${upload.error}). Try again, or submit without a photo.`,
-      };
-    }
-    photoPath = upload.data;
+  let ticket;
+  try {
+    ticket = await createTicket({
+      title: input.title,
+      description: input.description,
+      category: input.category,
+      priority: input.priority,
+      building_id: input.buildingId,
+      room_id: input.roomId,
+      location_note: input.locationNote ?? "",
+    });
+  } catch (error) {
+    return { error: `The report could not be saved: ${errorMessage(error)}. Try again in a moment.` };
   }
 
   const departments = await listDepartments();
   const department = departments.find((d) => d.code === CATEGORY_DEPARTMENT[input.category]);
-
-  const created = await createTicket(profile.id, {
-    title: input.title,
-    description: input.description,
-    category: input.category,
-    priority: input.priority,
-    buildingId: input.buildingId,
-    roomId: input.roomId,
-    locationNote: input.locationNote,
-    photoPath,
-    assignedDepartmentId: department?.id ?? null,
-    aiSuggestedCategory: input.aiSuggestedCategory ?? null,
-    aiSuggestedPriority: input.aiSuggestedPriority ?? null,
-    aiConfidence: input.aiConfidence ?? null,
-  });
-  if (!created.ok) {
-    return { error: `The report could not be saved: ${created.error}. Try again in a moment.` };
+  try {
+    await saveTriageAndRouting(ticket.id, {
+      departmentId: department?.id ?? null,
+      aiSuggestedCategory: input.aiSuggestedCategory ?? null,
+      aiSuggestedPriority: input.aiSuggestedPriority ?? null,
+      aiConfidence: input.aiConfidence ?? null,
+    });
+  } catch (error) {
+    console.warn(`service-requests: could not route ${ticket.code}:`, errorMessage(error));
   }
 
-  if (input.category === "AV_EQUIPMENT") {
+  let photoFailed = false;
+  if (hasPhoto) {
+    try {
+      await uploadTicketPhoto(ticket.id, photo);
+    } catch (error) {
+      console.warn(`service-requests: photo upload failed for ${ticket.code}:`, errorMessage(error));
+      photoFailed = true;
+    }
+  }
+
+  if (input.category === TICKET_CATEGORIES.AV_EQUIPMENT) {
     // TODO(reservation): room link hook for AV tickets.
-    onAvTicketChange({ ticketId: created.data.id, roomId: input.roomId, change: "opened" });
+    onAvTicketChange({ ticketId: ticket.id, roomId: input.roomId, change: "opened" });
   }
 
-  redirect(`/service-requests/${encodeURIComponent(created.data.code)}?created=1`);
+  redirect(
+    `/service-requests/${encodeURIComponent(ticket.code)}?created=1${photoFailed ? "&photo=failed" : ""}`,
+  );
 }
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
+
+const refused = (error: unknown): ActionResult => ({
+  ok: false,
+  error: `The update was refused: ${errorMessage(error)}. Refresh the page to see the ticket's current status, then try again.`,
+});
+
+function refresh(code: string) {
+  revalidatePath(`/service-requests/${code}`);
+  revalidatePath("/service-requests");
+  revalidatePath("/service-requests/queue");
+}
 
 /**
  * Every status change goes through transitionTicket. The database checks the
  * role and the allowed transition; its message is passed on when it refuses.
  */
-async function runTransition(code: string, input: TransitionInput): Promise<ActionResult> {
+async function runTransition(
+  code: string,
+  input: { ticketId: string; toStatus: TicketStatus; note?: string | null; assignedTo?: string | null },
+): Promise<ActionResult> {
   const profile = await getCurrentProfile();
   if (!profile) return { ok: false, error: "Your session has ended. Sign in again and retry." };
-  const result = await transitionTicket(input);
-  if (!result.ok) {
-    return {
-      ok: false,
-      error: `The update was refused: ${result.error}. Refresh the page to see the ticket's current status, then try again.`,
-    };
+  try {
+    await transitionTicket({
+      ticket_id: input.ticketId,
+      to_status: input.toStatus,
+      note: input.note ?? null,
+      assigned_to: input.assignedTo ?? null,
+    });
+  } catch (error) {
+    return refused(error);
   }
-  revalidatePath(`/service-requests/${code}`);
-  revalidatePath("/service-requests");
+  refresh(code);
   return { ok: true };
 }
 
@@ -205,24 +240,32 @@ const confirmFixedSchema = z.object({
   feedback: z.string().trim().max(1000, "Keep the feedback under 1000 characters.").optional(),
 });
 
-/** Requester confirms the fix: RESOLVED to CLOSED with a rating. */
+/** Requester confirms the fix: RESOLVED to CLOSED, then the rating through rateTicket. */
 export async function confirmFixedAction(
   input: z.input<typeof confirmFixedSchema>,
 ): Promise<ActionResult> {
   const parsed = confirmFixedSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { ticketId, code, rating, feedback, category, roomId } = parsed.data;
-  const result = await runTransition(code, {
-    ticketId,
-    toStatus: "CLOSED",
-    rating,
-    feedback: feedback || null,
-  });
-  if (result.ok && category === "AV_EQUIPMENT") {
+
+  const closed = await runTransition(code, { ticketId, toStatus: TICKET_STATUSES.CLOSED });
+  if (!closed.ok) return closed;
+
+  if (category === TICKET_CATEGORIES.AV_EQUIPMENT) {
     // TODO(reservation): room link hook for AV tickets.
     onAvTicketChange({ ticketId, roomId, change: "closed" });
   }
-  return result;
+
+  try {
+    await rateTicket({ ticket_id: ticketId, rating, feedback: feedback || null });
+  } catch (error) {
+    return {
+      ok: false,
+      error: `The ticket is closed, but the rating was not saved: ${errorMessage(error)}. Contact the admin office to add it.`,
+    };
+  }
+  refresh(code);
+  return { ok: true };
 }
 
 const stillBrokenSchema = z.object({
@@ -241,7 +284,7 @@ export async function stillBrokenAction(
   const parsed = stillBrokenSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { ticketId, code, note } = parsed.data;
-  return runTransition(code, { ticketId, toStatus: "REOPENED", note });
+  return runTransition(code, { ticketId, toStatus: TICKET_STATUSES.REOPENED, note });
 }
 
 const assignSchema = z.object({
@@ -256,7 +299,11 @@ export async function assignTicketAction(
   const parsed = assignSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { ticketId, code, technicianId } = parsed.data;
-  return runTransition(code, { ticketId, toStatus: "ASSIGNED", assignedTo: technicianId });
+  return runTransition(code, {
+    ticketId,
+    toStatus: TICKET_STATUSES.ASSIGNED,
+    assignedTo: technicianId,
+  });
 }
 
 const moveSchema = z.object({
@@ -269,15 +316,19 @@ const moveSchema = z.object({
     .max(1000, "Keep the note under 1000 characters."),
 });
 
-/** Dept admin sends the ticket to another department, back to OPEN, with a note. */
+/** Dept admin sends the ticket to another department with a note (reassign_ticket_department). */
 export async function moveToDepartmentAction(
   input: z.input<typeof moveSchema>,
 ): Promise<ActionResult> {
   const parsed = moveSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { ticketId, code, departmentId, note } = parsed.data;
-  const result = await runTransition(code, { ticketId, toStatus: "OPEN", departmentId, note });
-  if (!result.ok) return result;
+  try {
+    await reassignTicketDepartment({ ticket_id: ticketId, new_department_id: departmentId, note });
+  } catch (error) {
+    return refused(error);
+  }
+  refresh(code);
   // The ticket now belongs to another department, so this admin may no longer see it.
   redirect(`/service-requests/queue?moved=${encodeURIComponent(code)}`);
 }
@@ -289,7 +340,7 @@ export async function startWorkAction(input: z.input<typeof startSchema>): Promi
   const parsed = startSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: "That ticket could not be found. Refresh and try again." };
   const { ticketId, code } = parsed.data;
-  return runTransition(code, { ticketId, toStatus: "IN_PROGRESS" });
+  return runTransition(code, { ticketId, toStatus: TICKET_STATUSES.IN_PROGRESS });
 }
 
 const resolveSchema = z.object({
@@ -308,5 +359,5 @@ export async function resolveTicketAction(
   const parsed = resolveSchema.safeParse(input);
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
   const { ticketId, code, note } = parsed.data;
-  return runTransition(code, { ticketId, toStatus: "RESOLVED", note });
+  return runTransition(code, { ticketId, toStatus: TICKET_STATUSES.RESOLVED, note });
 }

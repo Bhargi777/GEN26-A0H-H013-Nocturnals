@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { CATEGORY_VALUES, PRIORITY_VALUES, STATUS_VALUES } from "../_lib/labels";
-import type { TicketListItem } from "../_stubs/db";
+import type { TicketListItem } from "./tickets";
 
 export const SORT_KEYS = ["code", "title", "category", "location", "status", "priority", "created", "updated"] as const;
 export type SortKey = (typeof SORT_KEYS)[number];

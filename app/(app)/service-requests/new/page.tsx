@@ -3,7 +3,8 @@ import { ButtonLink } from "@/components/service-requests/button";
 import { EmptyState } from "@/components/service-requests/empty-state";
 import { PageHeader } from "@/components/service-requests/page-header";
 import { ReportForm } from "@/components/service-requests/report-form";
-import { getCurrentProfile, listBuildings, listRooms } from "../_stubs/db";
+import { getCurrentProfile } from "@/lib/db/shared";
+import { listBuildings, listRooms } from "../_lib/queries";
 
 export const metadata = { title: "Report an issue" };
 

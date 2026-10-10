@@ -6,7 +6,8 @@ import {
   moveToDepartmentAction,
   type ActionResult,
 } from "@/app/(app)/service-requests/actions";
-import type { Department, Person } from "@/app/(app)/service-requests/_stubs/db";
+import type { Person } from "@/app/(app)/service-requests/_lib/queries";
+import type { Department } from "@/lib/types";
 import { Button } from "./button";
 import { Field, inputClass } from "./form-field";
 

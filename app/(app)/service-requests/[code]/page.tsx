@@ -9,13 +9,9 @@ import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
 import { Toast } from "@/components/service-requests/toast";
 import { formatAgo, formatDateTime } from "../_lib/format";
 import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_lib/labels";
-import {
-  getCurrentProfile,
-  getPhotoUrl,
-  getTicketByCode,
-  listDepartments,
-  listTechnicians,
-} from "../_stubs/db";
+import { getCurrentProfile } from "@/lib/db/shared";
+import { listDepartments, listTechnicians } from "../_lib/queries";
+import { loadTicketDetail } from "../_lib/tickets";
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -42,9 +38,9 @@ export default async function TicketPage({
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
 
-  const ticket = await getTicketByCode(decodeURIComponent(code), profile.id);
+  const ticket = await loadTicketDetail(decodeURIComponent(code), profile.id);
   if (!ticket) notFound();
-  const photoUrl = ticket.photo_path ? await getPhotoUrl(ticket.photo_path) : null;
+  const photoUrl = ticket.photo_url;
 
   // The database decides what each role may do; these flags only choose which controls to show.
   const isDeptAdmin =
@@ -67,7 +63,7 @@ export default async function TicketPage({
     <div className="mx-auto max-w-6xl space-y-6">
       <PageHeader
         title={`${ticket.code}: ${ticket.title}`}
-        description={`Reported by ${ticket.requester?.full_name ?? "a campus user"} ${formatAgo(ticket.created_at)}.`}
+        description={`Reported by ${ticket.requester_name ?? "a campus user"} ${formatAgo(ticket.created_at)}.`}
         action={<StatusBadge status={ticket.status} />}
       />
 
@@ -114,7 +110,7 @@ export default async function TicketPage({
                 <time dateTime={ticket.created_at}>{formatDateTime(ticket.created_at)}</time>
               </Detail>
               <Detail label="Department">{ticket.department_name ?? "Not routed yet"}</Detail>
-              <Detail label="Assigned to">{ticket.assignee?.full_name ?? "Not assigned yet"}</Detail>
+              <Detail label="Assigned to">{ticket.assignee_name ?? "Not assigned yet"}</Detail>
               <Detail label="Followers">
                 {followers}
                 {ticket.is_following && (

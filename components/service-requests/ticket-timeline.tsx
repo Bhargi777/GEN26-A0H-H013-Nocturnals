@@ -1,6 +1,6 @@
 import { formatDateTime } from "@/app/(app)/service-requests/_lib/format";
 import { TICKET_STATUS_LABELS } from "@/app/(app)/service-requests/_lib/labels";
-import type { TicketEvent } from "@/app/(app)/service-requests/_stubs/db";
+import type { TimelineEvent as TicketEvent } from "@/app/(app)/service-requests/_lib/tickets";
 
 function eventLabel(event: TicketEvent): string {
   if (!event.from_status && event.to_status) return "Reported";

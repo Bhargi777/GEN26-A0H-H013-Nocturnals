@@ -17,7 +17,7 @@ export const newTicketSchema = z.object({
     .string()
     .trim()
     .min(5, "Write a short title of at least 5 characters.")
-    .max(120, "Keep the title under 120 characters."),
+    .max(100, "Keep the title under 100 characters."),
   description: z
     .string()
     .trim()
