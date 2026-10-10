@@ -4,7 +4,8 @@ import {
   TICKET_CATEGORIES,
   TICKET_PRIORITIES,
 } from "@/app/(app)/service-requests/_stubs/constants";
-import { TRIAGE_SYSTEM_PROMPT } from "./prompt";
+import { TRIAGE_SYSTEM_PROMPT, buildTriageUserMessage } from "./prompt";
+import type { TriageInput } from "./schema";
 import { triage, type Classifier } from "./triage";
 
 const input = {
@@ -55,5 +56,34 @@ describe("model output validation", () => {
     const result = await triage(input, { classify: returning(output) });
     expect(result.source).toBe("rules");
     expect(result.category).toBe("AV_EQUIPMENT");
+  });
+});
+
+describe("privacy", () => {
+  const withPersonalData = {
+    ...input,
+    fullName: "Ananya Rao",
+    email: "ananya.rao@campus.edu",
+    rollNo: "21CS1042",
+  } as TriageInput;
+
+  it("passes only title, description and building name to the model", async () => {
+    let seen: unknown;
+    await triage(withPersonalData, {
+      classify: async (modelInput) => {
+        seen = modelInput;
+        return valid;
+      },
+    });
+    expect(Object.keys(seen as object).sort()).toEqual(["buildingName", "description", "title"]);
+    expect(JSON.stringify(seen)).not.toMatch(/Ananya|ananya\.rao@campus\.edu|21CS1042/);
+  });
+
+  it("builds the model message from those three fields only", () => {
+    const message = buildTriageUserMessage(withPersonalData);
+    expect(message).toContain(input.title);
+    expect(message).toContain(input.description);
+    expect(message).toContain(input.buildingName);
+    expect(message).not.toMatch(/Ananya|ananya\.rao@campus\.edu|21CS1042/);
   });
 });
