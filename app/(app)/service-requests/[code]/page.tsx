@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
+import { AdminActions } from "@/components/service-requests/admin-actions";
 import { PageHeader } from "@/components/service-requests/page-header";
 import { RequesterActions } from "@/components/service-requests/requester-actions";
 import { StatusBadge } from "@/components/service-requests/status-badge";
@@ -7,7 +8,13 @@ import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
 import { Toast } from "@/components/service-requests/toast";
 import { formatAgo, formatDateTime } from "../_lib/format";
 import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_stubs/constants";
-import { getCurrentProfile, getPhotoUrl, getTicketByCode } from "../_stubs/db";
+import {
+  getCurrentProfile,
+  getPhotoUrl,
+  getTicketByCode,
+  listDepartments,
+  listTechnicians,
+} from "../_stubs/db";
 
 export async function generateMetadata({ params }: { params: Promise<{ code: string }> }) {
   const { code } = await params;
@@ -38,6 +45,16 @@ export default async function TicketPage({
   if (!ticket) notFound();
   const photoUrl = ticket.photo_path ? await getPhotoUrl(ticket.photo_path) : null;
 
+  // The database decides what each role may do; these flags only choose which controls to show.
+  const isDeptAdmin =
+    profile.role === "dept_admin" &&
+    profile.department_id !== null &&
+    profile.department_id === ticket.assigned_department_id;
+  const adminCanManage = isDeptAdmin && ticket.status !== "CLOSED" && ticket.status !== "RESOLVED";
+  const [technicians, departments] = adminCanManage
+    ? await Promise.all([listTechnicians(profile.department_id as string), listDepartments()])
+    : [[], []];
+
   const followers =
     ticket.followers_count === 0
       ? "Nobody else has reported this yet"
@@ -55,6 +72,17 @@ export default async function TicketPage({
 
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="space-y-6 lg:col-span-2">
+          {adminCanManage && (
+            <AdminActions
+              ticketId={ticket.id}
+              code={ticket.code}
+              currentAssigneeId={ticket.assigned_to}
+              currentDepartmentId={ticket.assigned_department_id}
+              canAssign={["OPEN", "REOPENED", "ASSIGNED"].includes(ticket.status)}
+              technicians={technicians}
+              departments={departments}
+            />
+          )}
           {ticket.status === "RESOLVED" && ticket.requester_id === profile.id && (
             <RequesterActions
               ticketId={ticket.id}

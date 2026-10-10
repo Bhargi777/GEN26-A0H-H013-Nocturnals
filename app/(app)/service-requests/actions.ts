@@ -238,3 +238,41 @@ export async function stillBrokenAction(
   const { ticketId, code, note } = parsed.data;
   return runTransition(code, { ticketId, toStatus: "REOPENED", note });
 }
+
+const assignSchema = z.object({
+  ...ticketRef,
+  technicianId: z.string().min(1, "Choose a technician."),
+});
+
+/** Dept admin assigns (or re-assigns) a technician in their department. */
+export async function assignTicketAction(
+  input: z.input<typeof assignSchema>,
+): Promise<ActionResult> {
+  const parsed = assignSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, technicianId } = parsed.data;
+  return runTransition(code, { ticketId, toStatus: "ASSIGNED", assignedTo: technicianId });
+}
+
+const moveSchema = z.object({
+  ...ticketRef,
+  departmentId: z.string().min(1, "Choose the department to send it to."),
+  note: z
+    .string()
+    .trim()
+    .min(5, "Explain why it belongs to that department in at least 5 characters.")
+    .max(1000, "Keep the note under 1000 characters."),
+});
+
+/** Dept admin sends the ticket to another department, back to OPEN, with a note. */
+export async function moveToDepartmentAction(
+  input: z.input<typeof moveSchema>,
+): Promise<ActionResult> {
+  const parsed = moveSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, departmentId, note } = parsed.data;
+  const result = await runTransition(code, { ticketId, toStatus: "OPEN", departmentId, note });
+  if (!result.ok) return result;
+  // The ticket now belongs to another department, so this admin may no longer see it.
+  redirect(`/service-requests/queue?moved=${encodeURIComponent(code)}`);
+}

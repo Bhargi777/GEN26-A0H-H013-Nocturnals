@@ -7,6 +7,7 @@ import { inputClass } from "@/components/service-requests/form-field";
 import { PageHeader } from "@/components/service-requests/page-header";
 import { SortHeader } from "@/components/service-requests/sort-header";
 import { StatusBadge } from "@/components/service-requests/status-badge";
+import { Toast } from "@/components/service-requests/toast";
 import { formatAgo, formatDateTime } from "../_lib/format";
 import { listParamsSchema, sortTickets } from "../_lib/list-params";
 import { isOverdue, OVERDUE_AFTER_HOURS } from "../_lib/overdue";
@@ -61,7 +62,9 @@ export default async function QueuePage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const params = listParamsSchema.parse(await searchParams);
+  const raw = await searchParams;
+  const params = listParamsSchema.parse(raw);
+  const moved = typeof raw.moved === "string" && /^SR-\d+$/.test(raw.moved) ? raw.moved : null;
   const profile = await getCurrentProfile();
   if (!profile) redirect("/login");
 
@@ -288,6 +291,7 @@ export default async function QueuePage({
           </table>
         </div>
       )}
+      {moved && <Toast message={`${moved} was sent to the other department.`} />}
     </div>
   );
 }
