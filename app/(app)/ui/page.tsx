@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Badge, Button, Card, DataTable, Dialog, EmptyState, FileInput, FilterBar, FormField, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, ToastProvider, emptyFilters, filterSchema, useToast } from "@/components/ui";
+import { Badge, Button, Card, DataTable, Dialog, EmptyState, FileInput, FilterBar, FormField, Input, PageHeader, Select, Skeleton, StatusBadge, Textarea, Timeline, emptyFilters, filterSchema, useToast } from "@/components/ui";
 import { CATEGORIES, STATUS_LABELS, TICKET_STATUS, type Status } from "./preview-contract";
 import { previewEvents, previewTickets } from "./fixtures";
 import { ROLES, ROLE_LABELS, type Role } from "./preview-contract";
@@ -54,4 +54,4 @@ function Gallery() {
   </div>;
 }
 
-export default function UIPage() { return <ToastProvider><Gallery /></ToastProvider>; }
+export default function UIPage() { return <Gallery />; }

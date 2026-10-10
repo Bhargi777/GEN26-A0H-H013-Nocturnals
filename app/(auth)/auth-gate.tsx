@@ -9,7 +9,8 @@ export function AuthGate({ children }: { children: ReactNode }) {
   const { profile, ready, error, refresh } = useFrontend();
   const router = useRouter();
   useEffect(() => { if (ready && profile && !error) router.replace("/dashboard"); }, [ready, profile, error, router]);
-  if (!ready || profile) return <Skeleton label="Checking your account" rows={2} />;
+  if (!ready) return <Skeleton label="Checking your account" rows={2} />;
   if (error) return <EmptyState message={error} action={<Button onClick={() => void refresh()}>Try again</Button>} />;
+  if (profile) return <Skeleton label="Opening dashboard" rows={2} />;
   return children;
 }

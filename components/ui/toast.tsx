@@ -23,7 +23,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     setMessages((previous) => [...previous.slice(-2), { ...message, id }]);
   }, [prefix]);
   return <ToastContext.Provider value={notify}>{children}
-    <div aria-label="Feedback" className="fixed bottom-4 right-4 z-50 w-[calc(100%-32px)] max-w-sm space-y-2">
+    <div role="region" aria-label="Feedback" className="fixed bottom-4 right-4 z-50 w-[calc(100%-32px)] max-w-sm space-y-2">
       {messages.map((message) => <Toast key={message.id} {...message} onDismiss={() => setMessages((previous) => previous.filter((item) => item.id !== message.id))} />)}
     </div>
   </ToastContext.Provider>;
