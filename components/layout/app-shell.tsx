@@ -8,6 +8,7 @@ import { ROLE_LABELS } from "@/app/(app)/ui/preview-contract";
 import { Button, EmptyState, Skeleton, buttonStyles, useToast } from "@/components/ui";
 import { useFrontend } from "./frontend-provider";
 import { Navigation } from "./navigation";
+import { MobileNavigation } from "./mobile-navigation";
 
 export function AppShell({ children }: { children: ReactNode }) {
   const { profile, ready, error, refresh, notifications, signOut } = useFrontend();
@@ -24,6 +25,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     </aside>
     <div className="min-w-0 md:pl-64">
       <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b bg-surface px-4 py-3 md:px-6">
+        <MobileNavigation role={profile?.role} />
         <div className="min-w-0"><p className="break-words font-medium">{profile?.full_name ?? "CampusConnect"}</p>{profile && <p className="text-secondary">{ROLE_LABELS[profile.role]}</p>}</div>
         <div className="flex items-center gap-3">
           <Link href="/notifications" aria-label={`Notifications, ${unread} unread`} className="inline-flex min-h-11 items-center gap-2 rounded-control px-2 text-accent"><Bell size={16} aria-hidden="true" /><span>{unread}</span></Link>
