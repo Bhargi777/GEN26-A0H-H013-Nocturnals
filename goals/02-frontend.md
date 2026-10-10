@@ -26,7 +26,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
   - [x] `Timeline` (renders `events` rows: actor, action, status change, note, relative time)
   - [x] `Dialog` for confirmations, `Toast` for success and error feedback
   - [x] `EmptyState` (one sentence, one action)
-  - [ ] `Skeleton` loading rows
+  - [x] `Skeleton` loading rows
 - [ ] A gallery page at `/ui` showing every component and every badge state, so teammates can copy usage.
 
 ### Phase B: app shell
