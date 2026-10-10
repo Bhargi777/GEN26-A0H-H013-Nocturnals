@@ -57,7 +57,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 
 ### Phase E: quality pass
 
-- [ ] Every page checked at 375px and 1280px wide.
+- [x] Every page checked at 375px and 1280px wide.
 - [ ] Keyboard-only walk-through of sign-in, dashboard and notifications works.
 - [ ] Contrast checked against AA.
 - [ ] No banned patterns from the team rules anywhere.
