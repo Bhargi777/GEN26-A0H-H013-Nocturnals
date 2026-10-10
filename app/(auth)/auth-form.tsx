@@ -11,8 +11,13 @@ export const signInSchema = z.object({
   email: z.string().trim().email("Enter a valid campus email address.").max(254, "Email must be at most 254 characters."),
   password: z.string().min(1, "Enter your password.").max(128, "Password must be at most 128 characters."),
 });
+export const signUpSchema = signInSchema.extend({
+  fullName: z.string().trim().min(2, "Enter your full name.").max(100, "Name must be at most 100 characters."),
+  password: z.string().min(8, "Use at least 8 characters for your password.").max(128, "Password must be at most 128 characters."),
+});
 
-export function AuthForm() {
+export function AuthForm({ mode = "sign-in" }: { mode?: "sign-in" | "sign-up" }) {
+  const signingUp = mode === "sign-up";
   const { adapter, refresh } = useFrontend();
   const router = useRouter();
   const form = useRef<HTMLFormElement>(null);
@@ -20,33 +25,39 @@ export function AuthForm() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [error, setError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [message, setMessage] = useState<string>();
   useEffect(() => { form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus(); }, [errors]);
   useEffect(() => { if (error) summary.current?.focus(); }, [error]);
   return <div className="space-y-6">
-    <div className="space-y-2"><h1>Sign in</h1><p className="text-secondary">Only campus accounts are accepted.</p></div>
+    <div className="space-y-2"><h1>{signingUp ? "Create an account" : "Sign in"}</h1><p className="text-secondary">Only campus accounts are accepted.</p></div>
     <form ref={form} noValidate className="space-y-4" onSubmit={async (event) => {
       event.preventDefault();
       if (busy) return;
       setError(undefined);
+      setMessage(undefined);
       const values = new FormData(event.currentTarget);
-      const result = signInSchema.safeParse({ email: values.get("email"), password: values.get("password") });
+      const input = { email: values.get("email"), password: values.get("password"), fullName: values.get("fullName") };
+      const result = (signingUp ? signUpSchema : signInSchema).safeParse(input);
       if (!result.success) { setErrors(Object.fromEntries(result.error.issues.map((issue) => [issue.path[0], issue.message]))); return; }
       setErrors({}); setBusy(true);
       try {
-        const response = await adapter.signIn(result.data);
+        const response = signingUp ? await adapter.signUp(signUpSchema.parse(input)) : await adapter.signIn(result.data);
         if (response.error) setError(response.error);
+        else if (signingUp) { setMessage(response.message ?? "Account created. Check your campus email for the next step."); form.current?.reset(); }
         else { await refresh(); router.replace("/dashboard"); }
-      } catch { setError("Sign-in could not be completed. Check your connection and try again."); }
+      } catch { setError(`${signingUp ? "Registration" : "Sign-in"} could not be completed. Check your connection and try again.`); }
       finally { setBusy(false); }
     }}>
       <fieldset disabled={busy} className="space-y-4">
         <legend className="sr-only">Campus account details</legend>
+        {signingUp && <FormField label="Full name" required error={errors.fullName}>{(control) => <Input {...control} name="fullName" autoComplete="name" maxLength={100} />}</FormField>}
         <FormField label="Campus email" required error={errors.email}>{(control) => <Input {...control} name="email" type="email" autoComplete="email" autoCapitalize="none" maxLength={254} />}</FormField>
-        <FormField label="Password" required error={errors.password}>{(control) => <Input {...control} name="password" type="password" autoComplete="current-password" maxLength={128} />}</FormField>
+        <FormField label="Password" required help={signingUp ? "Use at least 8 characters." : undefined} error={errors.password}>{(control) => <Input {...control} name="password" type="password" autoComplete={signingUp ? "new-password" : "current-password"} maxLength={128} />}</FormField>
       </fieldset>
       <div ref={summary} tabIndex={error ? -1 : undefined}><FieldError>{error}</FieldError></div>
-      <Button type="submit" loading={busy} className="w-full">Sign in</Button>
+      {message && <p role="status" className="text-status-green-dark">{message}</p>}
+      <Button type="submit" loading={busy} className="w-full">{signingUp ? "Create account" : "Sign in"}</Button>
     </form>
-    <p className="text-secondary">Need a campus account? <Link href="/sign-up" className="text-link">Create an account</Link></p>
+    <p className="text-secondary">{signingUp ? "Already have an account? " : "Need a campus account? "}<Link href={signingUp ? "/sign-in" : "/sign-up"} className="text-link">{signingUp ? "Sign in" : "Create an account"}</Link></p>
   </div>;
 }
