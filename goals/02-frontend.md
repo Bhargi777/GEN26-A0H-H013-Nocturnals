@@ -52,7 +52,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
   - requester: counts of open service requests and pending certificates, and their five most recent items with status badges
   - technician and dept_admin: counts by status for their department queue, and the oldest unresolved tickets
   - office_staff: count waiting for review, and the oldest pending requests
-- [ ] `/notifications`: list, unread first, mark one read, mark all read, each notification links to its item.
+- [x] `/notifications`: list, unread first, mark one read, mark all read, each notification links to its item.
 - [ ] The bell shows the unread count and a short dropdown of the latest five.
 
 ### Phase E: quality pass
