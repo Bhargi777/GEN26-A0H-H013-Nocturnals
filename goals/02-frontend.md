@@ -33,7 +33,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
   - [x] `FilterBar` (controlled: status select, category select, text search, optional date range; emits one filter object)
   - [x] `Timeline` (renders `events` rows: actor, action, status change, note, relative time)
   - [x] `Dialog` (confirm, with title, body, confirm and cancel) and `Toast` (success and error, one provider in the app shell)
-  - [ ] `EmptyState` (one sentence, one optional action), `Skeleton` (one bar; pages repeat it)
+  - [x] `EmptyState` (one sentence, one optional action), `Skeleton` (one bar; pages repeat it)
 
 ### Phase B: app shell and auth
 
