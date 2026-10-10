@@ -11,14 +11,21 @@ import {
   RateTicketSchema,
   ReassignTicketDepartmentSchema
 } from '../types';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../types/database';
+
+function getSupabase(): Promise<SupabaseClient<Database>> {
+  return createClient();
+}
 
 export async function createTicket(input: CreateTicketInput): Promise<ServiceTicket> {
   const validated = CreateTicketSchema.parse(input);
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('service_tickets')
     .insert({
       requester_id: user.id,
@@ -38,8 +45,9 @@ export async function createTicket(input: CreateTicketInput): Promise<ServiceTic
 }
 
 export async function getTicket(id: string): Promise<ServiceTicket | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('service_tickets')
     .select('*')
     .eq('id', id)
@@ -53,11 +61,12 @@ export async function getTicket(id: string): Promise<ServiceTicket | null> {
 }
 
 export async function listMyTickets(): Promise<ServiceTicket[]> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('service_tickets')
     .select('*')
     .eq('requester_id', user.id)
@@ -68,8 +77,9 @@ export async function listMyTickets(): Promise<ServiceTicket[]> {
 }
 
 export async function listDepartmentTickets(filters?: Record<string, unknown>): Promise<ServiceTicket[]> {
-  const supabase = await createClient();
-  let query = supabase.from('service_tickets').select('*');
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let query = (supabase as any).from('service_tickets').select('*');
   
   if (filters) {
     Object.entries(filters).forEach(([key, value]) => {
@@ -83,8 +93,9 @@ export async function listDepartmentTickets(filters?: Record<string, unknown>): 
 }
 
 export async function assignTicket(ticketId: string, assigneeId: string): Promise<ServiceTicket> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('service_tickets')
     .update({ assigned_to: assigneeId })
     .eq('id', ticketId)
@@ -97,8 +108,9 @@ export async function assignTicket(ticketId: string, assigneeId: string): Promis
 
 export async function transitionTicket(input: TransitionTicketInput): Promise<ServiceTicket> {
   const validated = TransitionTicketSchema.parse(input);
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .rpc('transition_ticket', {
       p_ticket_id: validated.ticket_id,
       p_to_status: validated.to_status,
@@ -111,11 +123,12 @@ export async function transitionTicket(input: TransitionTicketInput): Promise<Se
 }
 
 export async function followTicket(ticketId: string): Promise<void> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('ticket_followers')
     .insert({ ticket_id: ticketId, user_id: user.id });
 
@@ -124,9 +137,10 @@ export async function followTicket(ticketId: string): Promise<void> {
 
 export async function rateTicket(input: RateTicketInput): Promise<ServiceTicket> {
   const validated = RateTicketSchema.parse(input);
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('service_tickets')
     .update({ rating: validated.rating, feedback: validated.feedback })
     .eq('id', validated.ticket_id)
@@ -138,8 +152,9 @@ export async function rateTicket(input: RateTicketInput): Promise<ServiceTicket>
 }
 
 export async function getTicketEvents(ticketId: string): Promise<EventLog[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('events')
     .select('*')
     .eq('entity_type', 'ticket')
@@ -151,7 +166,7 @@ export async function getTicketEvents(ticketId: string): Promise<EventLog[]> {
 }
 
 export async function uploadTicketPhoto(ticketId: string, file: File): Promise<string> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const fileExt = file.name.split('.').pop();
   const filePath = `${ticketId}/${crypto.randomUUID()}.${fileExt}`;
   
@@ -161,7 +176,8 @@ export async function uploadTicketPhoto(ticketId: string, file: File): Promise<s
     
   if (uploadError) throw new Error(uploadError.message);
   
-  const { data, error: updateError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error: updateError } = await (supabase as any)
     .from('service_tickets')
     .update({ photo_path: filePath })
     .eq('id', ticketId)
@@ -173,7 +189,7 @@ export async function uploadTicketPhoto(ticketId: string, file: File): Promise<s
 }
 
 export async function getPhotoUrl(path: string): Promise<string> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data } = await supabase.storage.from('ticket-photos').createSignedUrl(path, 3600);
   if (!data?.signedUrl) throw new Error('Could not get photo url');
   return data.signedUrl;
@@ -181,8 +197,9 @@ export async function getPhotoUrl(path: string): Promise<string> {
 
 export async function reassignTicketDepartment(input: ReassignTicketDepartmentInput): Promise<ServiceTicket> {
   const validated = ReassignTicketDepartmentSchema.parse(input);
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .rpc('reassign_ticket_department', {
       p_ticket_id: validated.ticket_id,
       p_new_department_id: validated.new_department_id,

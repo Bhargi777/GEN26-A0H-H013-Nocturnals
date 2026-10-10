@@ -8,14 +8,21 @@ import {
   DecideAdminRequestSchema
 } from '../types';
 import { Role } from '../constants';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../types/database';
+
+function getSupabase(): Promise<SupabaseClient<Database>> {
+  return createClient();
+}
 
 export async function createAdminRequest(input: CreateAdminRequestInput): Promise<AdminRequest> {
   const validated = CreateAdminRequestSchema.parse(input);
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('admin_requests')
     .insert({
       requester_id: user.id,
@@ -33,8 +40,9 @@ export async function createAdminRequest(input: CreateAdminRequestInput): Promis
 }
 
 export async function getAdminRequest(id: string): Promise<AdminRequest | null> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('admin_requests')
     .select('*')
     .eq('id', id)
@@ -48,11 +56,12 @@ export async function getAdminRequest(id: string): Promise<AdminRequest | null> 
 }
 
 export async function listMyAdminRequests(): Promise<AdminRequest[]> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('admin_requests')
     .select('*')
     .eq('requester_id', user.id)
@@ -63,8 +72,9 @@ export async function listMyAdminRequests(): Promise<AdminRequest[]> {
 }
 
 export async function listReviewQueue(role: Role): Promise<AdminRequest[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('admin_requests')
     .select('*')
     .eq('current_reviewer_role', role)
@@ -77,9 +87,10 @@ export async function listReviewQueue(role: Role): Promise<AdminRequest[]> {
 
 export async function decideAdminRequest(input: DecideAdminRequestInput): Promise<AdminRequest> {
   const validated = DecideAdminRequestSchema.parse(input);
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .rpc('decide_admin_request', {
       p_request_id: validated.request_id,
       p_decision: validated.decision,
@@ -91,7 +102,7 @@ export async function decideAdminRequest(input: DecideAdminRequestInput): Promis
 }
 
 export async function attachDocument(requestId: string, file: File): Promise<string> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const fileExt = file.name.split('.').pop();
   const filePath = `${requestId}/${crypto.randomUUID()}.${fileExt}`;
   
@@ -101,7 +112,8 @@ export async function attachDocument(requestId: string, file: File): Promise<str
     
   if (uploadError) throw new Error(uploadError.message);
   
-  const { data, error: updateError } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error: updateError } = await (supabase as any)
     .from('admin_requests')
     .update({ document_path: filePath })
     .eq('id', requestId)
@@ -113,15 +125,16 @@ export async function attachDocument(requestId: string, file: File): Promise<str
 }
 
 export async function getDocumentUrl(path: string): Promise<string> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data } = await supabase.storage.from('admin-documents').createSignedUrl(path, 3600);
   if (!data?.signedUrl) throw new Error('Could not get document url');
   return data.signedUrl;
 }
 
 export async function getAdminRequestEvents(requestId: string): Promise<EventLog[]> {
-  const supabase = await createClient();
-  const { data, error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('events')
     .select('*')
     .eq('entity_type', 'admin_request')

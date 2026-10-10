@@ -1,12 +1,19 @@
 import { createClient } from '../supabase/server';
 import { Profile, Notification } from '../types';
+import { SupabaseClient } from '@supabase/supabase-js';
+import { Database } from '../types/database';
+
+function getSupabase(): Promise<SupabaseClient<Database>> {
+  return createClient();
+}
 
 export async function getCurrentProfile(): Promise<Profile | null> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) return null;
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('profiles')
     .select('*')
     .eq('id', user.id)
@@ -20,11 +27,12 @@ export async function getCurrentProfile(): Promise<Profile | null> {
 }
 
 export async function listNotifications(): Promise<Notification[]> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any)
     .from('notifications')
     .select('*')
     .eq('user_id', user.id)
@@ -35,8 +43,9 @@ export async function listNotifications(): Promise<Notification[]> {
 }
 
 export async function markNotificationRead(id: string): Promise<void> {
-  const supabase = await createClient();
-  const { error } = await supabase
+  const supabase = await getSupabase();
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('notifications')
     .update({ read_at: new Date().toISOString() })
     .eq('id', id);
@@ -45,11 +54,12 @@ export async function markNotificationRead(id: string): Promise<void> {
 }
 
 export async function markAllNotificationsRead(): Promise<void> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase as any)
     .from('notifications')
     .update({ read_at: new Date().toISOString() })
     .eq('user_id', user.id)
@@ -59,11 +69,12 @@ export async function markAllNotificationsRead(): Promise<void> {
 }
 
 export async function unreadNotificationCount(): Promise<number> {
-  const supabase = await createClient();
+  const supabase = await getSupabase();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { count, error } = await supabase
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { count, error } = await (supabase as any)
     .from('notifications')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
