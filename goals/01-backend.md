@@ -42,10 +42,10 @@ You build the foundation everyone else depends on: project setup, database, auth
 
 Implement in `lib/db/`, each returning typed results and throwing typed errors:
 
-- [ ] Service requests: `createTicket`, `getTicket`, `listMyTickets`, `listDepartmentTickets(filters)`, `assignTicket`, `transitionTicket`, `followTicket`, `rateTicket`, `getTicketEvents`, `uploadTicketPhoto`, `getPhotoUrl`.
-- [ ] Admin requests: `createAdminRequest`, `getAdminRequest`, `listMyAdminRequests`, `listReviewQueue(role)`, `decideAdminRequest`, `attachDocument`, `getDocumentUrl`, `getAdminRequestEvents`.
-- [ ] Shared: `getCurrentProfile`, `listNotifications`, `markNotificationRead`, `markAllNotificationsRead`, `unreadNotificationCount`.
-- [ ] All inputs validated with `zod` schemas exported from `lib/types/` so the frontend can reuse them.
+- [x] Service requests: `createTicket`, `getTicket`, `listMyTickets`, `listDepartmentTickets(filters)`, `assignTicket`, `transitionTicket`, `followTicket`, `rateTicket`, `getTicketEvents`, `uploadTicketPhoto`, `getPhotoUrl`.
+- [x] Admin requests: `createAdminRequest`, `getAdminRequest`, `listMyAdminRequests`, `listReviewQueue(role)`, `decideAdminRequest`, `attachDocument`, `getDocumentUrl`, `getAdminRequestEvents`.
+- [x] Shared: `getCurrentProfile`, `listNotifications`, `markNotificationRead`, `markAllNotificationsRead`, `unreadNotificationCount`.
+- [x] All inputs validated with `zod` schemas exported from `lib/types/` so the frontend can reuse them.
 
 ### Phase E: seed and tests
 
