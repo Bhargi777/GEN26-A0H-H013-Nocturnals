@@ -38,7 +38,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
   - office_staff: Dashboard, Office review queue
   - admin: everything, plus Reports
 - [x] Sidebar collapses to a menu on phone width.
-- [ ] Sidebar uses the routes owned by Dev 3 and Dev 4 (`/service-requests`, `/service-requests/new`, `/service-requests/queue`, `/requests`, `/requests/new`, `/office`, `/admin/reports`). You only link to them; you do not build those pages.
+- [x] Sidebar uses the routes owned by Dev 3 and Dev 4 (`/service-requests`, `/service-requests/new`, `/service-requests/queue`, `/requests`, `/requests/new`, `/office`, `/admin/reports`). You only link to them; you do not build those pages.
 
 ### Phase C: auth pages
 
