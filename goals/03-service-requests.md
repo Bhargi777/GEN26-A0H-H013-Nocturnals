@@ -31,7 +31,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 - [x] `triage({ title, description, buildingName })` returns `{ category, priority, departmentCode, confidence, source }` validated with `zod`. `source` is `"model"` or `"rules"`.
 - [x] The model is asked for JSON only, with the allowed category, priority and department lists in the prompt. Invalid or out-of-list output is rejected and the rules fallback is used.
-- [ ] Never send the requester's name, email or roll number to the model. Only title, description and building name.
+- [x] Never send the requester's name, email or roll number to the model. Only title, description and building name.
 - [ ] Timeout of a few seconds. On timeout, error or missing key, fall back to `lib/ai/rules.ts`: keyword rules (e.g. wifi, internet, lan to `NETWORK`; projector, speaker, mic, hdmi to `AV_EQUIPMENT`; fan, light, switch, socket to `ELECTRICAL`; leak, tap, flush to `PLUMBING`; sparks, smoke, flooding to `URGENT`).
 - [ ] Triage runs in a server action or route handler only, so the API key never reaches the browser.
 - [ ] Vitest tests for the rules fallback covering every category and the urgent keywords.
