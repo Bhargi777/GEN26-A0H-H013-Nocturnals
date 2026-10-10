@@ -18,10 +18,10 @@ You build the administrative request module end to end: requesting a bonafide ce
 
 ### Phase B: requester flow
 
-- [ ] `/requests/new`: pick a type, then a form built from its fields, with validation messages in plain words.
-- [ ] On submit: request created at the right first status (`PENDING_OFFICE` for bonafide, `PENDING_DEPT` for NOC), success toast with the request code.
-- [ ] `/requests`: table of the user's requests with code, type, submitted date, status badge, and a download link when approved.
-- [ ] `/requests/[code]`: details, who it is waiting on in plain words ("Waiting for department approval"), timeline from events, decision note if rejected, download button if approved.
+- [x] `/requests/new`: pick a type, then a form built from its fields, with validation messages in plain words.
+- [x] On submit: request created at the right first status (`PENDING_OFFICE` for bonafide, `PENDING_DEPT` for NOC), success toast with the request code.
+- [x] `/requests`: table of the user's requests with code, type, submitted date, status badge, and a download link when approved.
+- [x] `/requests/[code]`: details, who it is waiting on in plain words ("Waiting for department approval"), timeline from events, decision note if rejected, download button if approved.
 
 ### Phase C: reviewer flow
 
