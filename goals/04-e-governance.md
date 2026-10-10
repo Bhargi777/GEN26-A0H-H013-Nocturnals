@@ -25,10 +25,10 @@ You build the administrative request module end to end: requesting a bonafide ce
 
 ### Phase C: reviewer flow
 
-- [ ] Department admin sees NOC requests from their department at `PENDING_DEPT` in `/office` (filtered by role) and can forward or reject with a note.
-- [ ] Office staff see requests at `PENDING_OFFICE` in `/office`, oldest first, and can approve or reject with a note. Reject requires a note.
-- [ ] Every decision uses `decideAdminRequest` from the data layer and shows the database's error message clearly if it is refused.
-- [ ] A confirmation dialog before approve and reject.
+- [x] Department admin sees NOC requests from their department at `PENDING_DEPT` in `/office` (filtered by role) and can forward or reject with a note.
+- [x] Office staff see requests at `PENDING_OFFICE` in `/office`, oldest first, and can approve or reject with a note. Reject requires a note.
+- [x] Every decision uses `decideAdminRequest` from the data layer and shows the database's error message clearly if it is refused.
+- [x] A confirmation dialog before approve and reject.
 
 ### Phase D: documents (`lib/pdf/`)
 
