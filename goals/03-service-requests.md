@@ -57,62 +57,59 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 ## BLOCKERS
 
-1. **Seeded demo story (Dev 1).** `supabase/migrations/20261010200200_svc_demo_story.sql` adds `svc_seed_demo_story()`, tested against a stand-in schema. It still needs Dev 1 to add `select public.svc_seed_demo_story();` at the end of `supabase/seed.sql`, after seeding a student, an ELEC `dept_admin`, an ELEC `technician` and at least one room. That is why the Phase E seed item is still open.
-2. **No project scaffold on main (Dev 1, Dev 2).** `package.json`, `tsconfig.json`, `next.config.*`, `middleware.ts`, `app/layout.tsx`, `app/(app)/layout.tsx` and the Tailwind setup do not exist yet, so `npm run typecheck` and `npm run lint` cannot run. Until they land, each commit was checked from a toolchain outside the repo: `tsc --strict` with the standard Next.js tsconfig, ESLint `next/core-web-vitals` + `next/typescript` at zero warnings, and Vitest. Pages were also driven in a browser through a local harness with an in-memory data layer.
-3. **Dependencies and scripts for `package.json` (Dev 1).** Runtime: `@anthropic-ai/sdk`, `zod`, `@supabase/ssr`, `@supabase/supabase-js`, `lucide-react`. Dev: `vitest`, `tsx`. Scripts: `"test": "vitest run"` and `"eval:triage": "tsx lib/ai/eval-triage.ts"`.
-4. **`.env.example` (Dev 1).** Add `ANTHROPIC_API_KEY=` (server only, never `NEXT_PUBLIC_`) and optionally `TRIAGE_MODEL=` (defaults to `claude-opus-5-5`).
-5. **`next.config.*` (Dev 1).** Set `experimental.serverActions.bodySizeLimit` to `"6mb"`. Photos up to 5 MB are uploaded through a server action, and the default limit is 1 MB.
-6. **Stubs to swap once Dev 1's code is on main.** `app/(app)/service-requests/_stubs/constants.ts` maps to `lib/constants/*`, `_stubs/supabase.ts` to `lib/supabase/server`, and `_stubs/db.ts` to `lib/db/service-requests.ts`. Change the imports, then delete `_stubs/`.
-7. **`transition_ticket` contract (Dev 1).** The data layer calls it with named parameters `p_ticket_id, p_to_status, p_note, p_assigned_to, p_department_id, p_rating, p_feedback`. The UI relies on these behaviours:
-   - A dept admin can reassign within `ASSIGNED` (`ASSIGNED` to `ASSIGNED` with a new `p_assigned_to`).
-   - A dept admin can move any open ticket to another department as `OPEN` with `p_department_id`, clearing `assigned_to`.
-   - `RESOLVED` and `REOPENED` take a note.
-   - `CLOSED` stores `p_rating` and `p_feedback`.
-   - The requester's notification uses the link `/service-requests/<code>`.
-8. **Ticket insert (Dev 1).** `createTicket` leaves `code` to the database (a default or trigger producing `SR-000123`) and does not write the first `events` row. The demo story adds a `created` event only if none exists.
-9. **Storage (Dev 1).** A private `ticket-photos` bucket. Authenticated users upload under `<their user id>/`, and reads are allowed for whoever can read the ticket.
-10. **RLS (Dev 1).**
-    - Users can insert their own `ticket_followers` rows.
-    - Followers can read the tickets they follow; otherwise "I have this issue too" opens a ticket the follower cannot see.
-    - A dept admin can read technician profiles in their department.
-    - `events` are readable by anyone who can read the ticket.
-11. **Follower notifications trigger (Dev 1 sign-off).** `20261010200100_svc_follower_notifications.sql` adds a trigger on the core `notifications` table that copies requester notifications to followers. If Dev 1 prefers, `transition_ticket` can do the same fan-out, and this migration can be dropped.
-12. **Shared UI (Dev 2).** `components/ui/` is missing, so local versions live in `components/service-requests/`: `button`, `form-field`, `status-badge`, `page-header`, `empty-state`, `toast`. Pages redirect to `/login` when signed out, so that route is assumed to exist.
+Checked against `main` after Dev 1 and Dev 2 merged. Each item names its owner.
+
+1. **Seeded demo story (Dev 1).** `20261010200200_svc_demo_story.sql` adds `svc_seed_demo_story()`. It was tested against main's migrations on a local Postgres and walks the full story through the real `transition_ticket`. Three things are still needed:
+   - `supabase/seed.sql` must call `select public.svc_seed_demo_story();`.
+   - The seed needs an IT `dept_admin`. AV tickets route to IT, and IT has only a technician.
+   - The seed's ids starting with `r`, `u`, `t` and `a` (for example `u0000000-…`) are not valid UUIDs, so `seed.sql` fails on Postgres.
+
+   This is why the Phase E seed item is still open.
+2. **RLS recursion (Dev 1).** The policy "Admins can read all profiles" reads `profiles` from inside a `profiles` policy. Any signed-in read of `service_tickets` then fails with `infinite recursion detected in policy for relation "profiles"` (reproduced on main's migrations). A `security definer` `is_admin()` helper used by the policies would fix it.
+3. **Production build, Tailwind (Dev 2).** `app/globals.css` does not load `tailwind.config.ts`, so `next build` fails on main itself with `Cannot apply unknown utility class border-border`. Adding `@config "../tailwind.config.ts";` after the import fixes it.
+4. **Production build, prerendering (Dev 2).** With `cacheComponents: true`, `AppShell` calls `usePathname()` outside `<Suspense>`, which breaks prerendering of dynamic routes such as `/service-requests/[code]`. Wrapping `AppShell` (or the part that reads the pathname) in `<Suspense>` fixes it. With items 3 and 4 applied locally, this branch builds and all four service-request routes prerender.
+5. **Test setup (Dev 1).** No Vitest config resolves `@/`, so `app/(app)/ui/frontend.test.ts` fails on main. The tests in this module use relative imports and pass.
+6. **`package.json` (Dev 1).** Add the script `"eval:triage": "tsx lib/ai/eval-triage.ts"` and `tsx` as a dev dependency. Until then the eval runs with `npx tsx lib/ai/eval-triage.ts`.
+7. **`createTicket` fields (Dev 1).** `CreateTicketSchema` and `createTicket` do not accept `assigned_department_id`, `ai_suggested_category`, `ai_suggested_priority` or `ai_confidence`. Until they do, `saveTriageAndRouting` in `_lib/queries.ts` (marked `TODO(dev1)`) sets them right after creating the ticket, which RLS allows for the requester's own ticket. Without it new tickets reach no department queue.
+8. **Reads missing from `lib/db` (Dev 1).** Buildings, rooms, departments, technicians, ticket by code, followers and similar tickets. They live in `app/(app)/service-requests/_lib/queries.ts` until `lib/db` offers them. `listMyTickets` and `listDepartmentTickets` return rows without names, so the module joins names itself.
+9. **Event history (Dev 1).** `transition_ticket` writes `from_status` after the update, so it always equals `to_status`, and no event is written when a ticket is created. The timeline shows the new status only and adds a "Reported" entry from the ticket itself.
+10. **Followers can't open what they follow (Dev 1).** RLS lets only the requester, the department and admins read a ticket. After "I have this issue too" the follower lands on a not-found page. They still get the notifications.
+11. **Follower notifications trigger (Dev 1 sign-off).** `20261010200100_svc_follower_notifications.sql` adds a trigger on the core `notifications` table that copies the requester's ticket notifications to followers. Tested with main's `transition_ticket`. If Dev 1 prefers, `transition_ticket` can do the fan-out and this migration can be dropped.
+12. **Photo size (Dev 1).** `next.config.ts` needs `experimental.serverActions.bodySizeLimit: "6mb"`, because photos up to 5 MB are uploaded through a server action and the default limit is 1 MB.
+13. **Photo types (Dev 1, Dev 2).** The `ticket-photos` bucket allows JPEG, PNG and WebP, but `components/ui/FileInput` also offers GIF. The server rejects GIF with a clear message before upload.
 
 ## SUGGESTIONS
 
-- Run `npm run eval:triage` once with `ANTHROPIC_API_KEY` set. The number in the summary only measures the keyword fallback, because no key was available here.
-- The keyword rules missed 2 of 28 fixtures (a projector complaint mentioning "power" and "light", and "geyser"). They were left untuned on purpose so the eval stays honest. A larger labelled set would show whether AV words should weigh more.
-- Triage uses `claude-opus-5-5` with low effort and a 4 second timeout. If timeouts show up often in logs, consider a faster model through `TRIAGE_MODEL`.
-- The contract lists no AV department, so `AV_EQUIPMENT` routes to `ELEC` in `lib/ai/routing.ts`. If an AV team exists, add its code to the contract and change that one line.
+- Run `npm run eval:triage` once with `ANTHROPIC_API_KEY` set. The result in the summary only measures the keyword fallback, because no key was available here.
+- `.env.example` sets `AI_MODEL_NAME=claude-3-5-haiku-20241022`, an old model. Leave it empty to use the default `claude-opus-5-5`, or set a current model. Triage falls back to rules if the model call fails.
+- The keyword rules missed 2 of 28 fixtures: a projector complaint mentioning "power" and "light", and "geyser". They were left untuned so the eval stays honest.
+- Routing follows the departments in `seed.sql`: Electrical goes to ELEC; Network and AV to IT; Plumbing, Furniture, Cleanliness and Hostel to Hostel Administration; Other to the Academic Office. A maintenance department would be a better home for plumbing and furniture; it is a one-line change in `lib/ai/routing.ts`.
 - Show tickets the user follows on `/service-requests`, next to the ones they reported.
 
 ## Summary
 
-24 of 25 items are done. The open one is the seeded demo story, which needs Dev 1's seed file (BLOCKERS 1). Work is on branch `Bhargava`, as the developer asked, instead of `feat/service-requests`.
+24 of 25 items are done; the seeded demo story waits on Dev 1 (BLOCKERS 1). The module is rebased on main and uses only shared code from the other owners:
+- constants from `lib/constants`;
+- data access through `lib/db`: `createTicket`, `uploadTicketPhoto`, `transitionTicket` with `p_ticket_id, p_to_status, p_note, p_assigned_to`, `rateTicket`, `reassignTicketDepartment`, `followTicket`, `getTicket` and `getTicketEvents`;
+- UI from `components/ui`: DataTable, FormField, FileInput, Card, PageHeader, StatusBadge, Timeline, Skeleton, EmptyState and the shared toast.
 
-**What works**
+The local stubs and UI copies are deleted. Signed-out users go to `/sign-in`, and triage calls the Anthropic SDK from `lib/ai/model.ts` only.
 
-- **Requester flow.** `/service-requests/new` suggests a category and priority while the user types (debounced, server side). It lists similar open issues in the same building, with "I have this issue too", and creates the ticket with a photo. It saves both the suggestion and the final choice and opens the ticket with a toast. `/service-requests` lists the user's tickets with sortable columns and status and category filters. `/service-requests/[code]` shows details, photo, department, assignee, followers and an events timeline. On a resolved ticket the requester can confirm with a 1 to 5 rating or reopen with a note.
-- **Staff flow.** `/service-requests/queue` lists department tickets for technicians and dept admins, sorted by priority then age. It has status, category, priority and building filters and marks overdue rows using one config object (4h, 24h, 72h, 7 days). Dept admins can assign, reassign, or send a ticket to another department with a note. Technicians can start work and resolve with a note. Every change goes through `transitionTicket`, and a refusal shows the database message.
-- **AI triage (`lib/ai/`).** `triage()` asks one model (`claude-opus-5-5` through `@anthropic-ai/sdk`) for JSON only, validated with zod against the allowed lists. It sends only title, description and building name, and has a 4 second timeout. It falls back to keyword rules on a missing key, timeout, error, refusal or invalid output. A production build confirmed no client bundle contains the key name, the API host or the prompt.
-- **Duplicates and followers.** `find_similar_tickets` (pg_trgm, same building, open, last 14 days, top 3 at a score of 0.4 or more) and a trigger that copies requester notifications to followers. Both were tested on local Postgres 16 against a stand-in core schema.
-- **Hook.** AV tickets call `onAvTicketChange` (marked `TODO(reservation)`) when opened and closed.
+**Triage eval:** running `lib/ai/eval-triage.ts` (what `npm run eval:triage` will run) gives **26/28 categories correct (92.9%)**. No API key was available, so all 28 were answered by the keyword rules; the model path has not been measured.
 
-**Triage eval:** `npm run eval:triage` gets **26/28 categories correct (92.9%)**. No API key was available, so all 28 were answered by the keyword rules; the model path has not been measured yet.
+**Checks on this branch**
+- `npm run typecheck` passes.
+- `npm run lint` reports 8 problems, all in other owners' files and identical to main; none come from this module.
+- `npm test -- --run`: all 99 tests pass, 93 of them in this module. The one failing file is Dev 2's `frontend.test.ts`, which also fails on main (BLOCKERS 5).
+- `next build` fails on main itself (BLOCKERS 3). With BLOCKERS 3 and 4 applied locally, this branch builds.
+- The three `_svc_` migrations were applied on top of main's migrations in a local Postgres:
+  - The demo story runs end to end.
+  - Followers receive copies of the requester's notifications.
+  - `find_similar_tickets` finds a duplicate across requesters for a student, while unrelated faults in the same room return nothing.
 
-**How to test**
-
-- **Checks.** Run `npm run typecheck`, `npm run lint` and `npm test` once Dev 1 adds the scripts. There are 90 Vitest tests: overdue rule, rules fallback for every category and urgent word, prompt and output validation, privacy, timeout and fixture shape. Then run `npm run eval:triage`, with `ANTHROPIC_API_KEY` set to measure the model.
-- **Demo.** Apply the three `_svc_` migrations and call `select public.svc_seed_demo_story();` after seeding. Then sign in as the seeded student and open the closed projector ticket.
-- **Manual pass.**
-  1. As a student, report a projector issue in a building with an open projector ticket: the suggestion and the similar-issues list appear.
-  2. As the ELEC dept admin, assign it from the queue.
-  3. As that technician, start and resolve it.
-  4. As the student, confirm it and rate it.
-- **Browser checks already done.** All pages were checked at 375px and 1280px with no horizontal scroll and no axe WCAG 2.1 AA violations. Loading skeletons, empty states, not-found and the error boundary were each seen in a browser.
-
-**Still blocked**
-
-- The seeded demo story (BLOCKERS 1).
-- Running inside the real app needs Dev 1's scaffold, dependencies, env, `next.config`, storage bucket, RLS and `transition_ticket` details (BLOCKERS 2 to 11) and Dev 2's shell and shared UI (BLOCKERS 12). After that, swap the stubs in `_stubs/` for the real modules.
+**How to test once BLOCKERS 2 to 4 are fixed**
+1. Sign in as a student.
+2. Report an issue at `/service-requests/new`: the triage suggestion and the similar-issues list appear while typing.
+3. As that department's admin, assign the ticket from `/service-requests/queue`.
+4. As the technician, start and resolve it.
+5. As the student, confirm it with a rating.
