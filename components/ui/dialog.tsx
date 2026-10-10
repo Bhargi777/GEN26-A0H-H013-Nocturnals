@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Button } from "./button";
 import { FieldError } from "./form-field";
+import { keepDialogFocus } from "./dialog-focus";
 
 export interface DialogProps {
   open: boolean;
@@ -28,7 +29,7 @@ export function Dialog({ open, title, description, confirmLabel, danger = false,
     if (!element.open) element.showModal();
     return () => { element.close(); previous?.focus(); };
   }, [open]);
-  return <dialog ref={dialog} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} className="m-auto w-[calc(100%-32px)] max-w-lg rounded-card border bg-surface p-6 text-primary backdrop:bg-primary/40">
+  return <dialog ref={dialog} onKeyDown={keepDialogFocus} aria-labelledby={`${id}-title`} aria-describedby={`${id}-description`} onCancel={(event) => { event.preventDefault(); if (!busy) onClose(); }} className="m-auto w-[calc(100%-32px)] max-w-lg rounded-card border bg-surface p-6 text-primary backdrop:bg-primary/40">
     <div className="space-y-4">
       <h2 id={`${id}-title`}>{title}</h2>
       <p id={`${id}-description`} className="text-secondary">{description}</p>
