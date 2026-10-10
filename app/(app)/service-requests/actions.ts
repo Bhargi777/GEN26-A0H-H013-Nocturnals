@@ -184,7 +184,12 @@ async function runTransition(code: string, input: TransitionInput): Promise<Acti
   const profile = await getCurrentProfile();
   if (!profile) return { ok: false, error: "Your session has ended. Sign in again and retry." };
   const result = await transitionTicket(input);
-  if (!result.ok) return { ok: false, error: `The update was refused: ${result.error}` };
+  if (!result.ok) {
+    return {
+      ok: false,
+      error: `The update was refused: ${result.error}. Refresh the page to see the ticket's current status, then try again.`,
+    };
+  }
   revalidatePath(`/service-requests/${code}`);
   revalidatePath("/service-requests");
   return { ok: true };

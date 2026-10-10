@@ -37,7 +37,7 @@ export function SortHeader({
         className="inline-flex items-center gap-1 rounded-md hover:text-slate-900 focus-visible:outline-2 focus-visible:outline-teal-700"
       >
         {label}
-        <Icon size={14} aria-hidden className={active ? "text-slate-900" : "text-slate-400"} />
+        <Icon size={16} aria-hidden className={active ? "text-slate-900" : "text-slate-500"} />
       </Link>
     </th>
   );

@@ -39,7 +39,7 @@ export function SimilarTickets({ matches }: { matches: SimilarTicket[] }) {
               <div className="flex flex-wrap items-center gap-2">
                 <Link
                   href={`/service-requests/${ticket.code}`}
-                  className="font-medium text-teal-700 hover:text-teal-800 hover:underline"
+                  className="rounded-sm font-medium text-teal-700 hover:text-teal-800 hover:underline focus-visible:outline-2 focus-visible:outline-teal-700"
                 >
                   {ticket.code}
                 </Link>

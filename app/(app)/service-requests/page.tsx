@@ -124,7 +124,7 @@ export default async function MyTicketsPage({
                   <td className="px-3 py-2 font-medium whitespace-nowrap">
                     <Link
                       href={`${PATH}/${ticket.code}`}
-                      className="text-teal-700 hover:text-teal-800 hover:underline"
+                      className="rounded-sm text-teal-700 hover:text-teal-800 hover:underline focus-visible:outline-2 focus-visible:outline-teal-700"
                     >
                       {ticket.code}
                     </Link>

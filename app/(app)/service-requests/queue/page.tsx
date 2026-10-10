@@ -233,7 +233,7 @@ export default async function QueuePage({
                     <td className="px-3 py-2 font-medium whitespace-nowrap">
                       <Link
                         href={`/service-requests/${ticket.code}`}
-                        className="text-teal-700 hover:text-teal-800 hover:underline"
+                        className="rounded-sm text-teal-700 hover:text-teal-800 hover:underline focus-visible:outline-2 focus-visible:outline-teal-700"
                       >
                         {ticket.code}
                       </Link>
@@ -279,7 +279,7 @@ export default async function QueuePage({
                       </time>
                       {overdue && (
                         <span className="ml-2 inline-flex items-center gap-1 rounded-md bg-red-100 px-1.5 py-0.5 text-xs font-medium text-red-800">
-                          <AlertTriangle size={12} aria-hidden />
+                          <AlertTriangle size={16} aria-hidden />
                           Overdue
                         </span>
                       )}
