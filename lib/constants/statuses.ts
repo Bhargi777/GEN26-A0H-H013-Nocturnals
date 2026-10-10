@@ -1,0 +1,19 @@
+export const TICKET_STATUSES = {
+  OPEN: 'OPEN',
+  ASSIGNED: 'ASSIGNED',
+  IN_PROGRESS: 'IN_PROGRESS',
+  RESOLVED: 'RESOLVED',
+  CLOSED: 'CLOSED',
+  REOPENED: 'REOPENED',
+} as const;
+
+export type TicketStatus = typeof TICKET_STATUSES[keyof typeof TICKET_STATUSES];
+
+export const ADMIN_REQUEST_STATUSES = {
+  PENDING_DEPT: 'PENDING_DEPT',
+  PENDING_OFFICE: 'PENDING_OFFICE',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export type AdminRequestStatus = typeof ADMIN_REQUEST_STATUSES[keyof typeof ADMIN_REQUEST_STATUSES];

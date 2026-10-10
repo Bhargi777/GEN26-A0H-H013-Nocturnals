@@ -55,4 +55,3 @@ function Gallery() {
 }
 
 export default function UIPage() { return <Gallery />; }
-
