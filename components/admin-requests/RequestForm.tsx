@@ -2,13 +2,17 @@
 
 import React, { useState } from "react";
 import { REQUEST_TYPES, RequestType } from "./request-types";
+import { submitRequest } from "../../app/(app)/requests/actions";
+import { useRouter } from "next/navigation";
 
 export function RequestForm({ type }: { type: RequestType }) {
   const config = REQUEST_TYPES[type];
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const router = useRouter();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const result = config.fields.safeParse(formData);
     if (!result.success) {
@@ -21,8 +25,19 @@ export function RequestForm({ type }: { type: RequestType }) {
       setErrors(newErrors);
     } else {
       setErrors({});
-      // TODO: Submit to backend
-      console.log("Submit:", result.data);
+      setIsSubmitting(true);
+      try {
+        const resultAction = await submitRequest(type, result.data);
+        if (resultAction.success) {
+          alert(`Success! Request ${resultAction.code} created.`);
+          router.push("/requests");
+        }
+      } catch (err) {
+        console.error(err);
+        alert("Failed to submit request.");
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -113,9 +128,10 @@ export function RequestForm({ type }: { type: RequestType }) {
 
       <button
         type="submit"
-        className="inline-flex justify-center rounded-md border border-transparent bg-teal-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+        disabled={isSubmitting}
+        className="inline-flex justify-center rounded-md border border-transparent bg-teal-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2 disabled:opacity-50"
       >
-        Submit Request
+        {isSubmitting ? "Submitting..." : "Submit Request"}
       </button>
     </form>
   );
