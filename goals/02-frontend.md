@@ -79,4 +79,62 @@ Do not review or fix Dev 3 and Dev 4 pages. If you spot a problem there, add one
 
 ## Summary
 
-(write when done)
+### Components (all exported from `@/components/ui`)
+
+| Component | Import Path | Key Props | Expected Extensions |
+|-----------|-------------|-----------|---------------------|
+| Button | `@/components/ui` | `variant` (primary, secondary, ghost, danger), `size` (sm, md), `loading` | `icon`, `fullWidth` |
+| Field (FormField) | `@/components/ui` | `label`, `help`, `error`, `required`, `children` (render prop) | `description` slot |
+| Input | `@/components/ui` | extends native input | — |
+| Textarea | `@/components/ui` | extends native textarea | — |
+| Select | `@/components/ui` | extends native select | — |
+| Label | `@/components/ui` | extends native label | — |
+| FileInput | `@/components/ui` | `label`, `onChange`, `maxBytes`, `disabled` | `accept` multiple, drag-and-drop |
+| StatusBadge | `@/components/ui` | `status` (TicketStatus \| RequestStatus) | — |
+| Badge | `@/components/ui` | `tone` (slate, blue, amber, green, orange, red) | — |
+| Card | `@/components/ui` | extends native div | `variant` (elevated, outlined) |
+| PageHeader | `@/components/ui` | `title`, `context`, `action`, `children` | `breadcrumb` |
+| DataTable | `@/components/ui` | `caption`, `columns[]`, `rows[]`, `rowKey`, `rowHref`, `emptyState` | `pagination`, `selection`, `rowActions` |
+| FilterBar | `@/components/ui` | `value`, `onChange`, `statuses[]`, `categories[]`, `dateRange` | `savedFilters`, `quickFilters` |
+| Timeline | `@/components/ui` | `events[]`, `now` | `groupByDate`, `filterByActor` |
+| Dialog | `@/components/ui` | `open`, `title`, `description`, `body`, `cancelLabel`, `confirmLabel`, `danger`, `onClose`, `onConfirm` | `size`, `closeOnOverlayClick` |
+| Toast | `@/components/ui` (via `useToast`) | `message`, `tone` (success, error) | `duration`, `action` |
+| ToastProvider | `@/components/ui` | `children` | — |
+| EmptyState | `@/components/ui` | `message`, `action` | `illustration`, `secondaryAction` |
+| Skeleton | `@/components/ui` | `label`, `className` | `variant` (text, circular, rectangular) |
+
+### Pages
+
+| Page | Path | Notes |
+|------|------|-------|
+| Sign In | `/sign-in` | Email/password, campus account note, redirects to `/dashboard` if signed in |
+| Sign Up | `/sign-up` | Email/password/full name, campus account note, shows server errors |
+| Dashboard | `/dashboard` | Role-adaptive via `dashboardFor()`; stat cards + recent items table |
+| Notifications | `/notifications` | Unread first, mark one/all read, links to items |
+
+### App Shell
+
+- `app/(app)/layout.tsx` → `AppShell` (sidebar, top bar, notification bell, sign-out)
+- `components/layout/navigation.tsx` → `navigationForRole()` single source of truth for links
+- `components/layout/mobile-navigation.tsx` → Collapsible sidebar under 768px
+- `components/layout/notification-bell.tsx` → Unread count + latest 5 dropdown
+- `components/layout/frontend-provider.tsx` → Auth state, notifications, toast provider
+
+### Design Tokens (tailwind.config.ts)
+
+- Colors: background `#F8FAFC`, surface `#FFFFFF`, border `#E2E8F0`, primary `#0F172A`, secondary `#475569`, accent `#0F766E` (hover `#115E59`, light `#F0FDFA`)
+- Status muted pairs: slate, blue, amber, green, orange, red
+- Font: Inter via `next/font`, body 14px, section 16px semibold, title 20px semibold
+- Radius: 6px controls, 8px cards
+- Spacing: 4px grid
+- Shadows: none
+
+### Blockers
+
+- Dev 1's foundation (package.json, tsconfig, lib/constants, lib/types, lib/auth, lib/db, lib/supabase) not on main. Cannot run typecheck/lint. Using local stubs in `components/ui/types.ts` and preview adapter in `app/(app)/ui/`.
+- Must replace `components/ui/types.ts` imports with `lib/constants` and `lib/types` after Dev 1 merges.
+- Must replace preview adapter with real Supabase client after Dev 1 merges.
+
+### Suggestions
+
+(none yet)
