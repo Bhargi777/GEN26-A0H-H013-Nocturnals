@@ -25,7 +25,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 - [x] `components/ui/index.ts` re-exports everything below so others import from one path.
 - [ ] These components, all typed, labelled, keyboard-usable, with visible focus rings:
   - [x] `Button` (variants primary, secondary, ghost, danger; sizes sm, md; `loading` prop)
-  - [ ] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
+  - [x] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
   - [ ] `FileInput` (single image, preview, rejects over 5 MB or non-image)
   - [ ] `StatusBadge` (one record mapping every status in `lib/constants` to a muted background and text pair, per team rules)
   - [ ] `Card`, `PageHeader` (title, one-line context, optional action slot)
