@@ -43,7 +43,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 ### Phase C: auth pages
 
 - [x] `/sign-in` with email and password, clear errors, and a note that only campus accounts are accepted.
-- [ ] `/sign-up` that shows the server's domain rejection message in plain words.
+- [x] `/sign-up` that shows the server's domain rejection message in plain words.
 - [ ] Signed-in users visiting auth pages are sent to `/dashboard`.
 
 ### Phase D: dashboards and notifications
