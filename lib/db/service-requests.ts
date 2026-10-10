@@ -5,9 +5,11 @@ import {
   CreateTicketInput,
   TransitionTicketInput,
   RateTicketInput,
+  ReassignTicketDepartmentInput,
   CreateTicketSchema,
   TransitionTicketSchema,
-  RateTicketSchema
+  RateTicketSchema,
+  ReassignTicketDepartmentSchema
 } from '../types';
 
 export async function createTicket(input: CreateTicketInput): Promise<ServiceTicket> {
@@ -175,4 +177,18 @@ export async function getPhotoUrl(path: string): Promise<string> {
   const { data } = await supabase.storage.from('ticket-photos').createSignedUrl(path, 3600);
   if (!data?.signedUrl) throw new Error('Could not get photo url');
   return data.signedUrl;
+}
+
+export async function reassignTicketDepartment(input: ReassignTicketDepartmentInput): Promise<ServiceTicket> {
+  const validated = ReassignTicketDepartmentSchema.parse(input);
+  const supabase = await createClient();
+  const { data, error } = await supabase
+    .rpc('reassign_ticket_department', {
+      p_ticket_id: validated.ticket_id,
+      p_new_department_id: validated.new_department_id,
+      p_note: validated.note || null,
+    });
+
+  if (error) throw new Error(error.message);
+  return data as ServiceTicket;
 }

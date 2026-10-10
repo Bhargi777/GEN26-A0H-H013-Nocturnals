@@ -44,3 +44,10 @@ export const RateTicketSchema = z.object({
   feedback: z.string().nullable().optional(),
 });
 export type RateTicketInput = z.infer<typeof RateTicketSchema>;
+
+export const ReassignTicketDepartmentSchema = z.object({
+  ticket_id: z.string().uuid(),
+  new_department_id: z.string().uuid(),
+  note: z.string().nullable().optional(),
+});
+export type ReassignTicketDepartmentInput = z.infer<typeof ReassignTicketDepartmentSchema>;
