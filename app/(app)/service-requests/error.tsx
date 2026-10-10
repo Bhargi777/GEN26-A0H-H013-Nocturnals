@@ -13,8 +13,9 @@ export default function ServiceRequestsError({
     <div role="alert" className="mx-auto max-w-xl rounded-lg border border-slate-200 bg-white p-6">
       <h1 className="text-base font-semibold text-slate-900">This page could not be loaded</h1>
       <p className="mt-2 text-sm text-slate-600">
-        {error.message || "Something went wrong while loading service requests."} Try again, and
-        if it keeps failing, contact the admin office.
+        The service request data could not be loaded. Try again, and if it keeps failing, contact
+        the admin office.
+        {error.digest && <span className="mt-1 block">Reference: {error.digest}</span>}
       </p>
       <div className="mt-4 flex flex-wrap gap-3">
         <Button onClick={reset}>Try again</Button>
