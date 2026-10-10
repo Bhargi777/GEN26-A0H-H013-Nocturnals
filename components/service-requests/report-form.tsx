@@ -1,8 +1,10 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import {
+  createTicketAction,
   findSimilarAction,
+  type CreateTicketState,
   suggestTriageAction,
   type TriageSuggestion,
 } from "@/app/(app)/service-requests/actions";
@@ -15,6 +17,7 @@ import {
   type TicketPriority,
 } from "@/app/(app)/service-requests/_stubs/constants";
 import type { Building, Room, SimilarTicket } from "@/app/(app)/service-requests/_stubs/db";
+import { MAX_PHOTO_BYTES } from "@/app/(app)/service-requests/_lib/schema";
 import { Button, ButtonLink } from "./button";
 import { Field, inputClass } from "./form-field";
 import { SimilarTickets } from "./similar-tickets";
@@ -66,6 +69,14 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   const latestRequest = useRef(0);
   const [similar, setSimilar] = useState<SimilarTicket[]>([]);
   const latestSimilarRequest = useRef(0);
+  const [submitState, setSubmitState] = useState<CreateTicketState>({});
+  const [submitting, startSubmit] = useTransition();
+  const fieldError = (name: keyof NonNullable<CreateTicketState["fieldErrors"]>) =>
+    submitState.fieldErrors?.[name];
+  const invalidProps = (name: keyof NonNullable<CreateTicketState["fieldErrors"]>) =>
+    fieldError(name)
+      ? { "aria-invalid": true as const, "aria-describedby": `${name}-error` }
+      : {};
 
   // Triage runs on the server, debounced while the user types the description.
   useEffect(() => {
@@ -112,10 +123,33 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   );
 
   return (
-    <form className="space-y-6 rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
+    <form
+      noValidate
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        setSubmitState({});
+        // Submitted by hand so a failed attempt does not reset the photo or notes.
+        startSubmit(async () => {
+          const result = await createTicketAction(formData);
+          if (result) setSubmitState(result);
+        });
+      }}
+      className="space-y-6 rounded-lg border border-slate-200 bg-white p-4 sm:p-6"
+    >
+      {submitState.error && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {submitState.error}
+        </div>
+      )}
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900">What is wrong?</h2>
-        <Field id="title" label="Title" hint="For example: Projector not turning on in room 204.">
+        <Field
+          id="title"
+          label="Title"
+          hint="For example: Projector not turning on in room 204."
+          error={fieldError("title")}
+        >
           <input
             id="title"
             name="title"
@@ -125,10 +159,11 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             autoComplete="off"
             value={title}
             onChange={(event) => setTitle(event.target.value)}
+            {...invalidProps("title")}
             className={inputClass}
           />
         </Field>
-        <Field id="description" label="Description">
+        <Field id="description" label="Description" error={fieldError("description")}>
           <textarea
             id="description"
             name="description"
@@ -138,7 +173,8 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
             rows={5}
             value={description}
             onChange={(event) => setDescription(event.target.value)}
-            aria-describedby="triage-status"
+            aria-describedby={fieldError("description") ? "description-error triage-status" : "triage-status"}
+            aria-invalid={fieldError("description") ? true : undefined}
             className={inputClass}
           />
         </Field>
@@ -147,7 +183,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
       <section className="space-y-4">
         <h2 className="text-base font-semibold text-slate-900">Where is it?</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="buildingId" label="Building">
+          <Field id="buildingId" label="Building" error={fieldError("buildingId")}>
             <select
               id="buildingId"
               name="buildingId"
@@ -157,6 +193,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
                 setBuildingId(event.target.value);
                 setRoomId("");
               }}
+              {...invalidProps("buildingId")}
               className={inputClass}
             >
               <option value="">Choose a building</option>
@@ -200,12 +237,30 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
         >
           <input id="locationNote" name="locationNote" maxLength={200} className={inputClass} />
         </Field>
-        <Field id="photo" label="Photo" optional hint="JPG, PNG or WebP, up to 5 MB.">
+        <Field
+          id="photo"
+          label="Photo"
+          optional
+          hint="JPG, PNG or WebP, up to 5 MB."
+          error={fieldError("photo")}
+        >
           <input
             id="photo"
             name="photo"
             type="file"
             accept="image/jpeg,image/png,image/webp"
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              const tooBig = file && file.size > MAX_PHOTO_BYTES;
+              setSubmitState((state) => ({
+                ...state,
+                fieldErrors: {
+                  ...state.fieldErrors,
+                  photo: tooBig ? "The photo is larger than 5 MB. Choose a smaller image." : undefined,
+                },
+              }));
+            }}
+            {...invalidProps("photo")}
             className="block w-full text-sm text-slate-900 file:mr-3 file:rounded-md file:border file:border-slate-200 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-50"
           />
         </Field>
@@ -224,6 +279,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
           <Field
             id="category"
             label="Category"
+            error={fieldError("category")}
             hint={
               suggestion && (
                 <SuggestionHint
@@ -244,6 +300,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
                 setCategory(event.target.value as TicketCategory | "");
                 categoryChosen.current = true;
               }}
+              {...invalidProps("category")}
               className={inputClass}
             >
               <option value="">Choose a category</option>
@@ -257,6 +314,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
           <Field
             id="priority"
             label="Priority"
+            error={fieldError("priority")}
             hint={
               suggestion && (
                 <SuggestionHint
@@ -277,6 +335,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
                 setPriority(event.target.value as TicketPriority | "");
                 priorityChosen.current = true;
               }}
+              {...invalidProps("priority")}
               className={inputClass}
             >
               <option value="">Choose a priority</option>
@@ -300,7 +359,9 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
         <ButtonLink href="/service-requests" variant="secondary">
           Cancel
         </ButtonLink>
-        <Button type="submit">Submit report</Button>
+        <Button type="submit" disabled={submitting}>
+          {submitting ? "Submitting..." : "Submit report"}
+        </Button>
       </div>
     </form>
   );
