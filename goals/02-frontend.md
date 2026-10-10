@@ -1,3 +1,140 @@
-# Goal: Dev 2, Frontend Shell
+# Goal: Dev 2, Frontend Foundation and Design System
 
-Branch: `feat/frontend`
+Branch: `Vikranth` (explicit branch instruction)
+Read `goals/00-team-rules.md` first. It is part of this goal, especially section 6 (UI rules).
+
+## Your role
+
+You own the design tokens, shared components, app shell, auth pages, dashboard and notifications. Dev 3 and Dev 4 build on your components, so ship them first and keep their props stable.
+
+## Working rules (follow these to stay efficient)
+
+- Write each file once, complete. Do not scaffold then refine.
+- Batch by phase: write all of a phase's files, then run `npm run typecheck && npm run lint` once, fix, then commit per file or per small group.
+- Do not read files you did not write. Do not explore the repo. Everything you need is in this file and the team rules.
+- No screenshots, no browser testing, no dev server loops. Check responsiveness by reading your own Tailwind classes.
+- Do not write tests, stories or a component gallery.
+- Keep every component under about 80 lines. If it grows past that, it is over-built.
+- Until Dev 1's foundation is on `main`, type against `lib/types` and `lib/constants` as described in the team rules; if the import fails, declare the few types you need locally in `components/ui/types.ts` and delete that file after rebasing.
+
+## Done when
+
+### Phase A: tokens and components
+
+- [x] Tailwind config with the exact tokens from team rules section 6. Inter via `next/font` in the root layout. `app/globals.css` sets the page background and base text color only.
+- [x] `components/ui/index.ts` re-exports everything below so others import from one path.
+- [x] These components, all typed, labelled, keyboard-usable, with visible focus rings:
+  - [x] `Button` (variants primary, secondary, ghost, danger; sizes sm, md; `loading` prop)
+  - [x] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
+  - [x] `FileInput` (single image, preview, rejects over 5 MB or non-image)
+  - [x] `StatusBadge` (one record mapping every status in `lib/constants` to a muted background and text pair, per team rules)
+  - [x] `Card`, `PageHeader` (title, one-line context, optional action slot)
+  - [x] `DataTable` (generic over a row type: columns with header, accessor and optional sort; `emptyState` prop; optional `rowHref`. Sorting is client-side on the current page. No built-in pagination; render rows the page passes.)
+  - [x] `FilterBar` (controlled: status select, category select, text search, optional date range; emits one filter object)
+  - [x] `Timeline` (renders `events` rows: actor, action, status change, note, relative time)
+  - [x] `Dialog` (confirm, with title, body, confirm and cancel) and `Toast` (success and error, one provider in the app shell)
+  - [x] `EmptyState` (one sentence, one optional action), `Skeleton` (one bar; pages repeat it)
+
+### Phase B: app shell and auth
+
+- [x] `app/(app)/layout.tsx`: left sidebar, top bar with user name, role, notification bell with unread count, sign-out. Sidebar collapses behind a menu button under 768px. Toast provider lives here.
+- [x] Sidebar links come from one array keyed by role, not conditionals scattered in markup:
+  - student, faculty: Dashboard, My service requests, Report an issue, My certificates, Request a certificate
+  - technician, dept_admin: Dashboard, Department queue, plus the student links
+  - office_staff: Dashboard, Office review queue
+  - admin: all of the above plus Reports
+  - Routes: `/dashboard`, `/service-requests`, `/service-requests/new`, `/service-requests/queue`, `/requests`, `/requests/new`, `/office`, `/admin/reports`. You only link to them.
+- [x] `/sign-in` and `/sign-up`: email and password, server error shown in plain words, a note that only campus accounts are accepted. Signed-in users hitting these routes go to `/dashboard`.
+
+### Phase C: dashboard and notifications
+
+- [x] `/dashboard`: one page, one layout. A row of stat cards plus a recent-items table, both fed by a single role-keyed config object (which counts to show, which list to fetch). Do not write three separate dashboards.
+  - requester: open service requests, pending certificates; recent five of their own items
+  - technician, dept_admin: department counts by status; oldest unresolved tickets
+  - office_staff: count waiting for review; oldest pending requests
+  - admin: both sets
+- [x] `/notifications`: list with unread first, mark one read, mark all read, each row links to its item.
+- [x] Bell dropdown shows the unread count and the latest five.
+
+### Phase D: close out
+
+- [x] Grep your own files for banned patterns from team rules section 6 (gradient, shadow-lg, emoji, sparkles, animate-) and remove any hit.
+- [x] Confirm every component is exported from `components/ui/index.ts` and the build passes.
+- [x] Write the Summary below: component list, import path, and any prop you expect to extend later.
+
+Do not review or fix Dev 3 and Dev 4 pages. If you spot a problem there, add one line under SUGGESTIONS.
+
+## Hand-offs
+
+- Merge Phase A and Phase B as soon as they build. Tell Dev 3 and Dev 4 the components are on `main`.
+- Never change an existing prop once others use it. Add new optional props instead.
+
+## BLOCKERS
+
+- Dev 1's foundation (package.json, tsconfig.json, lockfile, build config, lib/constants, lib/types, lib/auth, lib/db, lib/supabase) not on main. Cannot run `npm run typecheck` or `npm run lint`. Using local stubs in `components/ui/types.ts` and preview adapter in `app/(app)/ui/` per team rules section 18.
+
+## SUGGESTIONS
+
+(none yet)
+
+## Summary
+
+### Components (all exported from `@/components/ui`)
+
+| Component | Import Path | Key Props | Expected Extensions |
+|-----------|-------------|-----------|---------------------|
+| Button | `@/components/ui` | `variant` (primary, secondary, ghost, danger), `size` (sm, md), `loading` | `icon`, `fullWidth` |
+| Field (FormField) | `@/components/ui` | `label`, `help`, `error`, `required`, `children` (render prop) | `description` slot |
+| Input | `@/components/ui` | extends native input | — |
+| Textarea | `@/components/ui` | extends native textarea | — |
+| Select | `@/components/ui` | extends native select | — |
+| Label | `@/components/ui` | extends native label | — |
+| FileInput | `@/components/ui` | `label`, `onChange`, `maxBytes`, `disabled` | `accept` multiple, drag-and-drop |
+| StatusBadge | `@/components/ui` | `status` (TicketStatus \| RequestStatus) | — |
+| Badge | `@/components/ui` | `tone` (slate, blue, amber, green, orange, red) | — |
+| Card | `@/components/ui` | extends native div | `variant` (elevated, outlined) |
+| PageHeader | `@/components/ui` | `title`, `context`, `action`, `children` | `breadcrumb` |
+| DataTable | `@/components/ui` | `caption`, `columns[]`, `rows[]`, `rowKey`, `rowHref`, `emptyState` | `pagination`, `selection`, `rowActions` |
+| FilterBar | `@/components/ui` | `value`, `onChange`, `statuses[]`, `categories[]`, `dateRange` | `savedFilters`, `quickFilters` |
+| Timeline | `@/components/ui` | `events[]`, `now` | `groupByDate`, `filterByActor` |
+| Dialog | `@/components/ui` | `open`, `title`, `description`, `body`, `cancelLabel`, `confirmLabel`, `danger`, `onClose`, `onConfirm` | `size`, `closeOnOverlayClick` |
+| Toast | `@/components/ui` (via `useToast`) | `message`, `tone` (success, error) | `duration`, `action` |
+| ToastProvider | `@/components/ui` | `children` | — |
+| EmptyState | `@/components/ui` | `message`, `action` | `illustration`, `secondaryAction` |
+| Skeleton | `@/components/ui` | `label`, `className` | `variant` (text, circular, rectangular) |
+
+### Pages
+
+| Page | Path | Notes |
+|------|------|-------|
+| Sign In | `/sign-in` | Email/password, campus account note, redirects to `/dashboard` if signed in |
+| Sign Up | `/sign-up` | Email/password/full name, campus account note, shows server errors |
+| Dashboard | `/dashboard` | Role-adaptive via `dashboardFor()`; stat cards + recent items table |
+| Notifications | `/notifications` | Unread first, mark one/all read, links to items |
+
+### App Shell
+
+- `app/(app)/layout.tsx` → `AppShell` (sidebar, top bar, notification bell, sign-out)
+- `components/layout/navigation.tsx` → `navigationForRole()` single source of truth for links
+- `components/layout/mobile-navigation.tsx` → Collapsible sidebar under 768px
+- `components/layout/notification-bell.tsx` → Unread count + latest 5 dropdown
+- `components/layout/frontend-provider.tsx` → Auth state, notifications, toast provider
+
+### Design Tokens (tailwind.config.ts)
+
+- Colors: background `#F8FAFC`, surface `#FFFFFF`, border `#E2E8F0`, primary `#0F172A`, secondary `#475569`, accent `#0F766E` (hover `#115E59`, light `#F0FDFA`)
+- Status muted pairs: slate, blue, amber, green, orange, red
+- Font: Inter via `next/font`, body 14px, section 16px semibold, title 20px semibold
+- Radius: 6px controls, 8px cards
+- Spacing: 4px grid
+- Shadows: none
+
+### Blockers
+
+- Dev 1's foundation (package.json, tsconfig, lib/constants, lib/types, lib/auth, lib/db, lib/supabase) not on main. Cannot run typecheck/lint. Using local stubs in `components/ui/types.ts` and preview adapter in `app/(app)/ui/`.
+- Must replace `components/ui/types.ts` imports with `lib/constants` and `lib/types` after Dev 1 merges.
+- Must replace preview adapter with real Supabase client after Dev 1 merges.
+
+### Suggestions
+
+(none yet)
