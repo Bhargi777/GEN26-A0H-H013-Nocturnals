@@ -59,7 +59,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 ### Phase D: close out
 
 - [x] Grep your own files for banned patterns from team rules section 6 (gradient, shadow-lg, emoji, sparkles, animate-) and remove any hit.
-- [ ] Confirm every component is exported from `components/ui/index.ts` and the build passes.
+- [x] Confirm every component is exported from `components/ui/index.ts` and the build passes.
 - [ ] Write the Summary below: component list, import path, and any prop you expect to extend later.
 
 Do not review or fix Dev 3 and Dev 4 pages. If you spot a problem there, add one line under SUGGESTIONS.
