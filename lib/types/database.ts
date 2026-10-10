@@ -100,3 +100,100 @@ export interface Notification {
   read_at: string | null;
   created_at: string;
 }
+
+// Database schema for Supabase client typing
+export interface Database {
+  __InternalSupabase: {
+    PostgrestVersion: '12';
+  };
+  public: {
+    Tables: {
+      departments: {
+        Row: Department;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      buildings: {
+        Row: Building;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      rooms: {
+        Row: Room;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      profiles: {
+        Row: Profile;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      service_tickets: {
+        Row: ServiceTicket;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      ticket_followers: {
+        Row: TicketFollower;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      admin_requests: {
+        Row: AdminRequest;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      events: {
+        Row: EventLog;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+      notifications: {
+        Row: Notification;
+        Insert: Record<string, unknown>;
+        Update: Record<string, unknown>;
+      };
+    };
+    Views: {
+      [_ in never]: never;
+    };
+    Functions: {
+      transition_ticket: {
+        Args: { p_ticket_id: string; p_to_status: string; p_note: string | null; p_assigned_to: string | null };
+        Returns: ServiceTicket;
+      };
+      decide_admin_request: {
+        Args: { p_request_id: string; p_decision: string; p_note: string | null };
+        Returns: AdminRequest;
+      };
+      reassign_ticket_department: {
+        Args: { p_ticket_id: string; p_new_department_id: string; p_note: string | null };
+        Returns: ServiceTicket;
+      };
+      handle_new_user: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+      handle_updated_at: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+      block_direct_status_update: {
+        Args: Record<string, never>;
+        Returns: unknown;
+      };
+    };
+    Enums: {
+      user_role: Role;
+      ticket_status: TicketStatus;
+      ticket_category: TicketCategory;
+      ticket_priority: TicketPriority;
+      admin_request_type: AdminRequestType;
+      admin_request_status: AdminRequestStatus;
+      entity_type_enum: 'ticket' | 'admin_request';
+    };
+    CompositeTypes: {
+      [_ in never]: never;
+    };
+  };
+}
