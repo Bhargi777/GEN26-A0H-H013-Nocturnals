@@ -48,7 +48,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 
 ### Phase C: dashboard and notifications
 
-- [ ] `/dashboard`: one page, one layout. A row of stat cards plus a recent-items table, both fed by a single role-keyed config object (which counts to show, which list to fetch). Do not write three separate dashboards.
+- [x] `/dashboard`: one page, one layout. A row of stat cards plus a recent-items table, both fed by a single role-keyed config object (which counts to show, which list to fetch). Do not write three separate dashboards.
   - requester: open service requests, pending certificates; recent five of their own items
   - technician, dept_admin: department counts by status; oldest unresolved tickets
   - office_staff: count waiting for review; oldest pending requests
