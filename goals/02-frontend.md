@@ -17,7 +17,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 - [x] Inter loaded through `next/font`, applied globally.
 - [ ] Components in `components/ui/`, each typed, accessible, and keyboard-friendly:
   - [x] `Button` (primary, secondary, ghost, danger; sizes sm and md; loading state)
-  - [ ] `Input`, `Textarea`, `Select`, `Label`, `FieldError`, `FormField` (label + control + help + error)
+  - [x] `Input`, `Textarea`, `Select`, `Label`, `FieldError`, `FormField` (label + control + help + error)
   - [ ] `FileInput` for a single image, with preview and size check
   - [ ] `Badge` and `StatusBadge` (maps every status in `lib/constants` to its muted color pair)
   - [ ] `Card`, `PageHeader` (title, one line of context, one primary action slot)
