@@ -35,7 +35,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 - [x] Timeout of a few seconds. On timeout, error or missing key, fall back to `lib/ai/rules.ts`: keyword rules (e.g. wifi, internet, lan to `NETWORK`; projector, speaker, mic, hdmi to `AV_EQUIPMENT`; fan, light, switch, socket to `ELECTRICAL`; leak, tap, flush to `PLUMBING`; sparks, smoke, flooding to `URGENT`).
 - [x] Triage runs in a server action or route handler only, so the API key never reaches the browser.
 - [x] Vitest tests for the rules fallback covering every category and the urgent keywords.
-- [ ] A small labelled set of 25 to 30 realistic sample complaints in `lib/ai/fixtures.json`, and a script `npm run eval:triage` that prints how many the triage gets right for category. Report the real number in your summary. Do not claim accuracy anywhere else.
+- [x] A small labelled set of 25 to 30 realistic sample complaints in `lib/ai/fixtures.json`, and a script `npm run eval:triage` that prints how many the triage gets right for category. Report the real number in your summary. Do not claim accuracy anywhere else.
 
 ### Phase D: duplicate detection
 
