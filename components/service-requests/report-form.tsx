@@ -1,57 +1,67 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import {
+  Button,
+  Card,
+  FieldError,
+  FileInput,
+  FormField,
+  Input,
+  Select,
+  Textarea,
+  buttonStyles,
+} from "@/components/ui";
 import {
   createTicketAction,
   findSimilarAction,
-  type CreateTicketState,
   suggestTriageAction,
+  type CreateTicketState,
   type TriageSuggestion,
 } from "@/app/(app)/service-requests/actions";
 import {
   CATEGORY_VALUES,
-  TICKET_CATEGORY_LABELS,
   PRIORITY_VALUES,
+  TICKET_CATEGORY_LABELS,
   TICKET_PRIORITY_LABELS,
   type TicketCategory,
   type TicketPriority,
 } from "@/app/(app)/service-requests/_lib/labels";
 import type { SimilarTicket } from "@/app/(app)/service-requests/_lib/queries";
-import type { Building, Room } from "@/lib/types";
 import { MAX_PHOTO_BYTES } from "@/app/(app)/service-requests/_lib/schema";
-import { Button, ButtonLink } from "./button";
-import { Field, inputClass } from "./form-field";
+import type { Building, Room } from "@/lib/types";
 import { SimilarTickets } from "./similar-tickets";
 
 const TRIAGE_DEBOUNCE_MS = 800;
 const MIN_TRIAGE_CHARS = 15;
 
+type FieldName = keyof NonNullable<CreateTicketState["fieldErrors"]>;
+
 function SuggestionHint({
+  id,
   label,
   value,
   current,
   onAccept,
 }: {
+  id: string;
   label: string;
   value: string;
   current: string;
   onAccept: () => void;
 }) {
   return (
-    <span className="flex flex-wrap items-center gap-x-2">
+    <p id={id} aria-live="polite" className="flex flex-wrap items-center gap-2 text-secondary">
       <span>
-        Suggested {label}: <span className="font-medium text-slate-900">{value}</span>
+        Suggested {label}: <span className="font-medium text-primary">{value}</span>
       </span>
       {current !== value && (
-        <button
-          type="button"
-          onClick={onAccept}
-          className="rounded-md font-medium text-teal-700 underline-offset-2 hover:text-teal-800 hover:underline focus-visible:outline-2 focus-visible:outline-teal-700"
-        >
+        <Button variant="ghost" size="sm" onClick={onAccept}>
           Use suggestion
-        </button>
+        </Button>
       )}
-    </span>
+    </p>
   );
 }
 
@@ -62,6 +72,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   const [roomId, setRoomId] = useState("");
   const [category, setCategory] = useState<TicketCategory | "">("");
   const [priority, setPriority] = useState<TicketPriority | "">("");
+  const [photo, setPhoto] = useState<File | null>(null);
   // Set once the user picks a value themselves; suggestions then stop overwriting it.
   const categoryChosen = useRef(false);
   const priorityChosen = useRef(false);
@@ -72,12 +83,7 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   const latestSimilarRequest = useRef(0);
   const [submitState, setSubmitState] = useState<CreateTicketState>({});
   const [submitting, startSubmit] = useTransition();
-  const fieldError = (name: keyof NonNullable<CreateTicketState["fieldErrors"]>) =>
-    submitState.fieldErrors?.[name];
-  const invalidProps = (name: keyof NonNullable<CreateTicketState["fieldErrors"]>) =>
-    fieldError(name)
-      ? { "aria-invalid": true as const, "aria-describedby": `${name}-error` }
-      : {};
+  const fieldError = (name: FieldName) => submitState.fieldErrors?.[name];
 
   // Triage runs on the server, debounced while the user types the description.
   useEffect(() => {
@@ -101,7 +107,8 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   }, [title, description, buildingId]);
 
   // Possible duplicates in the chosen building, checked before the user submits.
-  const similarReady = Boolean(buildingId) && `${title} ${description}`.trim().length >= MIN_TRIAGE_CHARS;
+  const similarReady =
+    Boolean(buildingId) && `${title} ${description}`.trim().length >= MIN_TRIAGE_CHARS;
   useEffect(() => {
     const requestId = ++latestSimilarRequest.current;
     if (!similarReady) return;
@@ -127,147 +134,118 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
       onSubmit={(event) => {
         event.preventDefault();
         const formData = new FormData(event.currentTarget);
+        if (photo) formData.set("photo", photo);
         setSubmitState({});
-        // Submitted by hand so a failed attempt does not reset the photo or notes.
+        // Submitted by hand so a failed attempt keeps the photo and notes.
         startSubmit(async () => {
           const result = await createTicketAction(formData);
           if (result) setSubmitState(result);
         });
       }}
-      className="space-y-6 rounded-lg border border-slate-200 bg-white p-4 sm:p-6"
+      className="space-y-6"
     >
       {submitState.error && (
-        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+        <p role="alert" className="rounded-card border border-status-red-dark bg-status-red-light p-3 text-status-red-dark">
           {submitState.error}
-        </div>
+        </p>
       )}
-      <section className="space-y-4">
-        <h2 className="text-base font-semibold text-slate-900">What is wrong?</h2>
-        <Field
+
+      <Card className="space-y-4">
+        <h2>What is wrong?</h2>
+        <FormField
           id="title"
           label="Title"
-          hint="For example: Projector not turning on in room 204."
+          required
+          help="For example: Projector not turning on in Lab 101."
           error={fieldError("title")}
         >
-          <input
-            id="title"
-            name="title"
-            required
-            minLength={5}
-            maxLength={100}
-            autoComplete="off"
-            value={title}
-            onChange={(event) => setTitle(event.target.value)}
-            {...invalidProps("title")}
-            className={inputClass}
-          />
-        </Field>
-        <Field id="description" label="Description" error={fieldError("description")}>
-          <textarea
-            id="description"
-            name="description"
-            required
-            minLength={10}
-            maxLength={2000}
-            rows={5}
-            value={description}
-            onChange={(event) => setDescription(event.target.value)}
-            aria-describedby={fieldError("description") ? "description-error triage-status" : "triage-status"}
-            aria-invalid={fieldError("description") ? true : undefined}
-            className={inputClass}
-          />
-        </Field>
-      </section>
+          {(control) => (
+            <Input
+              {...control}
+              name="title"
+              maxLength={100}
+              autoComplete="off"
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+            />
+          )}
+        </FormField>
+        <FormField id="description" label="Description" required error={fieldError("description")}>
+          {(control) => (
+            <Textarea
+              {...control}
+              name="description"
+              maxLength={2000}
+              rows={5}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
+            />
+          )}
+        </FormField>
+      </Card>
 
-      <section className="space-y-4">
-        <h2 className="text-base font-semibold text-slate-900">Where is it?</h2>
+      <Card className="space-y-4">
+        <h2>Where is it?</h2>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field id="buildingId" label="Building" error={fieldError("buildingId")}>
-            <select
-              id="buildingId"
-              name="buildingId"
-              required
-              value={buildingId}
-              onChange={(event) => {
-                setBuildingId(event.target.value);
-                setRoomId("");
-              }}
-              {...invalidProps("buildingId")}
-              className={inputClass}
-            >
-              <option value="">Choose a building</option>
-              {buildings.map((building) => (
-                <option key={building.id} value={building.id}>
-                  {building.name}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field
+          <FormField id="buildingId" label="Building" required error={fieldError("buildingId")}>
+            {(control) => (
+              <Select
+                {...control}
+                name="buildingId"
+                value={buildingId}
+                onChange={(event) => {
+                  setBuildingId(event.target.value);
+                  setRoomId("");
+                }}
+              >
+                <option value="">Choose a building</option>
+                {buildings.map((building) => (
+                  <option key={building.id} value={building.id}>
+                    {building.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
+          <FormField
             id="roomId"
-            label="Room"
-            optional
-            hint={buildingId ? undefined : "Choose a building first."}
+            label="Room (optional)"
+            help={buildingId ? undefined : "Choose a building first."}
           >
-            <select
-              id="roomId"
-              name="roomId"
-              value={roomId}
-              onChange={(event) => setRoomId(event.target.value)}
-              disabled={!buildingId || buildingRooms.length === 0}
-              className={inputClass}
-            >
-              <option value="">
-                {buildingId && buildingRooms.length === 0 ? "No rooms listed" : "Not in a specific room"}
-              </option>
-              {buildingRooms.map((room) => (
-                <option key={room.id} value={room.id}>
-                  {room.name}
+            {(control) => (
+              <Select
+                {...control}
+                name="roomId"
+                value={roomId}
+                onChange={(event) => setRoomId(event.target.value)}
+                disabled={!buildingId || buildingRooms.length === 0}
+              >
+                <option value="">
+                  {buildingId && buildingRooms.length === 0 ? "No rooms listed" : "Not in a specific room"}
                 </option>
-              ))}
-            </select>
-          </Field>
+                {buildingRooms.map((room) => (
+                  <option key={room.id} value={room.id}>
+                    {room.name}
+                  </option>
+                ))}
+              </Select>
+            )}
+          </FormField>
         </div>
-        <Field
+        <FormField
           id="locationNote"
-          label="Location note"
-          optional
-          hint="For example: near the back window, second floor corridor."
+          label="Location note (optional)"
+          help="For example: near the back window, second floor corridor."
         >
-          <input id="locationNote" name="locationNote" maxLength={200} className={inputClass} />
-        </Field>
-        <Field
-          id="photo"
-          label="Photo"
-          optional
-          hint="JPG, PNG or WebP, up to 5 MB."
-          error={fieldError("photo")}
-        >
-          <input
-            id="photo"
-            name="photo"
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              const tooBig = file && file.size > MAX_PHOTO_BYTES;
-              setSubmitState((state) => ({
-                ...state,
-                fieldErrors: {
-                  ...state.fieldErrors,
-                  photo: tooBig ? "The photo is larger than 5 MB. Choose a smaller image." : undefined,
-                },
-              }));
-            }}
-            {...invalidProps("photo")}
-            className="block w-full text-sm text-slate-900 file:mr-3 file:rounded-md file:border file:border-slate-200 file:bg-white file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-slate-900 hover:file:bg-slate-50"
-          />
-        </Field>
-      </section>
+          {(control) => <Input {...control} name="locationNote" maxLength={200} />}
+        </FormField>
+        <FileInput label="Photo (optional)" maxBytes={MAX_PHOTO_BYTES} onChange={setPhoto} />
+        <FieldError id="photo-error">{fieldError("photo")}</FieldError>
+      </Card>
 
-      <section className="space-y-4">
-        <h2 className="text-base font-semibold text-slate-900">Category and priority</h2>
-        <p id="triage-status" aria-live="polite" className="text-sm text-slate-600">
+      <Card className="space-y-4">
+        <h2>Category and priority</h2>
+        <p id="triage-status" aria-live="polite" className="text-secondary">
           {triaging
             ? "Checking the description for a suggested category and priority..."
             : suggestion
@@ -275,91 +253,83 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
               : "A category and priority will be suggested once you describe the problem."}
         </p>
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            id="category"
-            label="Category"
-            error={fieldError("category")}
-            hint={
-              suggestion && (
-                <SuggestionHint
-                  label="category"
-                  value={TICKET_CATEGORY_LABELS[suggestion.category]}
-                  current={category ? TICKET_CATEGORY_LABELS[category] : ""}
-                  onAccept={() => setCategory(suggestion.category)}
-                />
-              )
-            }
-          >
-            <select
-              id="category"
-              name="category"
-              required
-              value={category}
-              onChange={(event) => {
-                setCategory(event.target.value as TicketCategory | "");
-                categoryChosen.current = true;
-              }}
-              {...invalidProps("category")}
-              className={inputClass}
-            >
-              <option value="">Choose a category</option>
-              {CATEGORY_VALUES.map((category) => (
-                <option key={category} value={category}>
-                  {TICKET_CATEGORY_LABELS[category]}
-                </option>
-              ))}
-            </select>
-          </Field>
-          <Field
-            id="priority"
-            label="Priority"
-            error={fieldError("priority")}
-            hint={
-              suggestion && (
-                <SuggestionHint
-                  label="priority"
-                  value={TICKET_PRIORITY_LABELS[suggestion.priority]}
-                  current={priority ? TICKET_PRIORITY_LABELS[priority] : ""}
-                  onAccept={() => setPriority(suggestion.priority)}
-                />
-              )
-            }
-          >
-            <select
-              id="priority"
-              name="priority"
-              required
-              value={priority}
-              onChange={(event) => {
-                setPriority(event.target.value as TicketPriority | "");
-                priorityChosen.current = true;
-              }}
-              {...invalidProps("priority")}
-              className={inputClass}
-            >
-              <option value="">Choose a priority</option>
-              {PRIORITY_VALUES.map((priority) => (
-                <option key={priority} value={priority}>
-                  {TICKET_PRIORITY_LABELS[priority]}
-                </option>
-              ))}
-            </select>
-          </Field>
+          <div className="space-y-2">
+            <FormField id="category" label="Category" required error={fieldError("category")}>
+              {(control) => (
+                <Select
+                  {...control}
+                  name="category"
+                  value={category}
+                  onChange={(event) => {
+                    setCategory(event.target.value as TicketCategory | "");
+                    categoryChosen.current = true;
+                  }}
+                >
+                  <option value="">Choose a category</option>
+                  {CATEGORY_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {TICKET_CATEGORY_LABELS[value]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </FormField>
+            {suggestion && (
+              <SuggestionHint
+                id="category-suggestion"
+                label="category"
+                value={TICKET_CATEGORY_LABELS[suggestion.category]}
+                current={category ? TICKET_CATEGORY_LABELS[category] : ""}
+                onAccept={() => setCategory(suggestion.category)}
+              />
+            )}
+          </div>
+          <div className="space-y-2">
+            <FormField id="priority" label="Priority" required error={fieldError("priority")}>
+              {(control) => (
+                <Select
+                  {...control}
+                  name="priority"
+                  value={priority}
+                  onChange={(event) => {
+                    setPriority(event.target.value as TicketPriority | "");
+                    priorityChosen.current = true;
+                  }}
+                >
+                  <option value="">Choose a priority</option>
+                  {PRIORITY_VALUES.map((value) => (
+                    <option key={value} value={value}>
+                      {TICKET_PRIORITY_LABELS[value]}
+                    </option>
+                  ))}
+                </Select>
+              )}
+            </FormField>
+            {suggestion && (
+              <SuggestionHint
+                id="priority-suggestion"
+                label="priority"
+                value={TICKET_PRIORITY_LABELS[suggestion.priority]}
+                current={priority ? TICKET_PRIORITY_LABELS[priority] : ""}
+                onAccept={() => setPriority(suggestion.priority)}
+              />
+            )}
+          </div>
         </div>
         {/* The suggestion is saved next to the final choice. */}
         <input type="hidden" name="aiSuggestedCategory" value={suggestion?.category ?? ""} />
         <input type="hidden" name="aiSuggestedPriority" value={suggestion?.priority ?? ""} />
         <input type="hidden" name="aiConfidence" value={suggestion?.confidence ?? ""} />
-      </section>
+      </Card>
 
       <SimilarTickets matches={similarReady ? similar : []} />
 
-      <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
-        <ButtonLink href="/service-requests" variant="secondary">
+      <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <Link href="/service-requests" className={buttonStyles("secondary")}>
           Cancel
-        </ButtonLink>
-        <Button type="submit" disabled={submitting}>
-          {submitting ? "Submitting..." : "Submit report"}
+        </Link>
+        <Button type="submit" loading={submitting}>
+          Submit report
         </Button>
       </div>
     </form>

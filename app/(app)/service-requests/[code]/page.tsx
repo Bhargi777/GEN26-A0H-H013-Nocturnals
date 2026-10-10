@@ -1,15 +1,15 @@
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
+import type { ReactNode } from "react";
+import { Card, PageHeader, StatusBadge, Timeline } from "@/components/ui";
 import { AdminActions } from "@/components/service-requests/admin-actions";
-import { PageHeader } from "@/components/service-requests/page-header";
+import { FlashToast } from "@/components/service-requests/flash-toast";
 import { RequesterActions } from "@/components/service-requests/requester-actions";
-import { StatusBadge } from "@/components/service-requests/status-badge";
 import { TechnicianActions } from "@/components/service-requests/technician-actions";
-import { TicketTimeline } from "@/components/service-requests/ticket-timeline";
-import { Toast } from "@/components/service-requests/toast";
-import { formatAgo, formatDateTime } from "../_lib/format";
-import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_lib/labels";
+import { ROLES, TICKET_STATUSES, type TicketStatus } from "@/lib/constants";
 import { getCurrentProfile } from "@/lib/db/shared";
+import { formatAgo, formatDateTime, requestTime } from "../_lib/format";
+import { TICKET_CATEGORY_LABELS, TICKET_PRIORITY_LABELS } from "../_lib/labels";
 import { listDepartments, listTechnicians } from "../_lib/queries";
 import { loadTicketDetail } from "../_lib/tickets";
 
@@ -18,11 +18,17 @@ export async function generateMetadata({ params }: { params: Promise<{ code: str
   return { title: decodeURIComponent(code) };
 }
 
-function Detail({ label, children }: { label: string; children: React.ReactNode }) {
+const ASSIGNABLE: readonly TicketStatus[] = [
+  TICKET_STATUSES.OPEN,
+  TICKET_STATUSES.REOPENED,
+  TICKET_STATUSES.ASSIGNED,
+];
+
+function Detail({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="space-y-0.5">
-      <dt className="text-sm text-slate-600">{label}</dt>
-      <dd className="text-sm text-slate-900">{children}</dd>
+    <div className="space-y-1">
+      <dt className="text-secondary">{label}</dt>
+      <dd>{children}</dd>
     </div>
   );
 }
@@ -32,7 +38,7 @@ export default async function TicketPage({
   searchParams,
 }: {
   params: Promise<{ code: string }>;
-  searchParams: Promise<{ created?: string; followed?: string }>;
+  searchParams: Promise<{ created?: string; followed?: string; photo?: string }>;
 }) {
   const [{ code }, flags] = await Promise.all([params, searchParams]);
   const profile = await getCurrentProfile();
@@ -40,17 +46,22 @@ export default async function TicketPage({
 
   const ticket = await loadTicketDetail(decodeURIComponent(code), profile.id);
   if (!ticket) notFound();
-  const photoUrl = ticket.photo_url;
+  const now = requestTime();
 
   // The database decides what each role may do; these flags only choose which controls to show.
-  const isDeptAdmin =
-    profile.role === "dept_admin" &&
+  const adminCanManage =
+    profile.role === ROLES.DEPT_ADMIN &&
     profile.department_id !== null &&
-    profile.department_id === ticket.assigned_department_id;
-  const adminCanManage = isDeptAdmin && ticket.status !== "CLOSED" && ticket.status !== "RESOLVED";
+    profile.department_id === ticket.assigned_department_id &&
+    ticket.status !== TICKET_STATUSES.CLOSED &&
+    ticket.status !== TICKET_STATUSES.RESOLVED;
   const [technicians, departments] = adminCanManage
     ? await Promise.all([listTechnicians(profile.department_id as string), listDepartments()])
     : [[], []];
+  const technicianCanWork =
+    profile.role === ROLES.TECHNICIAN &&
+    ticket.assigned_to === profile.id &&
+    (ticket.status === TICKET_STATUSES.ASSIGNED || ticket.status === TICKET_STATUSES.IN_PROGRESS);
 
   const followers =
     ticket.followers_count === 0
@@ -60,32 +71,34 @@ export default async function TicketPage({
         : `${ticket.followers_count} other people have this issue`;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title={`${ticket.code}: ${ticket.title}`}
-        description={`Reported by ${ticket.requester_name ?? "a campus user"} ${formatAgo(ticket.created_at)}.`}
+        context={`Reported by ${ticket.requester_name ?? "a campus user"} ${formatAgo(ticket.created_at, now)}.`}
         action={<StatusBadge status={ticket.status} />}
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+        <div className="min-w-0 space-y-6 lg:col-span-2">
           {adminCanManage && (
             <AdminActions
               ticketId={ticket.id}
               code={ticket.code}
               currentAssigneeId={ticket.assigned_to}
               currentDepartmentId={ticket.assigned_department_id}
-              canAssign={["OPEN", "REOPENED", "ASSIGNED"].includes(ticket.status)}
+              canAssign={ASSIGNABLE.includes(ticket.status)}
               technicians={technicians}
               departments={departments}
             />
           )}
-          {profile.role === "technician" &&
-            ticket.assigned_to === profile.id &&
-            (ticket.status === "ASSIGNED" || ticket.status === "IN_PROGRESS") && (
-              <TechnicianActions ticketId={ticket.id} code={ticket.code} status={ticket.status} />
-            )}
-          {ticket.status === "RESOLVED" && ticket.requester_id === profile.id && (
+          {technicianCanWork && (
+            <TechnicianActions
+              ticketId={ticket.id}
+              code={ticket.code}
+              status={ticket.status === TICKET_STATUSES.ASSIGNED ? "ASSIGNED" : "IN_PROGRESS"}
+            />
+          )}
+          {ticket.status === TICKET_STATUSES.RESOLVED && ticket.requester_id === profile.id && (
             <RequesterActions
               ticketId={ticket.id}
               code={ticket.code}
@@ -93,18 +106,17 @@ export default async function TicketPage({
               roomId={ticket.room_id}
             />
           )}
-          <section className="space-y-4 rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
-            <h2 className="text-base font-semibold text-slate-900">Details</h2>
-            <p className="text-sm whitespace-pre-line text-slate-900">{ticket.description}</p>
+
+          <Card className="space-y-4">
+            <h2>Details</h2>
+            <p className="whitespace-pre-line break-words">{ticket.description}</p>
             <dl className="grid gap-4 sm:grid-cols-2">
               <Detail label="Category">{TICKET_CATEGORY_LABELS[ticket.category]}</Detail>
               <Detail label="Priority">{TICKET_PRIORITY_LABELS[ticket.priority]}</Detail>
               <Detail label="Location">
                 {ticket.building_name}
                 {ticket.room_name && `, ${ticket.room_name}`}
-                {ticket.location_note && (
-                  <span className="block text-slate-600">{ticket.location_note}</span>
-                )}
+                {ticket.location_note && <span className="block text-secondary">{ticket.location_note}</span>}
               </Detail>
               <Detail label="Reported">
                 <time dateTime={ticket.created_at}>{formatDateTime(ticket.created_at)}</time>
@@ -114,47 +126,53 @@ export default async function TicketPage({
               <Detail label="Followers">
                 {followers}
                 {ticket.is_following && (
-                  <span className="block text-slate-600">You are following this ticket.</span>
+                  <span className="block text-secondary">You are following this ticket.</span>
                 )}
               </Detail>
               {ticket.rating !== null && (
                 <Detail label="Rating">
                   {ticket.rating} out of 5
-                  {ticket.feedback && <span className="block text-slate-600">{ticket.feedback}</span>}
+                  {ticket.feedback && <span className="block text-secondary">{ticket.feedback}</span>}
                 </Detail>
               )}
             </dl>
-          </section>
+          </Card>
 
           {ticket.photo_path && (
-            <section className="space-y-3 rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
-              <h2 className="text-base font-semibold text-slate-900">Photo</h2>
-              {photoUrl ? (
+            <Card className="space-y-3">
+              <h2>Photo</h2>
+              {ticket.photo_url ? (
                 <Image
-                  src={photoUrl}
+                  src={ticket.photo_url}
                   alt={`Photo attached to ${ticket.code}`}
                   width={960}
                   height={720}
                   unoptimized
-                  className="h-auto max-h-[480px] w-full rounded-md border border-slate-200 object-contain"
+                  className="h-auto max-h-96 w-full rounded-card border object-contain"
                 />
               ) : (
-                <p className="text-sm text-slate-600">
-                  The photo could not be loaded. Refresh the page to try again.
-                </p>
+                <p className="text-secondary">The photo could not be loaded. Refresh the page to try again.</p>
               )}
-            </section>
+            </Card>
           )}
         </div>
 
-        <aside className="self-start rounded-lg border border-slate-200 bg-white p-4 sm:p-6">
-          <h2 className="text-base font-semibold text-slate-900">Status timeline</h2>
-          <TicketTimeline events={ticket.events} />
-        </aside>
+        <Card className="space-y-4 self-start">
+          <h2>Status timeline</h2>
+          <Timeline events={ticket.events} now={now} />
+        </Card>
       </div>
 
-      {flags.created && <Toast message={`Ticket ${ticket.code} created. You can follow its progress here.`} />}
-      {flags.followed && <Toast message={`You are now following ${ticket.code}.`} />}
+      {flags.created && (
+        <FlashToast message={`Ticket ${ticket.code} created. You can follow its progress here.`} />
+      )}
+      {flags.photo === "failed" && (
+        <FlashToast
+          tone="error"
+          message="The photo could not be uploaded. The ticket was created without it."
+        />
+      )}
+      {flags.followed && <FlashToast message={`You are now following ${ticket.code}.`} />}
     </div>
   );
 }

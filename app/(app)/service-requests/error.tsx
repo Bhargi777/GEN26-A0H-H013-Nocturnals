@@ -1,6 +1,7 @@
 "use client";
 
-import { Button, ButtonLink } from "@/components/service-requests/button";
+import Link from "next/link";
+import { Button, Card, buttonStyles } from "@/components/ui";
 
 export default function ServiceRequestsError({
   error,
@@ -10,19 +11,19 @@ export default function ServiceRequestsError({
   reset: () => void;
 }) {
   return (
-    <div role="alert" className="mx-auto max-w-xl rounded-lg border border-slate-200 bg-white p-6">
-      <h1 className="text-base font-semibold text-slate-900">This page could not be loaded</h1>
-      <p className="mt-2 text-sm text-slate-600">
+    <Card role="alert" className="space-y-3">
+      <h1>This page could not be loaded</h1>
+      <p className="text-secondary">
         The service request data could not be loaded. Try again, and if it keeps failing, contact
         the admin office.
-        {error.digest && <span className="mt-1 block">Reference: {error.digest}</span>}
+        {error.digest && <span className="block">Reference: {error.digest}</span>}
       </p>
-      <div className="mt-4 flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-3">
         <Button onClick={reset}>Try again</Button>
-        <ButtonLink href="/service-requests" variant="secondary">
+        <Link href="/service-requests" className={buttonStyles("secondary")}>
           Back to my tickets
-        </ButtonLink>
+        </Link>
       </div>
-    </div>
+    </Card>
   );
 }

@@ -1,10 +1,6 @@
 import { z } from "zod";
-import { CATEGORY_VALUES, PRIORITY_VALUES, STATUS_VALUES } from "../_lib/labels";
+import { CATEGORY_VALUES, PRIORITY_VALUES, STATUS_VALUES } from "./labels";
 import type { TicketListItem } from "./tickets";
-
-export const SORT_KEYS = ["code", "title", "category", "location", "status", "priority", "created", "updated"] as const;
-export type SortKey = (typeof SORT_KEYS)[number];
-export type SortDir = "asc" | "desc";
 
 const optionalEnum = <T extends readonly [string, ...string[]]>(values: T) =>
   z.enum(values).optional().catch(undefined);
@@ -15,8 +11,6 @@ export const listParamsSchema = z.object({
   category: optionalEnum(CATEGORY_VALUES),
   priority: optionalEnum(PRIORITY_VALUES),
   building: z.string().max(64).optional().catch(undefined),
-  sort: optionalEnum(SORT_KEYS),
-  dir: z.enum(["asc", "desc"]).optional().catch(undefined),
   /** Queue only: "all" also lists closed tickets. */
   show: z.enum(["active", "all"]).optional().catch(undefined),
 });
@@ -24,41 +18,16 @@ export type ListParams = z.infer<typeof listParamsSchema>;
 
 const PRIORITY_RANK = { URGENT: 0, HIGH: 1, MEDIUM: 2, LOW: 3 } as const;
 
-function sortValue(ticket: TicketListItem, key: SortKey): string | number {
-  switch (key) {
-    case "location":
-      return `${ticket.building_name} ${ticket.room_name ?? ""}`.toLowerCase();
-    case "priority":
-      return PRIORITY_RANK[ticket.priority];
-    case "created":
-      return ticket.created_at;
-    case "updated":
-      return ticket.updated_at;
-    case "title":
-      return ticket.title.toLowerCase();
-    default:
-      return ticket[key];
-  }
+/** Starting order for the queue: most urgent first, then oldest first. */
+export function byPriorityThenAge(tickets: TicketListItem[]): TicketListItem[] {
+  return [...tickets].sort(
+    (a, b) =>
+      PRIORITY_RANK[a.priority] - PRIORITY_RANK[b.priority] ||
+      a.created_at.localeCompare(b.created_at),
+  );
 }
 
-export function sortTickets(tickets: TicketListItem[], key: SortKey, dir: SortDir): TicketListItem[] {
-  const factor = dir === "asc" ? 1 : -1;
-  return [...tickets].sort((a, b) => {
-    const left = sortValue(a, key);
-    const right = sortValue(b, key);
-    if (left !== right) return left < right ? -factor : factor;
-    // Ties go oldest first, so equal-priority work is handled in arrival order.
-    return a.created_at.localeCompare(b.created_at);
-  });
-}
-
-/** Builds a list URL that keeps the current filters and changes only what is given. */
-export function listHref(path: string, params: ListParams, change: Partial<ListParams>): string {
-  const merged = { ...params, ...change };
-  const query = new URLSearchParams();
-  for (const [key, value] of Object.entries(merged)) {
-    if (value) query.set(key, String(value));
-  }
-  const text = query.toString();
-  return text ? `${path}?${text}` : path;
+/** Starting order for the requester's list: most recently updated first. */
+export function byLastUpdate(tickets: TicketListItem[]): TicketListItem[] {
+  return [...tickets].sort((a, b) => b.updated_at.localeCompare(a.updated_at));
 }

@@ -1,7 +1,6 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ButtonLink } from "@/components/service-requests/button";
-import { EmptyState } from "@/components/service-requests/empty-state";
-import { PageHeader } from "@/components/service-requests/page-header";
+import { EmptyState, PageHeader, buttonStyles } from "@/components/ui";
 import { ReportForm } from "@/components/service-requests/report-form";
 import { getCurrentProfile } from "@/lib/db/shared";
 import { listBuildings, listRooms } from "../_lib/queries";
@@ -15,18 +14,18 @@ export default async function NewServiceRequestPage() {
   const [buildings, rooms] = await Promise.all([listBuildings(), listRooms()]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
+    <div className="space-y-6">
       <PageHeader
         title="Report an issue"
-        description="Tell the maintenance team what is broken and where to find it."
+        context="Tell the maintenance team what is broken and where to find it."
       />
       {buildings.length === 0 ? (
         <EmptyState
           message="No buildings are set up yet, so issues cannot be reported."
           action={
-            <ButtonLink href="/service-requests" variant="secondary">
+            <Link href="/service-requests" className={buttonStyles("secondary")}>
               Back to my tickets
-            </ButtonLink>
+            </Link>
           }
         />
       ) : (

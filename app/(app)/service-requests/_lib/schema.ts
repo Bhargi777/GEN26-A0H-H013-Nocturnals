@@ -2,7 +2,7 @@ import { z } from "zod";
 import { CATEGORY_VALUES, PRIORITY_VALUES } from "../_lib/labels";
 
 export const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
-export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp"] as const;
+export const ALLOWED_PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"] as const;
 
 const optionalText = (max: number) =>
   z
@@ -38,7 +38,7 @@ export type NewTicketInput = z.infer<typeof newTicketSchema>;
 /** Returns an error message for an unacceptable photo, or null when it is fine. */
 export function photoError(file: File): string | null {
   if (!(ALLOWED_PHOTO_TYPES as readonly string[]).includes(file.type)) {
-    return "Upload the photo as a JPG, PNG or WebP image.";
+    return "Upload the photo as a JPEG, PNG, WebP or GIF image.";
   }
   if (file.size > MAX_PHOTO_BYTES) {
     return "The photo is larger than 5 MB. Upload a smaller image.";
