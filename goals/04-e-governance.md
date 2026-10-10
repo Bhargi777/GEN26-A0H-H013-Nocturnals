@@ -32,10 +32,10 @@ You build the administrative request module end to end: requesting a bonafide ce
 
 ### Phase D: documents (`lib/pdf/`)
 
-- [ ] On approval, a PDF is generated server-side with `pdf-lib` from a clean template: institution name, document title, request code, student name, roll number, department, purpose, issue date, and a verification line with the URL `/verify/<code>`.
-- [ ] Sample letterhead text only. Add a visible line "Prototype document, not an official certificate" so it can never be mistaken for a real one.
-- [ ] The PDF is stored in the private `admin-documents` bucket and linked to the request. Only the requester, office staff and admin can download it, through a short-lived signed URL.
-- [ ] `/verify/[code]`: public page that only says whether the code is a valid approved document, its type and issue date. It shows no name, roll number or purpose.
+- [x] On approval, a PDF is generated server-side with `pdf-lib` from a clean template: institution name, document title, request code, student name, roll number, department, purpose, issue date, and a verification line with the URL `/verify/<code>`.
+- [x] Sample letterhead text only. Add a visible line "Prototype document, not an official certificate" so it can never be mistaken for a real one.
+- [x] The PDF is stored in the private `admin-documents` bucket and linked to the request. Only the requester, office staff and admin can download it, through a short-lived signed URL.
+- [x] `/verify/[code]`: public page that only says whether the code is a valid approved document, its type and issue date. It shows no name, roll number or purpose.
 
 ### Phase E: admin reports
 
