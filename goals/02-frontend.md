@@ -14,7 +14,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 ### Phase A: design system
 
 - [x] Tailwind config with the exact tokens from the team rules (colors, radius, font sizes). No other colors used anywhere.
-- [ ] Inter loaded through `next/font`, applied globally.
+- [x] Inter loaded through `next/font`, applied globally.
 - [ ] Components in `components/ui/`, each typed, accessible, and keyboard-friendly:
   - [ ] `Button` (primary, secondary, ghost, danger; sizes sm and md; loading state)
   - [ ] `Input`, `Textarea`, `Select`, `Label`, `FieldError`, `FormField` (label + control + help + error)
