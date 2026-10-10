@@ -46,7 +46,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 ### Phase E: finish
 
 - [ ] Seeded demo data walks through the full story: a student reports a broken projector, triage suggests `AV_EQUIPMENT`, the dept admin assigns a technician, the technician resolves it, the student confirms and rates it.
-- [ ] Every page follows the UI rules and works at 375px wide.
+- [x] Every page follows the UI rules and works at 375px wide.
 - [ ] Empty, loading and error states exist on every page.
 
 ## Hand-offs
