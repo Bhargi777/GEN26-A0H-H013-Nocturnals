@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  findSimilarAction,
   suggestTriageAction,
   type TriageSuggestion,
 } from "@/app/(app)/service-requests/actions";
@@ -13,9 +14,10 @@ import {
   type TicketCategory,
   type TicketPriority,
 } from "@/app/(app)/service-requests/_stubs/constants";
-import type { Building, Room } from "@/app/(app)/service-requests/_stubs/db";
+import type { Building, Room, SimilarTicket } from "@/app/(app)/service-requests/_stubs/db";
 import { Button, ButtonLink } from "./button";
 import { Field, inputClass } from "./form-field";
+import { SimilarTickets } from "./similar-tickets";
 
 const TRIAGE_DEBOUNCE_MS = 800;
 const MIN_TRIAGE_CHARS = 15;
@@ -62,6 +64,8 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
   const [suggestion, setSuggestion] = useState<TriageSuggestion | null>(null);
   const [triaging, setTriaging] = useState(false);
   const latestRequest = useRef(0);
+  const [similar, setSimilar] = useState<SimilarTicket[]>([]);
+  const latestSimilarRequest = useRef(0);
 
   // Triage runs on the server, debounced while the user types the description.
   useEffect(() => {
@@ -79,6 +83,24 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
         // A failed suggestion never blocks the report; the fields stay editable.
       } finally {
         if (requestId === latestRequest.current) setTriaging(false);
+      }
+    }, TRIAGE_DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  }, [title, description, buildingId]);
+
+  // Possible duplicates in the chosen building, checked before the user submits.
+  useEffect(() => {
+    const requestId = ++latestSimilarRequest.current;
+    if (!buildingId || `${title} ${description}`.trim().length < MIN_TRIAGE_CHARS) {
+      setSimilar([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      try {
+        const matches = await findSimilarAction({ buildingId, title, description });
+        if (requestId === latestSimilarRequest.current) setSimilar(matches);
+      } catch {
+        // Duplicate checks are a convenience; reporting still works without them.
       }
     }, TRIAGE_DEBOUNCE_MS);
     return () => clearTimeout(timer);
@@ -271,6 +293,8 @@ export function ReportForm({ buildings, rooms }: { buildings: Building[]; rooms:
         <input type="hidden" name="aiSuggestedPriority" value={suggestion?.priority ?? ""} />
         <input type="hidden" name="aiConfidence" value={suggestion?.confidence ?? ""} />
       </section>
+
+      <SimilarTickets matches={similar} />
 
       <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
         <ButtonLink href="/service-requests" variant="secondary">
