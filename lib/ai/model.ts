@@ -1,13 +1,28 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { TRIAGE_SYSTEM_PROMPT, buildTriageUserMessage } from "./prompt";
-import { modelOutputSchema, type TriageInput } from "./schema";
+import type { TriageInput } from "./schema";
 
 /** The single LLM provider for triage. Swap the provider by replacing this file. */
 export const DEFAULT_TRIAGE_MODEL = "claude-opus-5-5";
 
+/**
+ * Request fields newer than the pinned SDK's types. The API reads them as sent:
+ * low effort keeps a one-line classification fast, and on a safety decline
+ * the API retries on its recommended fallback model.
+ */
+type TriageRequest = Anthropic.MessageCreateParamsNonStreaming & {
+  output_config: { effort: "low" };
+  fallbacks: "default";
+};
+
 export function hasModelKey(): boolean {
   return Boolean(process.env.ANTHROPIC_API_KEY);
+}
+
+/** Reads the JSON object out of the model's reply, with or without a code fence. */
+export function parseModelJson(text: string): unknown {
+  const trimmed = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  return JSON.parse(trimmed);
 }
 
 export async function classifyWithModel(
@@ -21,22 +36,26 @@ export async function classifyWithModel(
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY is not set");
 
   const client = new Anthropic({ apiKey, maxRetries: 0, timeout: options.timeoutMs });
-  const response = await client.beta.messages.parse(
-    {
-      model: process.env.TRIAGE_MODEL || DEFAULT_TRIAGE_MODEL,
-      max_tokens: 1024,
-      // On a safety decline the API retries on its recommended fallback model.
-      betas: ["server-side-fallback-2026-07-01"],
-      fallbacks: "default",
-      output_config: { effort: "low", format: betaZodOutputFormat(modelOutputSchema) },
-      system: TRIAGE_SYSTEM_PROMPT,
-      messages: [{ role: "user", content: buildTriageUserMessage(input) }],
-    },
-    { signal: options.signal },
-  );
+  const request: TriageRequest = {
+    model: process.env.TRIAGE_MODEL || DEFAULT_TRIAGE_MODEL,
+    max_tokens: 2048,
+    system: TRIAGE_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: buildTriageUserMessage(input) }],
+    output_config: { effort: "low" },
+    fallbacks: "default",
+  };
+  const response = await client.messages.create(request, {
+    signal: options.signal,
+    headers: { "anthropic-beta": "server-side-fallback-2026-07-01" },
+  });
 
-  if (response.stop_reason !== "end_turn") {
-    throw new Error(`Triage model stopped with ${response.stop_reason}`);
-  }
-  return response.parsed_output;
+  // "refusal" and other newer stop reasons are not in the pinned SDK's types.
+  const stopReason: string | null = response.stop_reason;
+  if (stopReason !== "end_turn") throw new Error(`Triage model stopped with ${stopReason}`);
+
+  const text = response.content
+    .filter((block): block is Anthropic.TextBlock => block.type === "text")
+    .map((block) => block.text)
+    .join("");
+  return parseModelJson(text);
 }

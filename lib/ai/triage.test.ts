@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { DEPARTMENT_CODES } from "./routing";
+import { CATEGORY_DEPARTMENT, DEPARTMENT_CODES } from "./routing";
 import { CATEGORY_VALUES, PRIORITY_VALUES } from "./values";
+import { parseModelJson } from "./model";
 import { TRIAGE_SYSTEM_PROMPT, buildTriageUserMessage } from "./prompt";
 import type { TriageInput } from "./schema";
 import { TRIAGE_TIMEOUT_MS, triage, type Classifier } from "./triage";
@@ -134,8 +135,26 @@ describe("fallback to rules", () => {
     vi.stubEnv("ANTHROPIC_API_KEY", "");
     const fetchSpy = vi.spyOn(globalThis, "fetch");
     const result = await triage(input);
-    expect(result).toMatchObject({ source: "rules", category: "AV_EQUIPMENT", departmentCode: "ELEC" });
+    expect(result).toMatchObject({
+      source: "rules",
+      category: "AV_EQUIPMENT",
+      departmentCode: CATEGORY_DEPARTMENT.AV_EQUIPMENT,
+    });
     expect(fetchSpy).not.toHaveBeenCalled();
     vi.unstubAllEnvs();
+  });
+});
+
+describe("parseModelJson", () => {
+  it("reads a bare JSON object", () => {
+    expect(parseModelJson('{"category":"NETWORK"}')).toEqual({ category: "NETWORK" });
+  });
+
+  it("reads JSON inside a code fence", () => {
+    expect(parseModelJson('```json\n{"category":"NETWORK"}\n```')).toEqual({ category: "NETWORK" });
+  });
+
+  it("throws on text that is not JSON, so triage falls back to rules", () => {
+    expect(() => parseModelJson("Category: Network")).toThrow();
   });
 });
