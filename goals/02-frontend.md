@@ -18,7 +18,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
 - [ ] Components in `components/ui/`, each typed, accessible, and keyboard-friendly:
   - [x] `Button` (primary, secondary, ghost, danger; sizes sm and md; loading state)
   - [x] `Input`, `Textarea`, `Select`, `Label`, `FieldError`, `FormField` (label + control + help + error)
-  - [ ] `FileInput` for a single image, with preview and size check
+  - [x] `FileInput` for a single image, with preview and size check
   - [ ] `Badge` and `StatusBadge` (maps every status in `lib/constants` to its muted color pair)
   - [ ] `Card`, `PageHeader` (title, one line of context, one primary action slot)
   - [ ] `DataTable` (columns, sorting, empty state, row link, simple pagination)
