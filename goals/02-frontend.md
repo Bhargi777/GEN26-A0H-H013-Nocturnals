@@ -23,7 +23,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 
 - [x] Tailwind config with the exact tokens from team rules section 6. Inter via `next/font` in the root layout. `app/globals.css` sets the page background and base text color only.
 - [x] `components/ui/index.ts` re-exports everything below so others import from one path.
-- [ ] These components, all typed, labelled, keyboard-usable, with visible focus rings:
+- [x] These components, all typed, labelled, keyboard-usable, with visible focus rings:
   - [x] `Button` (variants primary, secondary, ghost, danger; sizes sm, md; `loading` prop)
   - [x] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
   - [x] `FileInput` (single image, preview, rejects over 5 MB or non-image)
@@ -60,7 +60,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 
 - [x] Grep your own files for banned patterns from team rules section 6 (gradient, shadow-lg, emoji, sparkles, animate-) and remove any hit.
 - [x] Confirm every component is exported from `components/ui/index.ts` and the build passes.
-- [ ] Write the Summary below: component list, import path, and any prop you expect to extend later.
+- [x] Write the Summary below: component list, import path, and any prop you expect to extend later.
 
 Do not review or fix Dev 3 and Dev 4 pages. If you spot a problem there, add one line under SUGGESTIONS.
 
