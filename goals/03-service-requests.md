@@ -41,7 +41,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 - [x] New migration `<timestamp>_svc_similar_tickets.sql` with a function `find_similar_tickets(building_id, text)` using `pg_trgm` similarity on title and description, limited to open tickets in the same building from the last 14 days, top 3 above a threshold.
 - [x] The form calls it before submit and shows matches with code, title, status and how long ago.
-- [ ] Following a ticket adds the user to `ticket_followers`, and followers get the same notifications as the requester.
+- [x] Following a ticket adds the user to `ticket_followers`, and followers get the same notifications as the requester.
 
 ### Phase E: finish
 
