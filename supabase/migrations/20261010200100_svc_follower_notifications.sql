@@ -1,9 +1,10 @@
 -- Service requests: followers ("I have this issue too") get the same
 -- notifications as the requester. Owner: Dev 3.
 --
--- transition_ticket (Dev 1) writes the requester's notification with the link
--- /service-requests/<code>. This trigger copies each such notification to the
--- ticket's followers in the same transaction, without changing Dev 1's function.
+-- transition_ticket and reassign_ticket_department (Dev 1) write the requester's
+-- notification with the link /service-requests/<ticket id>. This trigger copies
+-- each such notification to the ticket's followers in the same transaction,
+-- without changing Dev 1's functions. Links by code are matched too.
 
 create or replace function public.copy_ticket_notification_to_followers()
 returns trigger
@@ -22,7 +23,8 @@ begin
   from public.service_tickets t
   join public.ticket_followers f on f.ticket_id = t.id
   where t.requester_id = new.user_id
-    and split_part(coalesce(new.link, ''), '?', 1) = '/service-requests/' || t.code
+    and split_part(coalesce(new.link, ''), '?', 1)
+        in ('/service-requests/' || t.id::text, '/service-requests/' || t.code)
     and f.user_id <> t.requester_id;
 
   return new;
