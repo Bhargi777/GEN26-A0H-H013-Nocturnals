@@ -25,8 +25,8 @@ CampusConnect is an internal university tool for managing service requests and e
    - `SUPABASE_SERVICE_ROLE_KEY`: Your Supabase service role key
    - `ALLOWED_EMAIL_DOMAINS`: e.g. `example.edu`
    - `NEXT_PUBLIC_APP_URL`: e.g. `http://localhost:3000`
-   - `OPENAI_API_KEY`: Your LLM API key
-   - `AI_MODEL_NAME`: e.g. `gpt-4o-mini`
+   - `ANTHROPIC_API_KEY`: Your LLM API key
+   - `AI_MODEL_NAME`: e.g. `claude-3-5-haiku-20241022`
 
 4. **Demo Data Setup (Database):**
    Run the Supabase seed script in your project to populate demo data.
