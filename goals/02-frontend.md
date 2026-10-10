@@ -26,7 +26,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 - [ ] These components, all typed, labelled, keyboard-usable, with visible focus rings:
   - [x] `Button` (variants primary, secondary, ghost, danger; sizes sm, md; `loading` prop)
   - [x] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
-  - [ ] `FileInput` (single image, preview, rejects over 5 MB or non-image)
+  - [x] `FileInput` (single image, preview, rejects over 5 MB or non-image)
   - [ ] `StatusBadge` (one record mapping every status in `lib/constants` to a muted background and text pair, per team rules)
   - [ ] `Card`, `PageHeader` (title, one-line context, optional action slot)
   - [ ] `DataTable` (generic over a row type: columns with header, accessor and optional sort; `emptyState` prop; optional `rowHref`. Sorting is client-side on the current page. No built-in pagination; render rows the page passes.)
