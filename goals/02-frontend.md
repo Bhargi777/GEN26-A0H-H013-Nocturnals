@@ -22,7 +22,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
 ### Phase A: tokens and components
 
 - [x] Tailwind config with the exact tokens from team rules section 6. Inter via `next/font` in the root layout. `app/globals.css` sets the page background and base text color only.
-- [ ] `components/ui/index.ts` re-exports everything below so others import from one path.
+- [x] `components/ui/index.ts` re-exports everything below so others import from one path.
 - [ ] These components, all typed, labelled, keyboard-usable, with visible focus rings:
   - [ ] `Button` (variants primary, secondary, ghost, danger; sizes sm, md; `loading` prop)
   - [ ] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
