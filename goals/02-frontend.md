@@ -28,7 +28,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
   - [x] `Field` (one component: label, required mark, control slot, help text, error text) plus plain `Input`, `Textarea`, `Select` styled with shared class strings
   - [x] `FileInput` (single image, preview, rejects over 5 MB or non-image)
   - [x] `StatusBadge` (one record mapping every status in `lib/constants` to a muted background and text pair, per team rules)
-  - [ ] `Card`, `PageHeader` (title, one-line context, optional action slot)
+  - [x] `Card`, `PageHeader` (title, one-line context, optional action slot)
   - [ ] `DataTable` (generic over a row type: columns with header, accessor and optional sort; `emptyState` prop; optional `rowHref`. Sorting is client-side on the current page. No built-in pagination; render rows the page passes.)
   - [ ] `FilterBar` (controlled: status select, category select, text search, optional date range; emits one filter object)
   - [ ] `Timeline` (renders `events` rows: actor, action, status change, note, relative time)
