@@ -25,7 +25,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 - [x] Overdue rule in one config object: `URGENT` 4h, `HIGH` 24h, `MEDIUM` 72h, `LOW` 7 days, counted from creation until resolved.
 - [x] Dept admin can assign a ticket to a technician in their department and reassign it to another department with a note.
 - [x] Technician can move `ASSIGNED` to `IN_PROGRESS` and `IN_PROGRESS` to `RESOLVED` with a resolution note.
-- [ ] Every action uses `transitionTicket` from the data layer, never a direct update, and shows the database's error message clearly if it is refused.
+- [x] Every action uses `transitionTicket` from the data layer, never a direct update, and shows the database's error message clearly if it is refused.
 
 ### Phase C: AI triage (`lib/ai/`)
 
