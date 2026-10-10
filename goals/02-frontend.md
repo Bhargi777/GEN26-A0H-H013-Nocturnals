@@ -54,7 +54,7 @@ You own the design tokens, shared components, app shell, auth pages, dashboard a
   - office_staff: count waiting for review; oldest pending requests
   - admin: both sets
 - [x] `/notifications`: list with unread first, mark one read, mark all read, each row links to its item.
-- [ ] Bell dropdown shows the unread count and the latest five.
+- [x] Bell dropdown shows the unread count and the latest five.
 
 ### Phase D: close out
 
