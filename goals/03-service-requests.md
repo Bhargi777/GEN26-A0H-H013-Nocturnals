@@ -11,7 +11,7 @@ You build the maintenance and facility issue module end to end, plus the AI-assi
 
 ### Phase A: requester flow
 
-- [ ] `/service-requests/new`: report form with title, description, building, room (optional, filtered by building), location note, optional photo, category and priority.
+- [x] `/service-requests/new`: report form with title, description, building, room (optional, filtered by building), location note, optional photo, category and priority.
 - [ ] While the user types the description, triage runs (debounced) and shows "Suggested category" and "Suggested priority". The user can accept or change them. Both the suggestion and the final choice are saved.
 - [ ] Before submitting, possible duplicates are shown: "Similar open issues in this building". The user can follow an existing ticket ("I have this issue too") instead of creating a new one.
 - [ ] On submit: ticket created, photo uploaded, user sent to the ticket page with a success toast showing the ticket code.
