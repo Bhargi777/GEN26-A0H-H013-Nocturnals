@@ -17,6 +17,8 @@ export const listParamsSchema = z.object({
   building: z.string().max(64).optional().catch(undefined),
   sort: optionalEnum(SORT_KEYS),
   dir: z.enum(["asc", "desc"]).optional().catch(undefined),
+  /** Queue only: "all" also lists closed tickets. */
+  show: z.enum(["active", "all"]).optional().catch(undefined),
 });
 export type ListParams = z.infer<typeof listParamsSchema>;
 
@@ -44,7 +46,9 @@ export function sortTickets(tickets: TicketListItem[], key: SortKey, dir: SortDi
   return [...tickets].sort((a, b) => {
     const left = sortValue(a, key);
     const right = sortValue(b, key);
-    return left < right ? -factor : left > right ? factor : 0;
+    if (left !== right) return left < right ? -factor : factor;
+    // Ties go oldest first, so equal-priority work is handled in arrival order.
+    return a.created_at.localeCompare(b.created_at);
   });
 }
 
