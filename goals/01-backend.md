@@ -49,7 +49,7 @@ Implement in `lib/db/`, each returning typed results and throwing typed errors:
 
 ### Phase E: seed and tests
 
-- [ ] `supabase/seed.sql` with realistic data: real-looking campus building names, departments, rooms, 8 to 10 demo users covering every role (passwords documented in README for demo only), 15 to 20 tickets across all statuses and categories, 6 to 8 admin requests across all statuses. No "John Doe", no lorem ipsum.
+- [x] `supabase/seed.sql` with realistic data: real-looking campus building names, departments, rooms, 8 to 10 demo users covering every role (passwords documented in README for demo only), 15 to 20 tickets across all statuses and categories, 6 to 8 admin requests across all statuses. No "John Doe", no lorem ipsum.
 - [ ] Tests (SQL or Vitest against a local Supabase) proving:
   - a student cannot read another student's ticket
   - a technician cannot close a ticket
@@ -66,7 +66,8 @@ Implement in `lib/db/`, each returning typed results and throwing typed errors:
 
 ## BLOCKERS
 
-(none yet)
+- Need to run Vitest tests against a local Supabase, but `supabase-cli` is not configured/running in the environment. Wrote test stubs in `tests/db.test.ts`.
+- Deployment to Vercel is blocked because no Vercel token or linked project is available in this environment.
 
 ## SUGGESTIONS
 
@@ -74,4 +75,10 @@ Implement in `lib/db/`, each returning typed results and throwing typed errors:
 
 ## Summary
 
-(write when done)
+Completed the backend foundation! 
+1. Next.js app is configured with TypeScript, Tailwind, ESLint, and Prettier.
+2. All required constants and Zod schemas are exported.
+3. The database layer is set up with fully typed stubs and implementations using the Supabase client.
+4. Database migrations provide the core tables, `pg_trgm`, auto-generated IDs, and robust Row Level Security rules.
+5. A seed script is ready to populate the DB with realistic data.
+The database logic is unverified locally and needs manual testing once Supabase CLI is available. Vercel deployment is pending.
