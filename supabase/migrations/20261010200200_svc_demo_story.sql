@@ -1,7 +1,8 @@
 -- Service requests: demo story for seeded environments. Owner: Dev 3.
 --
 -- A student reports a broken projector, triage suggests AV_EQUIPMENT, the
--- ELEC dept admin assigns a technician, the technician resolves it and the
+-- dept admin of the department that handles AV equipment (IT, as in
+-- lib/ai/routing.ts) assigns a technician, the technician resolves it and the
 -- student confirms and rates it. Every status change goes through
 -- transition_ticket as the person who would make it, so events and
 -- notifications come from the real rules.
@@ -17,7 +18,7 @@ security definer
 set search_path = public
 as $$
 declare
-  v_title constant text := 'Projector not showing anything in Room 204';
+  v_title constant text := 'Projector not showing anything in Lecture Hall 2';
   v_start constant timestamptz := now() - interval '3 days';
   v_dept uuid;
   v_student uuid;
@@ -32,7 +33,7 @@ begin
     return 'demo story already seeded';
   end if;
 
-  select id into v_dept from departments where code = 'ELEC';
+  select id into v_dept from departments where code = 'IT';
   select id into v_student from profiles where role = 'student' order by created_at, email limit 1;
   select id into v_admin from profiles
     where role = 'dept_admin' and department_id = v_dept order by created_at, email limit 1;
@@ -41,7 +42,7 @@ begin
   select id, building_id into v_room, v_building from rooms order by name limit 1;
 
   if v_dept is null or v_student is null or v_admin is null or v_tech is null or v_room is null then
-    return 'skipped: needs an ELEC department, a student, an ELEC dept_admin, an ELEC technician and a room';
+    return 'skipped: needs an IT department, a student, an IT dept_admin, an IT technician and a room';
   end if;
 
   -- 1. The student reports it. Triage suggested AV_EQUIPMENT with medium
@@ -60,36 +61,28 @@ begin
 
   if not exists (select 1 from events where entity_type = 'ticket' and entity_id = v_ticket) then
     insert into events (entity_type, entity_id, actor_id, action, from_status, to_status, created_at)
-    values ('ticket', v_ticket, v_student, 'created', null, 'OPEN', v_start);
+    values ('ticket', v_ticket, v_student, 'CREATED', null, 'OPEN', v_start);
   end if;
 
   -- 2. The dept admin assigns the technician.
   perform set_config('request.jwt.claim.sub', v_admin::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', v_admin, 'role', 'authenticated')::text, true);
-  perform transition_ticket(p_ticket_id => v_ticket, p_to_status => 'ASSIGNED', p_assigned_to => v_tech);
+  perform transition_ticket(v_ticket, 'ASSIGNED', null, v_tech);
 
   -- 3. The technician starts and resolves it.
   perform set_config('request.jwt.claim.sub', v_tech::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', v_tech, 'role', 'authenticated')::text, true);
-  perform transition_ticket(p_ticket_id => v_ticket, p_to_status => 'IN_PROGRESS');
+  perform transition_ticket(v_ticket, 'IN_PROGRESS', null, null);
   perform transition_ticket(
-    p_ticket_id => v_ticket,
-    p_to_status => 'RESOLVED',
-    p_note => 'Replaced the faulty HDMI cable and reset the projector input source.'
+    v_ticket, 'RESOLVED', 'Replaced the faulty HDMI cable and reset the projector input source.', null
   );
 
-  -- 4. The student confirms the fix and rates it.
+  -- 4. The student confirms the fix, then rates it the way rateTicket does.
   perform set_config('request.jwt.claim.sub', v_student::text, true);
-  perform set_config('request.jwt.claims', json_build_object('sub', v_student, 'role', 'authenticated')::text, true);
-  perform transition_ticket(
-    p_ticket_id => v_ticket,
-    p_to_status => 'CLOSED',
-    p_rating => 5,
-    p_feedback => 'Fixed before the lecture. Thank you.'
-  );
+  perform transition_ticket(v_ticket, 'CLOSED', null, null);
+  update service_tickets
+  set rating = 5, feedback = 'Fixed before the lecture. Thank you.'
+  where id = v_ticket;
 
   perform set_config('request.jwt.claim.sub', '', true);
-  perform set_config('request.jwt.claims', '', true);
 
   -- Spread the story over a day and a half so the timeline reads naturally.
   update events e
@@ -104,8 +97,7 @@ begin
 
   update service_tickets
   set resolved_at = v_start + interval '1 day 2 hours',
-      closed_at = v_start + interval '1 day 6 hours',
-      updated_at = v_start + interval '1 day 6 hours'
+      closed_at = v_start + interval '1 day 6 hours'
   where id = v_ticket;
 
   return 'seeded demo story ' || v_code;
