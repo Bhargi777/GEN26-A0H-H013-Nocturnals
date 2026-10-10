@@ -53,7 +53,7 @@ Until Dev 1's foundation is on `main`, build against the contract in the team ru
   - technician and dept_admin: counts by status for their department queue, and the oldest unresolved tickets
   - office_staff: count waiting for review, and the oldest pending requests
 - [x] `/notifications`: list, unread first, mark one read, mark all read, each notification links to its item.
-- [ ] The bell shows the unread count and a short dropdown of the latest five.
+- [x] The bell shows the unread count and a short dropdown of the latest five.
 
 ### Phase E: quality pass
 
