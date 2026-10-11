@@ -63,6 +63,12 @@ Work only on your assigned branch. Never push directly to `main`.
 | `app/(app)/requests/**`, `app/(app)/office/**`, `app/(app)/admin/reports/**`, `app/verify/**`, `components/admin-requests/**`, `lib/pdf/**` | Dev 4 |
 | `goals/0X-*.md` | only the developer whose number it is |
 
+## Live demo
+
+https://campusconnect-bhargi777s-projects.vercel.app (Vercel, backed by a hosted Supabase project in ap-south-1). Demo mode is on, so the sign-in page has one button per seeded role. Every seeded account uses the password `password123`; turn off `NEXT_PUBLIC_DEMO_MODE` and drop the seed before real use.
+
+Deploy steps used: `supabase projects create`, `supabase link`, `supabase db push --include-seed`, then `vercel env add` for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_DEMO_MODE`, then `vercel deploy --prod`. The service-role key is never given to the app.
+
 ## Run it locally with the Supabase CLI
 
 ```bash
