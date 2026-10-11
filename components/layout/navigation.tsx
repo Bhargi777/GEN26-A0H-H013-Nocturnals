@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, Bell, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Award, Bell, ChartNoAxesColumn, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { ROLES, type Role } from "@/app/(app)/ui/preview-contract";
 import { useFrontend } from "./frontend-provider";
 
@@ -25,13 +25,15 @@ const eventCalendar = item("/events/calendar", "Event calendar", Calendar);
 const certificates = item("/requests", "My certificates", Award);
 const newCertificate = item("/requests/new", "Request a certificate", Plus);
 const certificateReviews = item("/office", "Certificate reviews", Award);
+const myClasses = item("/rooms/classes", "My classes", Calendar);
+const reports = item("/admin/reports", "Campus pulse", ChartNoAxesColumn);
 const canteen = item("/canteen", "Canteen", UtensilsCrossed);
 const myOrders = item("/canteen/orders", "My orders", ReceiptText);
 
 const requester = [myRequests, report];
 const byRole: Record<Role, NavigationItem[]> = {
   [ROLES.STUDENT]: [...requester, certificates, newCertificate, canteen, myOrders],
-  [ROLES.FACULTY]: [...requester, bookRoom, myBookings, canteen, myOrders],
+  [ROLES.FACULTY]: [...requester, bookRoom, myBookings, myClasses, canteen, myOrders],
   [ROLES.CR]: [...requester, bookRoom, myBookings, certificates, newCertificate, canteen, myOrders],
   [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, certificates, newCertificate, canteen, myOrders],
   [ROLES.TECHNICIAN]: [department],
@@ -39,11 +41,11 @@ const byRole: Record<Role, NavigationItem[]> = {
   [ROLES.DEPT_HEAD]: [department, roomQueue, certificateReviews],
   [ROLES.EVENTS_DEPT]: [eventCalendar],
   [ROLES.OSA]: [eventReview, certificateReviews],
-  [ROLES.CAMPUS_DIRECTOR]: [eventApproval],
+  [ROLES.CAMPUS_DIRECTOR]: [eventApproval, reports],
   [ROLES.CANTEEN_KITCHEN]: [canteen],
   [ROLES.CANTEEN_COUNTER]: [canteen],
   [ROLES.CANTEEN_MANAGER]: [canteen],
-  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, certificateReviews, canteen, myOrders],
+  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, certificateReviews, reports, canteen, myOrders],
 };
 
 export function navigationForRole(role?: Role | string): NavigationItem[] {

@@ -113,3 +113,40 @@ export function findConflicts(bookings: RoomBookingRow[]): Set<string> {
   for (const ids of groups.values()) if (ids.length > 1) ids.forEach((id) => conflicted.add(id));
   return conflicted;
 }
+
+export interface RoomSuggestion {
+  room_id: string; room_name: string; room_code: string; floor_id: string; block_id: string;
+  block_name: string; floor_label: string; capacity: number;
+}
+
+/** Free rooms that fit the group, tightest fit first. */
+export async function suggestRooms(date: string, periodId: string, attendees: number): Promise<RoomSuggestion[]> {
+  const { data, error } = await getSupabase().rpc('suggest_rooms', { p_date: date, p_period: periodId, p_attendees: attendees });
+  fail(error);
+  return data ?? [];
+}
+
+export interface ClassEntry {
+  id: string; weekday: number; course: string; section: string; faculty_name: string;
+  room: { name: string; code: string } | null; period: { label: string; start_time: string; end_time: string } | null;
+}
+
+export async function listMyClasses(facultyName: string): Promise<ClassEntry[]> {
+  const { data, error } = await getSupabase().from('timetable_entries')
+    .select('id, weekday, course, section, faculty_name, room:room_id(name, code), period:period_id(label, start_time, end_time)')
+    .eq('faculty_name', facultyName).order('weekday');
+  fail(error);
+  return (data ?? []) as unknown as ClassEntry[];
+}
+
+export async function listCancellations(entryIds: string[]): Promise<{ timetable_entry_id: string; date: string }[]> {
+  if (!entryIds.length) return [];
+  const { data, error } = await getSupabase().from('class_cancellations').select('timetable_entry_id, date').in('timetable_entry_id', entryIds);
+  fail(error);
+  return data ?? [];
+}
+
+export async function cancelClass(entryId: string, date: string, reason: string): Promise<void> {
+  const { error } = await getSupabase().rpc('cancel_class', { p_entry: entryId, p_date: date, p_reason: reason });
+  fail(error);
+}

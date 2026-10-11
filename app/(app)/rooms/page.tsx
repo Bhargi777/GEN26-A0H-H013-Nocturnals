@@ -7,7 +7,7 @@ import { RoleGate } from "@/components/layout/role-gate";
 import { useFrontend } from "@/components/layout/frontend-provider";
 import { Button, Card, FieldError, FormField, Input, PageHeader, Select, Skeleton, Textarea, useToast } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
-import { getFloorAvailability, listBlocks, listFloorRooms, listFloors, listPeriods, requestRoomBooking } from "@/lib/db/rooms";
+import { getFloorAvailability, listBlocks, listFloorRooms, listFloors, listPeriods, requestRoomBooking, suggestRooms, type RoomSuggestion } from "@/lib/db/rooms";
 import { formatClock, istDate, istTime } from "@/lib/time";
 import type { BlockRow, FloorRow, PeriodRow, PlanState, RoomRow } from "@/lib/types/campus";
 
@@ -39,6 +39,8 @@ function BookingForm() {
   const [formError, setFormError] = useState<string>();
   const [loadError, setLoadError] = useState<string>();
   const [busy, setBusy] = useState(false);
+  const [suggestions, setSuggestions] = useState<RoomSuggestion[]>();
+  const [finding, setFinding] = useState(false);
   const today = istDate(0);
   const floor = floors.find((item) => item.id === floorId);
   const room = rooms.find((item) => item.id === roomId);
@@ -68,6 +70,27 @@ function BookingForm() {
   }
   function pickDate(value: string) { setDate(value); setRoomId(""); void refreshPlan(floorId, value, periodId); }
   function pickPeriod(value: string) { setPeriodId(value); setRoomId(""); void refreshPlan(floorId, date, value); }
+
+  async function findRoom() {
+    const count = Number(attendees);
+    const found: Errors = {};
+    if (!date) found.date = "Choose a date first.";
+    if (!periodId) found.period = "Choose a period first.";
+    if (!Number.isInteger(count) || count < 1) found.attendees = "Enter how many people are coming.";
+    if (Object.keys(found).length) { setErrors((current) => ({ ...current, ...found })); return; }
+    setFinding(true); setFormError(undefined);
+    try { setSuggestions(await suggestRooms(date, periodId, count)); }
+    catch { setFormError("Rooms could not be suggested. Try again."); }
+    finally { setFinding(false); }
+  }
+  async function chooseSuggestion(item: RoomSuggestion) {
+    setBlockId(item.block_id); setFloorId(item.floor_id); setRoomId(item.room_id); setErrors((current) => ({ ...current, room: undefined }));
+    try {
+      const [floorRows, roomRows] = await Promise.all([listFloors(item.block_id), listFloorRooms(item.floor_id)]);
+      setFloors(floorRows); setRooms(roomRows);
+    } catch { setFormError("The floor plan could not be loaded. Try again."); }
+    void refreshPlan(item.floor_id, date, periodId);
+  }
 
   const ended = (period: PeriodRow) => date === today && period.end_time <= istTime();
 
@@ -129,6 +152,10 @@ function BookingForm() {
           {!floor ? <p className="text-secondary">Choose a block and floor to see its rooms.</p>
             : !date || !periodId ? <p className="text-secondary">Choose a date and period to see which rooms are free.</p>
             : <FloorPlan rooms={rooms} cols={floor.grid_cols} rows={floor.grid_rows} states={states} selectedId={roomId} onSelect={(item) => { setRoomId(item.id); setErrors((current) => ({ ...current, room: undefined })); }} />}
+          <div className="space-y-2 rounded-control border bg-background p-3">
+            <div className="flex flex-wrap items-center gap-3"><Button variant="secondary" size="sm" loading={finding} onClick={() => void findRoom()}>Find me a room</Button><span className="text-secondary">Uses the date, period and attendee count to suggest the tightest-fitting free rooms.</span></div>
+            {suggestions && (suggestions.length === 0 ? <p role="status" className="text-secondary">No free room fits {attendees} people in that period. Try another period or date.</p> : <ul aria-label="Suggested rooms" className="flex flex-wrap gap-2">{suggestions.map((item) => <li key={item.room_id}><Button size="sm" variant={item.room_id === roomId ? "primary" : "secondary"} onClick={() => void chooseSuggestion(item)} aria-label={`Use ${item.room_name}, ${item.block_name} ${item.floor_label}, seats ${item.capacity}`}>{item.room_code.replace(/^[A-Z]+-/, "")} · {item.block_name}, {item.floor_label} · seats {item.capacity}</Button></li>)}</ul>)}
+          </div>
           <p role="status" className={room ? "font-medium text-accent" : "text-secondary"}>{room ? `Selected: ${room.name}${room.capacity ? ` (seats ${room.capacity})` : ""}` : "No room selected."}</p>
           <FieldError>{errors.room}</FieldError>
         </div>
