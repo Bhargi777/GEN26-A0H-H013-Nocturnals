@@ -9,6 +9,7 @@ import { Button, Card, DataTable, EmptyState, Skeleton, StatusBadge, buttonStyle
 import { ROLE_LABELS } from "@/app/(app)/ui/preview-contract";
 import { loadDashboardData } from "@/lib/db/dashboard";
 import { dashboardFor, type DashboardModel } from "./dashboard-model";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const QUOTE = "Small acts of care, done every day, build a campus where everyone wants to belong.";
 
@@ -44,6 +45,8 @@ export default function DashboardPage() {
     void loadDashboardData(profile).then((data) => { if (!cancelled) setModel(dashboardFor(profile, data)); }).catch(() => { if (!cancelled) setError("Your dashboard could not be loaded. Try again."); });
     return () => { cancelled = true; };
   }, [profile, attempt]);
+  // Live data: reload the counts quietly when anything changes or the app comes back to the foreground
+  useLiveRefresh(() => setAttempt((value) => value + 1));
 
   const tiles = useMemo(() => navigationForRole(profile?.role, profile?.canteen_id).filter((item) => item.href !== "/dashboard"), [profile?.role, profile?.canteen_id]);
   const alerts = useMemo(() => [...notifications].sort((a, b) => Number(Boolean(a.read_at)) - Number(Boolean(b.read_at)) || Date.parse(b.created_at) - Date.parse(a.created_at)).slice(0, 4), [notifications]);

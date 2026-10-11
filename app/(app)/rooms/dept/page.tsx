@@ -8,6 +8,7 @@ import { decideRoomBooking, findConflicts, getDepartmentBookings } from "@/lib/d
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, formatDay } from "@/lib/time";
 import type { RoomBookingRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 type Tab = "pending" | "conflicts" | "decided";
 const TABS: { id: Tab; label: string }[] = [{ id: "pending", label: "Pending" }, { id: "conflicts", label: "Conflicts" }, { id: "decided", label: "Decided" }];
@@ -30,6 +31,7 @@ function Queue() {
     catch { setError("Room requests could not be loaded. Try again."); }
   }, []);
 
+  useLiveRefresh(load);
   useEffect(() => {
     const supabase = getSupabase();
     const first = setTimeout(() => void load(), 0);

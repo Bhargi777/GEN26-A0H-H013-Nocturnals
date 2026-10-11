@@ -7,6 +7,7 @@ import { Badge, Button, Card, EmptyState, FieldError, FormField, Input, PageHead
 import { ROLES } from "@/lib/constants/roles";
 import { cancelClass, listCancellations, listMyClasses, type ClassEntry } from "@/lib/db/rooms";
 import { formatClock, formatDay, istDate } from "@/lib/time";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const WEEKDAY = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
@@ -43,6 +44,7 @@ function Classes() {
       setEntries(rows); setCancelled(new Set(cancellations.map((row) => `${row.timetable_entry_id}|${row.date}`))); setError(undefined);
     } catch { setError("Your classes could not be loaded. Try again."); }
   }, [name]);
+  useLiveRefresh(load);
   useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load]);
 
   async function confirm() {

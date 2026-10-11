@@ -5,6 +5,7 @@ import type { FrontendAdapter } from "@/app/(app)/ui/preview-adapter";
 import { supabaseAdapter } from "@/lib/frontend/supabase-adapter";
 import type { Notification, Profile } from "@/app/(app)/ui/preview-contract";
 import { ToastProvider } from "@/components/ui/toast";
+import { useLiveSync } from "@/components/layout/live-sync";
 
 interface FrontendState {
   adapter: FrontendAdapter;
@@ -44,13 +45,11 @@ export function FrontendProvider({ children, adapter = supabaseAdapter }: { chil
       .finally(() => { if (!cancelled) setReady(true); });
     return () => { cancelled = true; };
   }, [fetchSession]);
-  useEffect(() => {
-    if (!profile || !adapter.subscribeNotifications) return;
-    let cancelled = false;
-    const reload = () => { void adapter.getNotifications(profile).then((items) => { if (!cancelled) setNotifications(items); }).catch(() => undefined); };
-    const stop = adapter.subscribeNotifications(profile, reload);
-    return () => { cancelled = true; stop(); };
+  const reloadNotifications = useCallback(() => {
+    if (profile) void adapter.getNotifications(profile).then(setNotifications).catch(() => undefined);
   }, [adapter, profile]);
+  // Realtime plus resume/poll catch-up for every page; notifications reload on the same signal.
+  useLiveSync(profile?.id, reloadNotifications);
 
   async function signOut() {
     await adapter.signOut();

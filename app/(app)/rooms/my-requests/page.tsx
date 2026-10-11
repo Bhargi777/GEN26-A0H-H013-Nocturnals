@@ -10,6 +10,7 @@ import { cancelRoomBooking, getMyRoomBookings } from "@/lib/db/rooms";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, formatDay, istDate } from "@/lib/time";
 import type { RoomBookingRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 export default function MyRoomRequestsPage() {
   return <RoleGate roles={[ROLES.FACULTY, ROLES.CR]}><Requests /></RoleGate>;
@@ -29,6 +30,7 @@ function Requests() {
     catch { setError("Your room requests could not be loaded. Try again."); }
   }, [userId]);
 
+  useLiveRefresh(load);
   useEffect(() => {
     if (!userId) return;
     const supabase = getSupabase();

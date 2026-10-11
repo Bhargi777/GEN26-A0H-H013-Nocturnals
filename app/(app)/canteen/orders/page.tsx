@@ -10,6 +10,7 @@ import { itemsSummary, listMyOrders } from "@/lib/db/canteen";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, formatDay } from "@/lib/time";
 import type { OrderRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const CUSTOMERS = Object.values(ROLES).filter((role) => !([ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER] as string[]).includes(role));
 
@@ -29,6 +30,7 @@ function Orders() {
     catch { setError("Your orders could not be loaded. Try again."); }
   }, [userId]);
 
+  useLiveRefresh(load);
   useEffect(() => {
     if (!userId) return;
     const supabase = getSupabase();

@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ui/badge";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, formatDay } from "@/lib/time";
 import type { EventRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 /** One event request as a card. `children` holds the role's actions. */
 export function EventSummary({ event, children }: { event: EventRow; children?: React.ReactNode }) {
@@ -44,5 +45,6 @@ export function useEvents(load: () => Promise<EventRow[]>, channel: string) {
       .subscribe();
     return () => { clearTimeout(first); void supabase.removeChannel(subscription); };
   }, [channel, reload]);
+  useLiveRefresh(reload);
   return { events, error, reload };
 }

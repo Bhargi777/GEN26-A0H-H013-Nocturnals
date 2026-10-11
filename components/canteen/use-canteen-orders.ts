@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listCanteenOrders, watchCanteenOrders } from "@/lib/db/canteen";
 import type { OrderRow, OrderStatusValue } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 /** Orders of one canteen in the given statuses, kept current by realtime changes plus a slow poll. */
 export function useCanteenOrders(canteenId: string, statuses: OrderStatusValue[]) {
@@ -22,5 +23,6 @@ export function useCanteenOrders(canteenId: string, statuses: OrderStatusValue[]
     return () => { clearTimeout(first); clearInterval(poll); stop(); };
   }, [canteenId, reload]);
 
+  useLiveRefresh(reload);
   return { orders, error, reload };
 }

@@ -5,6 +5,7 @@ import { RoleGate } from "@/components/layout/role-gate";
 import { Button, Card, EmptyState, PageHeader, Skeleton } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
 import { loadCampusReport, type CampusReport } from "@/lib/db/reports";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 export default function ReportsPage() {
   return <RoleGate roles={[ROLES.ADMIN, ROLES.CAMPUS_DIRECTOR]}><Reports /></RoleGate>;
@@ -38,6 +39,7 @@ function Reports() {
     try { setReport(await loadCampusReport()); setError(undefined); }
     catch { setError("The report could not be loaded. Try again."); }
   }, []);
+  useLiveRefresh(load);
   useEffect(() => { const first = setTimeout(() => void load(), 0); return () => clearTimeout(first); }, [load]);
 
   if (error && !report) return <EmptyState message={error} action={<Button onClick={() => void load()}>Try again</Button>} />;

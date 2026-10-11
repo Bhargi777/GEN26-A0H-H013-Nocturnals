@@ -7,6 +7,7 @@ import { ROLES } from "@/lib/constants/roles";
 import { getApprovedEventRequests, markEventCalendared } from "@/lib/db/events";
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, formatDay } from "@/lib/time";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 interface ApprovedEvent { id: string; code: string; title: string; event_type: string; event_date: string; start_time: string; end_time: string; expected_attendance: number; status: "APPROVED" }
 
@@ -25,6 +26,7 @@ function Queue() {
     catch { setError("Approved events could not be loaded. Try again."); }
   }, []);
 
+  useLiveRefresh(load);
   useEffect(() => {
     const supabase = getSupabase();
     const first = setTimeout(() => void load(), 0);

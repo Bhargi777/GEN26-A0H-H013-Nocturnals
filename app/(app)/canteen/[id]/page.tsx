@@ -11,6 +11,7 @@ import { getCanteen, listMenu, listPickableSlots, placeOrder, type SlotOption } 
 import { getSupabase } from "@/lib/supabase/browser";
 import { formatClock, istDate } from "@/lib/time";
 import type { CanteenRow, MenuItemRow, OrderRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const CUSTOMERS = Object.values(ROLES).filter((role) => !([ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER] as string[]).includes(role));
 const MAX_PER_ITEM = 10;
@@ -42,6 +43,7 @@ function OrderForm() {
     catch { setError("The menu could not be loaded. Try again."); }
   }, [id]);
 
+  useLiveRefresh(loadSlots);
   useEffect(() => {
     let cancelled = false;
     getCanteen(id)

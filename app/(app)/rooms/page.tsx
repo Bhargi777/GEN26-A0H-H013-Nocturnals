@@ -10,6 +10,7 @@ import { ROLES } from "@/lib/constants/roles";
 import { getFloorAvailability, listBlocks, listFloorRooms, listFloors, listPeriods, requestRoomBooking, suggestRooms, type RoomSuggestion } from "@/lib/db/rooms";
 import { formatClock, istDate, istTime } from "@/lib/time";
 import type { BlockRow, FloorRow, PeriodRow, PlanState, RoomRow } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 type Errors = Partial<Record<"block" | "floor" | "room" | "date" | "period" | "attendees" | "faculty" | "reason", string>>;
 
@@ -58,6 +59,7 @@ function BookingForm() {
     try { setStates(await getFloorAvailability(nextFloor, nextDate, nextPeriod)); }
     catch { setFormError("Availability could not be checked. Try again."); }
   }
+  useLiveRefresh(() => refreshPlan(floorId, date, periodId));
   async function pickBlock(id: string) {
     setBlockId(id); setFloorId(""); setRoomId(""); setFloors([]); setRooms([]); setStates({});
     if (id) { try { setFloors(await listFloors(id)); } catch { setFormError("Floors could not be loaded. Try again."); } }

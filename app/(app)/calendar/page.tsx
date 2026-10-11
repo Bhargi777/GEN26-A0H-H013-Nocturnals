@@ -8,6 +8,7 @@ import { groupByDate, monthGrid, shiftMonth } from "@/lib/calendar-grid";
 import { listCalendar } from "@/lib/db/calendar";
 import { formatClock, formatDay, istDate } from "@/lib/time";
 import type { CalendarEvent } from "@/lib/types/campus";
+import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
@@ -50,6 +51,7 @@ export default function CampusCalendarPage() {
   }, [from, to]);
 
   // Reload on a slow timer and whenever the tab regains focus, so a newly approved event shows up for everyone.
+  useLiveRefresh(load);
   useEffect(() => {
     const first = setTimeout(() => void load(), 0);
     const poll = setInterval(() => void load(), 60_000);
