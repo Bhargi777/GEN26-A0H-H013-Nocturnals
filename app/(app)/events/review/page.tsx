@@ -42,6 +42,18 @@ export default function ReviewEventsPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return router.push('/sign-in');
+
+      // Check if user is OSA
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'osa') {
+        return router.push('/dashboard');
+      }
+
       await load();
     })();
 

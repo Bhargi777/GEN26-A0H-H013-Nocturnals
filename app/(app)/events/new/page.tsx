@@ -40,6 +40,18 @@ export default function NewEventPage() {
       try {
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return router.push('/sign-in');
+
+        // Check if user is club president
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
+
+        if (profile?.role !== 'club_president') {
+          return router.push('/dashboard');
+        }
+
         const userClubs = await getClubsForUser(user.id);
         setClubs(userClubs);
       } catch (e: any) {

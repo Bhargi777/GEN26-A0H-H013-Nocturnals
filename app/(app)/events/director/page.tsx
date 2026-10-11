@@ -40,6 +40,18 @@ export default function DirectorEventsPage() {
     (async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return router.push('/sign-in');
+
+      // Check if user is campus director
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (profile?.role !== 'campus_director') {
+        return router.push('/dashboard');
+      }
+
       await load();
     })();
 
