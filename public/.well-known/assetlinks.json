@@ -1,0 +1,10 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "app.campusconnect.portal",
+      "sha256_cert_fingerprints": ["2C:89:11:52:DB:18:32:8B:81:A3:DC:77:71:C9:A4:F0:B1:17:37:7C:58:C7:7B:CD:E5:75:D8:F2:06:4E:B0:99"]
+    }
+  }
+]

@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Android (Bubblewrap): keep only the TWA manifest in git; the keystore and its password must never be committed
+/android/*
+!/android/twa-manifest.json
