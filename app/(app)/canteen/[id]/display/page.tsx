@@ -1,53 +1,49 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useParams } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import { getOrdersForCanteen } from '@/lib/db/canteen';
-import { nowIST } from '@/lib/time';
-import { format } from 'date-fns';
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useCanteenOrders } from "@/components/canteen/use-canteen-orders";
+import { RoleGate } from "@/components/layout/role-gate";
+import { Button, EmptyState, Skeleton } from "@/components/ui";
+import { ROLES } from "@/lib/constants/roles";
+import { getCanteen } from "@/lib/db/canteen";
 
-const supabase = createClient<any>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
-
-// Public token board: PAID orders are ready for pickup
 export default function DisplayPage() {
-  const { id } = useParams<{ id: string }>();
-  const [ready, setReady] = useState<string[]>([]);
+  return <RoleGate roles={[ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Board /></RoleGate>;
+}
 
-  const load = useCallback(async () => {
-    try {
-      const orders = await getOrdersForCanteen(id, format(nowIST(), 'yyyy-MM-dd'));
-      setReady(orders.filter((o) => o.status === 'PAID').map((o) => o.token));
-    } catch {
-      /* display board stays on last known state */
-    }
-  }, [id]);
+function Board() {
+  const { id } = useParams<{ id: string }>();
+  const { orders, error, reload } = useCanteenOrders(id, ["PAID", "READY"]);
+  const [name, setName] = useState("");
 
   useEffect(() => {
-    load();
-    const ch = supabase
-      .channel(`display-${id}`)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'orders', filter: `canteen_id=eq.${id}` }, load)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [id, load]);
+    let cancelled = false;
+    getCanteen(id).then((row) => { if (!cancelled && row) setName(row.name); }).catch(() => undefined);
+    return () => { cancelled = true; };
+  }, [id]);
 
-  return (
-    <div className="min-h-screen bg-slate-900 p-10">
-      <h1 className="text-4xl font-bold text-white mb-8">Ready for pickup</h1>
-      <div className="grid grid-cols-3 md:grid-cols-5 gap-6">
-        {ready.map((t) => (
-          <div key={t} className="bg-teal-700 rounded-lg p-6 text-center text-4xl font-bold text-white">
-            {t}
-          </div>
-        ))}
-      </div>
-      {ready.length === 0 && <p className="text-slate-400 text-xl">No orders ready</p>}
-    </div>
-  );
+  if (error && !orders) return <EmptyState message={error} action={<Button onClick={() => void reload()}>Try again</Button>} />;
+  if (!orders) return <Skeleton label="Loading display board" />;
+  const ready = orders.filter((order) => order.status === "READY");
+  const preparing = orders.filter((order) => order.status === "PAID");
+
+  return <div className="space-y-8">
+    <h1>{name ? `${name} · ` : ""}Order status</h1>
+    <section aria-labelledby="ready-heading" className="space-y-3">
+      <h2 id="ready-heading">Ready for pickup</h2>
+      {/* aria-live announces new tokens to screen reader users */}
+      <ul aria-live="polite" className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
+        {ready.length === 0 ? <li className="col-span-full text-secondary">No orders are ready right now.</li> :
+          ready.map((order) => <li key={order.id} className="rounded-card border border-status-green-dark bg-status-green-light p-6 text-center text-status-green-dark"><span className="text-title tabular-nums">{order.token}</span></li>)}
+      </ul>
+    </section>
+    <section aria-labelledby="preparing-heading" className="space-y-3">
+      <h2 id="preparing-heading">Being prepared</h2>
+      <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4 lg:grid-cols-6">
+        {preparing.length === 0 ? <li className="col-span-full text-secondary">Nothing is being prepared.</li> :
+          preparing.map((order) => <li key={order.id} className="rounded-card border bg-surface p-3 text-center tabular-nums">{order.token}</li>)}
+      </ul>
+    </section>
+  </div>;
 }

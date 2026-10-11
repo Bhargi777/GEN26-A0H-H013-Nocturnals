@@ -28,6 +28,7 @@ export interface OrderRow {
   id: string; code: string; token: string; canteen_id: string; user_id: string; slot_id: string;
   status: OrderStatusValue; total: number; created_at: string;
   slot?: { slot_date: string; start_time: string; end_time: string } | null;
+  canteen?: { name: string } | null;
   order_items?: { quantity: number; unit_price: number; item: { name: string } | null }[];
 }
 

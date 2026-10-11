@@ -364,6 +364,15 @@ begin
   return v_order;
 end $$;
 
+-- How many live orders each slot holds (RLS hides other users' orders, so this is definer-side)
+create or replace function public.canteen_slot_load(p_canteen uuid, p_date date)
+returns table (slot_id uuid, taken int)
+language sql stable security definer set search_path = public as $$
+  select s.id, (select count(*)::int from orders o where o.slot_id = s.id and o.status <> 'FORFEITED')
+  from canteen_slots s where s.canteen_id = p_canteen and s.slot_date = p_date
+$$;
+grant execute on function public.canteen_slot_load(uuid, date) to authenticated;
+
 -- Staff move orders along: counter PLACED->PAID and READY->COLLECTED, kitchen PAID->READY
 create or replace function public.advance_order(p_id uuid, p_to order_status)
 returns orders
