@@ -17,7 +17,7 @@ export interface RoomBookingRow {
   id: string; code: string; room_id: string; date: string; period_id: string; requested_by: string;
   reason: string; faculty_name: string; attendees: number; status: RoomBookingStatus;
   decision_note: string | null; created_at: string;
-  room?: { name: string; code: string; capacity: number | null } | null;
+  room?: { name: string; code: string; capacity: number | null; floor?: { block?: { name: string; owner?: { name: string } | null } | null } | null } | null;
   period?: { label: string; start_time: string; end_time: string } | null;
   requester?: { full_name: string } | null;
 }

@@ -10,7 +10,7 @@ function fail(error: { message: string } | null): asserts error is null {
 
 const BOOKING_COLUMNS =
   'id, code, room_id, date, period_id, requested_by, reason, faculty_name, attendees, status, decision_note, created_at, ' +
-  'room:room_id(name, code, capacity), period:period_id(label, start_time, end_time), requester:requested_by(full_name)';
+  'room:room_id(name, code, capacity, floor:floor_id(block:block_id(name, owner:owner_department_id(name)))), period:period_id(label, start_time, end_time), requester:requested_by(full_name)';
 
 export async function listBlocks(): Promise<BlockRow[]> {
   const { data, error } = await getSupabase().from('blocks').select('id, code, name, owner_department_id').order('name');

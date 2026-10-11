@@ -19,7 +19,7 @@ export const signUpSchema = signInSchema.extend({
 
 const DEMO_ACCOUNTS = [
   ["Student", "arjun.s@example.edu"], ["Class rep", "cr.cse@example.edu"], ["Faculty", "dr.rao@example.edu"],
-  ["Dept office", "office.cse@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
+  ["CSE office (Ramanujan Block)", "office.cse@example.edu"], ["Electrical office (Faraday Hall)", "office.elec@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
   ["Campus director", "director.campus@example.edu"], ["Events dept", "events.dept@example.edu"], ["Main counter", "counter.main@example.edu"],
   ["Main kitchen", "kitchen.main@example.edu"], ["Main manager", "canteen.manager@example.edu"], ["North kitchen", "kitchen.north@example.edu"], ["North manager", "manager.north@example.edu"], ["IT office", "office.it@example.edu"], ["IEEE president", "ieee.president@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
 ] as const;

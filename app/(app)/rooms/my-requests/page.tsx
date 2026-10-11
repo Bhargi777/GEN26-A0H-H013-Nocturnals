@@ -50,7 +50,7 @@ function Requests() {
     <FieldError>{error}</FieldError>
     <DataTable caption="My room requests" rows={rows} rowKey={(row) => row.id} columns={[
       { id: "code", header: "Request", cell: (row) => row.code, sortValue: (row) => row.code },
-      { id: "room", header: "Room", cell: (row) => <span className="block"><span className="block font-medium">{row.room?.name ?? "Room"}</span><span className="block text-secondary">{row.reason}</span></span> },
+      { id: "room", header: "Room", cell: (row) => <span className="block"><span className="block font-medium">{row.room?.name ?? "Room"}</span><span className="block text-secondary">{row.reason}</span>{row.room?.floor?.block?.owner && <span className="block text-secondary">Approved by {row.room.floor.block.owner.name} office ({row.room.floor.block.name})</span>}</span> },
       { id: "when", header: "When", cell: (row) => <span className="block"><span className="block">{formatDay(row.date)}</span><span className="block text-secondary">{row.period ? `${row.period.label} · ${formatClock(row.period.start_time)}–${formatClock(row.period.end_time)}` : ""}</span></span>, sortValue: (row) => row.date },
       { id: "status", header: "Status", cell: (row) => <span className="block space-y-1"><StatusBadge status={row.status} />{row.decision_note && <span className="block text-secondary">{row.decision_note}</span>}</span>, sortValue: (row) => row.status },
       { id: "action", header: "Action", cell: (row) => (row.status === "PENDING" || (row.status === "APPROVED" && row.date >= today))

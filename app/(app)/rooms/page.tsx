@@ -126,7 +126,8 @@ function BookingForm() {
     setBusy(true);
     try {
       const booking = await requestRoomBooking({ roomId, date, periodId, reason: reason.trim(), facultyName: facultyName.trim(), attendees: Number(attendees) });
-      toast({ message: `Request ${booking.code} sent for approval.` });
+      const owner = blocks?.find((block) => block.id === blockId);
+      toast({ message: `Request ${booking.code} sent to ${owner ? `the office that owns ${owner.name}` : "the owning department"} for approval.` });
       router.push("/rooms/my-requests");
     } catch (cause) {
       setFormError(cause instanceof Error ? cause.message : "The request could not be sent. Try again.");
