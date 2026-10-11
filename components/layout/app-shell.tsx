@@ -9,6 +9,7 @@ import { useFrontend } from "./frontend-provider";
 import { MobileNavigation } from "./mobile-navigation";
 import { navigationForRole } from "./navigation";
 import { NotificationBell } from "./notification-bell";
+import { AssistantPanel } from "@/components/assistant/assistant-panel";
 
 /** Home / Section breadcrumb: the section label comes from the role's navigation, else a tidied path segment. */
 function useCrumb(): string | undefined {
@@ -39,6 +40,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <div className="flex items-center gap-3">
           {profile && <p className="hidden min-w-0 text-right sm:block"><span className="block break-words font-medium">{profile.full_name}</span><span className="block opacity-90">{ROLE_LABELS[profile.role]}</span></p>}
+          {profile && <AssistantPanel />}
           <NotificationBell />
           {profile
             ? <button type="button" disabled={leaving} className="inline-flex min-h-11 items-center rounded-control border border-surface px-3 py-2 font-medium text-surface hover:bg-accent-hover disabled:opacity-60" onClick={async () => {
