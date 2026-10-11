@@ -12,19 +12,19 @@ create type user_role_new as enum (
 );
 
 -- ============================================================================
--- STEP 2: Drop all policies that reference the old role enum
+-- STEP 2: Drop all policies that depend on profiles.role (before column drop)
 -- ============================================================================
-drop policy if exists "technicians_see_own_queue" on service_requests;
-drop policy if exists "dept_admin_sees_queue" on service_requests;
-drop policy if exists "office_staff_sees_own_queue" on service_requests;
-drop policy if exists "admin_sees_all" on service_requests;
-drop policy if exists "students_insert_requests" on service_requests;
-drop policy if exists "technicians_update_queue" on service_requests;
-drop policy if exists "dept_admin_update_queue" on service_requests;
-drop policy if exists "office_staff_update_queue" on service_requests;
-drop policy if exists "admin_update_all" on service_requests;
-drop policy if exists "users_see_own_profile" on profiles;
-drop policy if exists "admins_update_profiles" on profiles;
+-- Policies on profiles table that reference role
+drop policy if exists "Admins can read all profiles" on profiles;
+
+-- Policies on service_tickets table that reference role
+drop policy if exists "Technicians and dept admins can view their dept tickets" on service_tickets;
+drop policy if exists "Admins can view all tickets" on service_tickets;
+
+-- Policies on admin_requests table that reference role
+drop policy if exists "Dept admins can view requests for their dept" on admin_requests;
+drop policy if exists "Office staff can view requests at PENDING_OFFICE and later" on admin_requests;
+drop policy if exists "Admins can view all admin requests" on admin_requests;
 
 -- ============================================================================
 -- STEP 3: Migrate role data with mapping
@@ -61,103 +61,51 @@ alter table profiles add column if not exists section text;
 alter table profiles add column if not exists club_id uuid;
 
 -- ============================================================================
--- STEP 5: Recreate all policies with new role enum
+-- STEP 5: Recreate policies with new role enum and corrected table references
 -- ============================================================================
 
--- Service Requests Policies
-create policy "technicians_see_own_queue"
-  on service_requests for select
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role in ('technician'::user_role, 'dept_office'::user_role)
-    )
-  );
+-- Profiles policies
+create policy "Admins can read all profiles" on profiles for select to authenticated using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin'::user_role)
+);
 
-create policy "office_osa_sees_queue"
-  on service_requests for select
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role in ('osa'::user_role)
-    )
-  );
+-- Service Tickets policies (Module C - service requests)
+create policy "Technicians and dept admins can view their dept tickets" on service_tickets for select to authenticated using (
+  exists (
+    select 1 from profiles p
+    where p.id = auth.uid()
+    and p.role in ('technician'::user_role, 'dept_office'::user_role)
+    and p.department_id = (select department_id from service_tickets st where st.id = service_tickets.id)
+  )
+);
 
-create policy "admin_sees_all"
-  on service_requests for select
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'admin'::user_role
-    )
-  );
+create policy "Admins can view all tickets" on service_tickets for select to authenticated using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin'::user_role)
+);
 
-create policy "students_insert_requests"
-  on service_requests for insert
-  to authenticated
-  with check (auth.uid() = user_id);
+-- Admin Requests policies
+create policy "Dept admins can view requests for their dept" on admin_requests for select to authenticated using (
+  exists (
+    select 1 from profiles student
+    join profiles me on me.id = auth.uid()
+    where me.role = 'dept_office'::user_role
+    and me.department_id = student.department_id
+    and student.id = (select requester_id from admin_requests ar where ar.id = admin_requests.id)
+  )
+);
 
-create policy "technicians_update_queue"
-  on service_requests for update
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'technician'::user_role
-    )
-  );
+create policy "Office staff can view requests at PENDING_OFFICE and later" on admin_requests for select to authenticated using (
+  exists (
+    select 1 from profiles where id = auth.uid() and role = 'osa'::user_role
+  )
+);
 
-create policy "dept_office_update_queue"
-  on service_requests for update
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'dept_office'::user_role
-        and p.department_id = (select department_id from service_requests where id = service_requests.id)
-    )
-  );
-
-create policy "osa_update_queue"
-  on service_requests for update
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'osa'::user_role
-    )
-  );
-
-create policy "admin_update_all"
-  on service_requests for update
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'admin'::user_role
-    )
-  );
-
--- Profiles Policies
-create policy "users_see_own_profile"
-  on profiles for select
-  to authenticated
-  using (auth.uid() = id);
-
-create policy "admins_update_profiles"
-  on profiles for update
-  to authenticated
-  using (
-    exists (
-      select 1 from profiles p
-      where p.id = auth.uid() and p.role = 'admin'::user_role
-    )
-  );
+create policy "Admins can view all admin requests" on admin_requests for select to authenticated using (
+  exists (select 1 from profiles where id = auth.uid() and role = 'admin'::user_role)
+);
 
 -- ============================================================================
--- STEP 6: Update event_log enum references if any
+-- STEP 6: Note on event_log reviewer_role enum
 -- ============================================================================
--- (event_log.reviewer_role will be updated in a follow-up migration after tables exist)
+-- event_log.reviewer_role enum will be created when event_requests table is added
+-- in the next migration (20261011200002_master_spec_tables.sql)
