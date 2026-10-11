@@ -24,7 +24,7 @@ import { withNames } from "../_lib/tickets";
 export const metadata = { title: "Department queue" };
 
 const PATH = "/service-requests/queue";
-const STAFF_ROLES: readonly Role[] = [ROLES.TECHNICIAN, ROLES.DEPT_ADMIN];
+const STAFF_ROLES: readonly Role[] = [ROLES.TECHNICIAN, ROLES.DEPT_OFFICE, ROLES.DEPT_HEAD];
 
 const backToMine = (
   <Link href="/service-requests" className={buttonStyles("secondary")}>

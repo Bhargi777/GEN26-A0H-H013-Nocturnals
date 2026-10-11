@@ -50,7 +50,7 @@ export default async function TicketPage({
 
   // The database decides what each role may do; these flags only choose which controls to show.
   const adminCanManage =
-    profile.role === ROLES.DEPT_ADMIN &&
+    (profile.role === ROLES.DEPT_OFFICE || profile.role === ROLES.DEPT_HEAD) &&
     profile.department_id !== null &&
     profile.department_id === ticket.assigned_department_id &&
     ticket.status !== TICKET_STATUSES.CLOSED &&
