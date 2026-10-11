@@ -51,5 +51,5 @@ The browser runner uses Playwright and `@axe-core/playwright`; install these in
 an external validation environment or ask Dev 1 to supply them. It defaults to
 `http://127.0.0.1:3100` and Edge. Override `FRONTEND_URL`, `BROWSER_CHANNEL` and
 `QA_OUTPUT` as needed. Reports and screenshots default to the operating system's
-temporary `campusconnect-frontend-qa` directory. The role preview is intentionally
+temporary `ouramrita-frontend-qa` directory. The role preview is intentionally
 disabled in production builds.

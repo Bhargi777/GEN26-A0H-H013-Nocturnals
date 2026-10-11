@@ -16,16 +16,34 @@ export interface FrontendAdapter {
   subscribeNotifications?: (profile: Profile, onChange: () => void) => () => void;
 }
 
-const SESSION_KEY = "campusconnect.preview.role";
-const READ_KEY = "campusconnect.preview.read";
+const SESSION_KEY = "ouramrita.preview.role";
+const READ_KEY = "ouramrita.preview.read";
+const LEGACY_SESSION_KEY = "campusconnect.preview.role";
+const LEGACY_READ_KEY = "campusconnect.preview.read";
+const PREVIOUS_SESSION_KEY = "myamrita.preview.role";
+const PREVIOUS_READ_KEY = "myamrita.preview.read";
 export const previewEnabled = process.env.NODE_ENV !== "production";
 const roleSchema = z.enum(Object.values(ROLES) as [Role, ...Role[]]);
 const readSchema = z.record(z.string(), z.string().datetime());
 
 function readMarks(): Record<string, string> {
-  const raw = sessionStorage.getItem(READ_KEY);
+  const raw = readStoredValue(READ_KEY, [PREVIOUS_READ_KEY, LEGACY_READ_KEY]);
   if (!raw) return {};
   try { return readSchema.parse(JSON.parse(raw)); } catch { return {}; }
+}
+
+function readStoredValue(key: string, legacyKeys: string[]): string | null {
+  const current = sessionStorage.getItem(key);
+  if (current !== null) return current;
+  for (const legacyKey of legacyKeys) {
+    const legacy = sessionStorage.getItem(legacyKey);
+    if (legacy !== null) {
+      sessionStorage.setItem(key, legacy);
+      sessionStorage.removeItem(legacyKey);
+      return legacy;
+    }
+  }
+  return null;
 }
 
 export async function startPreview(role: Role) {
@@ -36,13 +54,20 @@ export async function startPreview(role: Role) {
 export const previewAdapter: FrontendAdapter = {
   async getSession() {
     if (!previewEnabled) return null;
-    const parsed = roleSchema.safeParse(sessionStorage.getItem(SESSION_KEY));
+    const parsed = roleSchema.safeParse(readStoredValue(SESSION_KEY, [PREVIOUS_SESSION_KEY, LEGACY_SESSION_KEY]));
     if (!parsed.success) return null;
     return { id: PREVIEW_USER_ID, full_name: `${ROLE_LABELS[parsed.data]} preview`, email: "preview@example.invalid", role: parsed.data, department_id: PREVIEW_DEPARTMENT_ID };
   },
   async signIn() { return { error: "Sign-in is not connected yet. Contact campus support or try again after the service is connected." }; },
   async signUp() { return { error: "Account registration is not connected yet. Contact campus support or try again after the service is connected." }; },
-  async signOut() { sessionStorage.removeItem(SESSION_KEY); sessionStorage.removeItem(READ_KEY); },
+  async signOut() {
+    sessionStorage.removeItem(SESSION_KEY);
+    sessionStorage.removeItem(READ_KEY);
+    sessionStorage.removeItem(LEGACY_SESSION_KEY);
+    sessionStorage.removeItem(LEGACY_READ_KEY);
+    sessionStorage.removeItem(PREVIOUS_SESSION_KEY);
+    sessionStorage.removeItem(PREVIOUS_READ_KEY);
+  },
   async getNotifications(profile) {
     if (!previewEnabled) return [];
     const read = readMarks();
@@ -62,4 +87,3 @@ export const previewAdapter: FrontendAdapter = {
     sessionStorage.setItem(READ_KEY, JSON.stringify(read));
   },
 };
-

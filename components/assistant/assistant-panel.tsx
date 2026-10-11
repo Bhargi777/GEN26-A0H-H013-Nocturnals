@@ -45,7 +45,7 @@ function ProposalCard({ proposal, profileName, onDone }: { proposal: RoomProposa
   </div>;
 }
 
-/** "Ask CampusConnect": answers from campus help and your own data, and proposes actions you confirm. */
+/** Answers campus questions and proposes actions for the user to confirm. */
 export function AssistantPanel() {
   const { profile } = useFrontend();
   const [open, setOpen] = useState(false);
@@ -92,13 +92,13 @@ export function AssistantPanel() {
 
   return <>
     <button ref={trigger} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-controls={id} className="inline-flex min-h-11 items-center gap-2 rounded-control border border-surface px-3 py-2 font-medium text-surface hover:bg-accent-hover">
-      <MessageCircleQuestion size={18} aria-hidden="true" /><span className="hidden sm:inline">Ask</span><span className="sr-only sm:hidden">Ask CampusConnect</span>
+      <MessageCircleQuestion size={18} aria-hidden="true" /><span className="hidden sm:inline">Ask</span><span className="sr-only sm:hidden">Ask ourAmrita</span>
     </button>
     <dialog ref={dialog} id={id} aria-labelledby={`${id}-title`} onKeyDown={keepDialogFocus} onClose={() => { setOpen(false); trigger.current?.focus(); }} onCancel={(event) => { event.preventDefault(); setOpen(false); }}
       className="m-0 ml-auto h-dvh max-h-none w-full max-w-md rounded-none border-l bg-surface p-0 text-primary backdrop:bg-primary/40">
       <div className="flex h-full flex-col">
         <div className="flex items-center justify-between gap-3 bg-accent px-4 py-3 text-surface">
-          <h2 id={`${id}-title`} className="text-surface">Ask CampusConnect</h2>
+          <h2 id={`${id}-title`} className="text-surface">Ask ourAmrita</h2>
           <button type="button" aria-label="Close assistant" onClick={() => setOpen(false)} className="rounded-control p-2 hover:bg-accent-hover"><X size={18} aria-hidden="true" /></button>
         </div>
         <div ref={list} className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">

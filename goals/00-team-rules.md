@@ -1,4 +1,4 @@
-# CampusConnect: Team Rules (every agent reads this first)
+# ourAmrita: Team Rules (every agent reads this first)
 
 These rules apply to all four developers and their agents. If a goal file conflicts with this file, this file wins.
 

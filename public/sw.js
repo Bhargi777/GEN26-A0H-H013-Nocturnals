@@ -1,9 +1,9 @@
-/* CampusConnect service worker: offline shell, static asset cache and web push.
+/* ourAmrita service worker: offline shell, static asset cache and web push.
  * It never caches pages, API calls or anything with a session, only static files and the offline page. */
 const VERSION = "v1";
-const STATIC_CACHE = `campusconnect-static-${VERSION}`;
+const STATIC_CACHE = `ouramrita-static-${VERSION}`;
 const OFFLINE_URL = "/offline";
-const PRECACHE = [OFFLINE_URL, "/icons/icon-192.png", "/icons/icon-512.png"];
+const PRECACHE = [OFFLINE_URL, "/icons/amrita-192.png", "/icons/amrita-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(STATIC_CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
@@ -12,7 +12,7 @@ self.addEventListener("install", (event) => {
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((key) => key.startsWith("campusconnect-") && key !== STATIC_CACHE).map((key) => caches.delete(key))))
+      .then((keys) => Promise.all(keys.filter((key) => ["ouramrita-", "myamrita-", "campusconnect-"].some((prefix) => key.startsWith(prefix)) && key !== STATIC_CACHE).map((key) => caches.delete(key))))
       .then(() => self.clients.claim()),
   );
 });
@@ -42,12 +42,12 @@ self.addEventListener("fetch", (event) => {
 
 self.addEventListener("push", (event) => {
   let data = {};
-  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "CampusConnect", body: event.data ? event.data.text() : "" }; }
-  const title = data.title || "CampusConnect";
+  try { data = event.data ? event.data.json() : {}; } catch { data = { title: "ourAmrita", body: event.data ? event.data.text() : "" }; }
+  const title = data.title || "ourAmrita";
   event.waitUntil(self.registration.showNotification(title, {
     body: data.body || "",
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
+    icon: "/icons/amrita-192.png",
+    badge: "/icons/amrita-192.png",
     tag: data.tag || undefined,
     renotify: Boolean(data.tag),
     vibrate: [120, 60, 120],

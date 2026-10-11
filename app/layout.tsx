@@ -6,11 +6,11 @@ import { FrontendProvider } from "@/components/layout/frontend-provider";
 
 
 export const metadata: Metadata = {
-  title: { default: "CampusConnect", template: "%s | CampusConnect" },
+  title: { default: "ourAmrita", template: "%s | ourAmrita" },
   description: "Campus services: requests, rooms, events and canteen",
-  applicationName: "CampusConnect",
-  appleWebApp: { capable: true, title: "CampusConnect", statusBarStyle: "default" },
-  icons: { icon: "/icons/icon-192.png", apple: "/icons/apple-touch-icon.png" },
+  applicationName: "ourAmrita",
+  appleWebApp: { capable: true, title: "ourAmrita", statusBarStyle: "default" },
+  icons: { icon: "/icons/amrita.svg", apple: "/icons/amrita-apple-touch.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#A9244A", viewportFit: "cover", width: "device-width", initialScale: 1 };

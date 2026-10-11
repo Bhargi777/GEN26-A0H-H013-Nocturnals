@@ -11,7 +11,7 @@ import { loadDashboardData } from "@/lib/db/dashboard";
 import { dashboardFor, type DashboardModel } from "./dashboard-model";
 import { useLiveRefresh } from "@/components/layout/live-sync";
 
-const QUOTE = "Small acts of care, done every day, build a campus where everyone wants to belong.";
+const QUOTE = "When love and compassion fills your heart, you find newness in every moment, and life becomes a celebration.";
 
 /** Circular portrait. The photo is public/portrait.jpg; initials show until it is added. */
 function Portrait({ name }: { name: string }) {
@@ -62,7 +62,7 @@ export default function DashboardPage() {
         <div className="min-w-0 space-y-4">
           <span aria-hidden="true" className="block text-[56px] font-bold leading-none text-status-amber-dark">“</span>
           <p className="max-w-prose text-accent">{QUOTE}</p>
-          <p className="font-semibold text-accent">— CampusConnect</p>
+          <p className="font-semibold text-accent">— Amma</p>
           {model && <p className="text-secondary">{model.context}</p>}
         </div>
         <Portrait name={profile.full_name} />

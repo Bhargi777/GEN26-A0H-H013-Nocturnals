@@ -25,7 +25,7 @@ export async function POST(request: Request) {
 
   webpush.setVapidDetails(process.env.VAPID_SUBJECT ?? "mailto:admin@example.com", publicKey, privateKey);
   const message = JSON.stringify({
-    title: String(payload.title ?? "CampusConnect").slice(0, 120),
+    title: String(payload.title ?? "ourAmrita").slice(0, 120),
     body: String(payload.body ?? "").slice(0, 240),
     link: typeof payload.link === "string" && payload.link.startsWith("/") ? payload.link : "/notifications",
     tag: payload.tag,

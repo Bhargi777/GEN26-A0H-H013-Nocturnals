@@ -1,13 +1,13 @@
-# CampusConnect
+# ourAmrita
 
-CampusConnect is an internal university tool for managing service requests and e-governance administrative tasks.
+ourAmrita is a role-aware campus operations portal for service requests, room bookings, events, canteen orders, notifications, and campus administration.
 
 ## Setup
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
-   cd campusconnect
+   git clone https://github.com/Bhargi777/GEN26-A0H-H013-Nocturnals.git
+   cd GEN26-A0H-H013-Nocturnals
    ```
 
 2. **Install dependencies:**
@@ -65,7 +65,7 @@ Work only on your assigned branch. Never push directly to `main`.
 
 ## Live demo
 
-https://campusconnect-bhargi777s-projects.vercel.app (Vercel, backed by a hosted Supabase project in ap-south-1). Demo mode is on, so the sign-in page has one button per seeded role. Every seeded account uses the password `password123`; turn off `NEXT_PUBLIC_DEMO_MODE` and drop the seed before real use.
+https://ouramrita-bhargi777s-projects.vercel.app (Vercel, backed by the hosted Supabase project in ap-south-1). [Download the Android app](https://ouramrita-bhargi777s-projects.vercel.app/downloads/ouramrita.apk). The GitHub repository remains [Bhargi777/GEN26-A0H-H013-Nocturnals](https://github.com/Bhargi777/GEN26-A0H-H013-Nocturnals). Demo accounts use the password `password123`; never enable demo mode or load the seed against a real project.
 
 Deploy steps used: `supabase projects create`, `supabase link`, `supabase db push --include-seed`, then `vercel env add` for `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and `NEXT_PUBLIC_DEMO_MODE`, then `vercel deploy --prod`. The service-role key is never given to the app.
 

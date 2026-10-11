@@ -36,7 +36,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-8">
         <div className="flex min-w-0 items-center gap-3">
           {profile && <MobileNavigation role={profile.role} />}
-          <Link href="/dashboard" className="min-w-0 truncate text-title text-surface">CampusConnect Portal</Link>
+          <Link href="/dashboard" className="min-w-0 truncate text-title text-surface">ourAmrita</Link>
         </div>
         <div className="flex items-center gap-3">
           {profile && <p className="hidden min-w-0 text-right sm:block"><span className="block break-words font-medium">{profile.full_name}</span><span className="block opacity-90">{ROLE_LABELS[profile.role]}</span></p>}

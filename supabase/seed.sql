@@ -1,4 +1,4 @@
--- Seed script for CampusConnect
+-- Seed script for ourAmrita
 
 -- Departments
 insert into public.departments (id, name, code) values

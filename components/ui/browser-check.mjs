@@ -7,7 +7,7 @@ import { chromium } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 
 const base = process.env.FRONTEND_URL ?? "http://127.0.0.1:3100";
-const output = process.env.QA_OUTPUT ?? path.join(tmpdir(), "campusconnect-frontend-qa");
+const output = process.env.QA_OUTPUT ?? path.join(tmpdir(), "ouramrita-frontend-qa");
 await mkdir(output, { recursive: true });
 const browser = await chromium.launch({ channel: process.env.BROWSER_CHANNEL || "msedge", headless: true });
 const context = await browser.newContext();
@@ -150,7 +150,7 @@ try {
   const menu = page.getByRole("button", { name: "Menu", exact: true });
   await tabTo(menu);
   await page.keyboard.press("Enter");
-  const mobileDialog = page.getByRole("dialog", { name: "CampusConnect" });
+  const mobileDialog = page.getByRole("dialog", { name: "ourAmrita" });
   await mobileDialog.waitFor();
   await page.screenshot({ path: path.join(output, "mobile-menu-375.png") });
   await page.keyboard.press("Escape");

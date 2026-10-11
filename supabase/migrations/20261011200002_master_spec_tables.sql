@@ -1,5 +1,5 @@
 -- MASTER-SPEC Extension: Rooms (Module A), Events (Module B), Canteen (Module D)
--- Extends existing schema with new tables for complete CampusConnect
+-- Extends the existing schema with tables for the ourAmrita campus portal.
 -- NOTE: Role enum migration must be run first (20261011200000_master_spec_role_migration.sql)
 
 -- Enable btree_gist for exclusion constraints (event hall conflicts)

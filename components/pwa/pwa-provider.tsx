@@ -5,7 +5,9 @@ import { Button } from "@/components/ui";
 
 interface InstallEvent extends Event { prompt: () => Promise<void>; userChoice: Promise<{ outcome: "accepted" | "dismissed" }> }
 
-const DISMISSED_KEY = "campusconnect.install.dismissed";
+const DISMISSED_KEY = "ouramrita.install.dismissed";
+const PREVIOUS_DISMISSED_KEY = "myamrita.install.dismissed";
+const LEGACY_DISMISSED_KEY = "campusconnect.install.dismissed";
 const apkUrl = process.env.NEXT_PUBLIC_APK_URL;
 
 /** Registers the service worker and offers to install the app on phones. */
@@ -19,7 +21,12 @@ export function PwaProvider() {
     if ("serviceWorker" in navigator) void navigator.serviceWorker.register("/sw.js").catch(() => undefined);
     const standalone = window.matchMedia("(display-mode: standalone)").matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
     let dismissed = false;
-    try { dismissed = localStorage.getItem(DISMISSED_KEY) === "1"; } catch { /* private mode: ask again */ }
+    try {
+      dismissed = localStorage.getItem(DISMISSED_KEY) === "1"
+        || localStorage.getItem(PREVIOUS_DISMISSED_KEY) === "1"
+        || localStorage.getItem(LEGACY_DISMISSED_KEY) === "1";
+      if (dismissed) localStorage.setItem(DISMISSED_KEY, "1");
+    } catch { /* private mode: ask again */ }
     const agent = navigator.userAgent;
     const phone = /Android|iPhone|iPad|iPod/i.test(agent);
     const isIos = /iPhone|iPad|iPod/i.test(agent);
@@ -38,7 +45,7 @@ export function PwaProvider() {
 
   if (!open) return null;
   return <section aria-label="Install the app" className="fixed inset-x-0 bottom-0 z-40 space-y-3 border-t bg-surface p-4 pb-[max(16px,env(safe-area-inset-bottom))]">
-    <div><p className="font-semibold">Install CampusConnect</p>
+    <div><p className="font-semibold">Install ourAmrita</p>
       <p className="text-secondary">{ios ? "Tap Share, then Add to Home Screen, to get the app and notifications." : "Get the app on your phone for quick access and notifications."}</p></div>
     <div className="flex flex-wrap gap-3">
       {installEvent && <Button onClick={async () => { await installEvent.prompt(); const choice = await installEvent.userChoice; if (choice.outcome === "accepted") setOpen(false); }}>Install app</Button>}
