@@ -2,7 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { Database } from './lib/types/database'
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
   })
@@ -33,7 +33,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Protect all routes under /(app)
-  // For the middleware, (app) routes are just regular paths like /dashboard, /service-requests, etc.
+  // For the proxy, (app) routes are just regular paths like /dashboard, /service-requests, etc.
   // We need to match those paths. Let's redirect unauthenticated users to /sign-in.
   // Actually, we can check if the user is unauthenticated and trying to access anything other than /sign-in or /auth
   const isAuthRoute = request.nextUrl.pathname.startsWith('/sign-in')

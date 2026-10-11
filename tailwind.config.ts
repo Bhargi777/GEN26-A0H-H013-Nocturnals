@@ -22,7 +22,7 @@ const config = {
         red: { light: "#FEF2F2", dark: "#991B1B" },
       },
     },
-    fontFamily: { sans: ["var(--font-inter)", "sans-serif"] },
+    fontFamily: { sans: ["ui-sans-serif", "system-ui", "-apple-system", "Segoe UI", "Roboto", "Helvetica Neue", "Arial", "sans-serif"] },
     fontSize: {
       body: ["14px", { lineHeight: "20px" }],
       section: ["16px", { lineHeight: "24px", fontWeight: "600" }],
