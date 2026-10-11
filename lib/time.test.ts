@@ -32,6 +32,7 @@ describe("IST helpers", () => {
     expect(isValidCanteenSlot(at(45), at(60), now)).toBe(true);
     expect(isValidCanteenSlot(at(14), at(29), now)).toBe(false);
     expect(isValidCanteenSlot(at(50), at(65), now)).toBe(false);
+    expect(isValidCanteenSlot(at(20), at(-700), now)).toBe(false); // end before start (midnight wrap)
   });
 });
 

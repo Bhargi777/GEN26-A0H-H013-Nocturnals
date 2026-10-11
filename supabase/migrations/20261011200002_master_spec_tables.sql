@@ -188,7 +188,8 @@ create table if not exists canteen_slots (
   end_time time not null,
   capacity integer not null default 50,
   created_at timestamptz not null default now(),
-  unique(canteen_id, slot_date, start_time, end_time)
+  unique(canteen_id, slot_date, start_time, end_time),
+  constraint canteen_slots_ordered check (end_time > start_time)
 );
 
 create type order_status as enum ('PLACED', 'PAID', 'READY', 'COLLECTED', 'FORFEITED', 'LATE_WALKIN');

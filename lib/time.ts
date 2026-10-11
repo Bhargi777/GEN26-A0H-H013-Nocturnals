@@ -57,7 +57,7 @@ export function slotFor(date: Date, periodId: string): { startTime: string; endT
 export function isValidCanteenSlot(slotStart: Date, slotEnd: Date, now: Date = new Date()): boolean {
   const earliestStart = now.getTime() + 15 * 60 * 1000;
   const latestEnd = now.getTime() + 60 * 60 * 1000;
-  return slotStart.getTime() >= earliestStart && slotEnd.getTime() <= latestEnd;
+  return slotEnd.getTime() > slotStart.getTime() && slotStart.getTime() >= earliestStart && slotEnd.getTime() <= latestEnd;
 }
 
 /** Calendar date in IST as yyyy-MM-dd, `offsetDays` from today. */

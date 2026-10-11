@@ -91,7 +91,7 @@ insert into public.menu_items (id, canteen_id, name, price, category, veg, avail
 -- extension for crypt
 create extension if not exists "pgcrypto";
 
-insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_user_meta_data) values
+insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_user_meta_data, instance_id, aud, role, raw_app_meta_data, confirmation_token, recovery_token, email_change, email_change_token_new, created_at, updated_at) select v.id::uuid, v.email, v.pw, v.confirmed, v.meta::jsonb, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated', '{"provider":"email","providers":["email"]}'::jsonb, '', '', '', '', now(), now() from (values
   ('a5000000-0000-0000-0000-000000000001', 'arjun.s@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Arjun Sharma"}'),
   ('a5000000-0000-0000-0000-000000000002', 'priya.m@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Priya Menon"}'),
   ('a5000000-0000-0000-0000-000000000003', 'dr.rao@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Dr. Venkatesh Rao"}'),
@@ -107,7 +107,10 @@ insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_u
   ('a5000000-0000-0000-0000-000000000013', 'events.dept@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Neha Kapoor"}'),
   ('a5000000-0000-0000-0000-000000000014', 'kitchen.main@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Balu Kitchen"}'),
   ('a5000000-0000-0000-0000-000000000015', 'counter.main@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Lata Counter"}'),
-  ('a5000000-0000-0000-0000-000000000016', 'canteen.manager@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Hari Manager"}');
+  ('a5000000-0000-0000-0000-000000000016', 'canteen.manager@example.edu', crypt('password123', gen_salt('bf')), now(), '{"full_name": "Hari Manager"}')) as v(id, email, pw, confirmed, meta);
+
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select gen_random_uuid(), u.id, u.id::text, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', now(), now(), now() from auth.users u;
 
 -- Profiles roles and departments (using new role names from migration)
 update public.profiles set role = 'student', department_id = 'd0000000-0000-0000-0000-000000000001', roll_no = 'CSE2021045' where email = 'arjun.s@example.edu';
@@ -174,4 +177,4 @@ insert into public.canteen_slots (canteen_id, slot_date, start_time, end_time, c
 select c.id, d::date, t::time, (t + interval '15 minutes')::time, 25
 from public.canteens c
 cross join generate_series((now() at time zone 'Asia/Kolkata')::date, (now() at time zone 'Asia/Kolkata')::date + 2, interval '1 day') as d
-cross join generate_series(timestamp '2000-01-01 00:00', timestamp '2000-01-01 23:45', interval '15 minutes') as t;
+cross join generate_series(timestamp '2000-01-01 00:00', timestamp '2000-01-01 23:30', interval '15 minutes') as t;

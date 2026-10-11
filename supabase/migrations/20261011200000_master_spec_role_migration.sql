@@ -73,8 +73,8 @@ create policy "Technicians and dept admins can view their dept tickets" on servi
   exists (
     select 1 from profiles p
     where p.id = auth.uid()
-    and p.role in ('technician'::user_role, 'dept_office'::user_role)
-    and p.department_id = (select department_id from service_tickets st where st.id = service_tickets.id)
+    and p.role in ('technician'::user_role, 'dept_office'::user_role, 'dept_head'::user_role)
+    and p.department_id = assigned_department_id
   )
 );
 
@@ -87,9 +87,9 @@ create policy "Dept admins can view requests for their dept" on admin_requests f
   exists (
     select 1 from profiles student
     join profiles me on me.id = auth.uid()
-    where me.role = 'dept_office'::user_role
-    and me.department_id = student.department_id
-    and student.id = (select requester_id from admin_requests ar where ar.id = admin_requests.id)
+    where student.id = admin_requests.requester_id
+    and student.department_id = me.department_id
+    and me.role in ('dept_office'::user_role, 'dept_head'::user_role)
   )
 );
 
@@ -97,6 +97,7 @@ create policy "Office staff can view requests at PENDING_OFFICE and later" on ad
   exists (
     select 1 from profiles where id = auth.uid() and role = 'osa'::user_role
   )
+  and status in ('PENDING_OFFICE', 'APPROVED', 'REJECTED')
 );
 
 create policy "Admins can view all admin requests" on admin_requests for select to authenticated using (
