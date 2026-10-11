@@ -245,6 +245,8 @@ create trigger room_booking_notify after update on room_bookings for each row ex
 -- ============================================================================
 -- Events: RLS and transition guard
 -- ============================================================================
+create policy "Everyone can read clubs" on clubs for select to authenticated using (true);
+
 drop policy if exists "Club presidents see their own event requests" on event_requests;
 create policy "Requesters see their own event requests" on event_requests for select to authenticated using (requested_by = auth.uid());
 

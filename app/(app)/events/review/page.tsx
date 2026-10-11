@@ -9,12 +9,12 @@ import { getEventRequestsForOSA, osaApproveEventRequest, osaRequestChanges } fro
 const supabase = getSupabase();
 
 const statusBadge: Record<string, string> = {
-  SUBMITTED: 'bg-amber-50 text-amber-800 border-amber-200',
-  CHANGES_REQUESTED: 'bg-amber-50 text-amber-800 border-amber-200',
-  PENDING_DIRECTOR: 'bg-sky-50 text-sky-800 border-sky-200',
-  APPROVED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-  REJECTED: 'bg-rose-50 text-rose-800 border-rose-200',
-  CALENDARED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
+  SUBMITTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
+  CHANGES_REQUESTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
+  PENDING_DIRECTOR: 'bg-status-blue-light text-status-blue-dark border-status-blue-dark',
+  APPROVED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
+  REJECTED: 'bg-status-red-light text-status-red-dark border-status-red-dark',
+  CALENDARED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
 };
 
 export default function ReviewEventsPage() {
@@ -96,21 +96,21 @@ export default function ReviewEventsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Event requests (OSA review)</h1>
-        {error && <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800">{error}</div>}
+        <h1 className="text-3xl font-bold text-primary mb-6">Event requests (OSA review)</h1>
+        {error && <div className="mb-4 p-4 bg-status-red-light border border-status-red-dark rounded-card text-status-red-dark">{error}</div>}
 
         {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-slate-200">
+        <div className="flex gap-2 mb-6 border-b border-border">
           {(['SUBMITTED', 'CHANGES_REQUESTED', 'PENDING_DIRECTOR'] as const).map((tab) => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 font-semibold border-b-2 ${
                 activeTab === tab
-                  ? 'border-teal-700 text-teal-700'
-                  : 'border-transparent text-slate-600 hover:text-slate-900'
+                  ? 'border-accent text-accent'
+                  : 'border-transparent text-secondary hover:text-primary'
               }`}
             >
               {tab.replace(/_/g, ' ')}
@@ -120,14 +120,14 @@ export default function ReviewEventsPage() {
 
         {/* Events grid */}
         <div className="grid md:grid-cols-2 gap-4">
-          {filtered.length === 0 && <p className="text-slate-500 col-span-full">No events in this category</p>}
+          {filtered.length === 0 && <p className="text-secondary col-span-full">No events in this category</p>}
           {filtered.map((e) => (
-            <div key={e.id} className="bg-white rounded-lg shadow p-5 space-y-3">
+            <div key={e.id} className="bg-surface rounded-card border p-5 space-y-3">
               <div>
-                <p className="text-lg font-semibold text-slate-900">{e.event_name}</p>
-                <p className="text-sm text-slate-600">{e.theme}</p>
+                <p className="text-lg font-semibold text-primary">{e.event_name}</p>
+                <p className="text-sm text-secondary">{e.theme}</p>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-sm text-slate-600">
+              <div className="grid grid-cols-2 gap-2 text-sm text-secondary">
                 <p>
                   <span className="font-semibold">Date:</span> {e.proposed_date}
                 </p>
@@ -142,7 +142,7 @@ export default function ReviewEventsPage() {
                 </p>
               </div>
               {e.description && (
-                <p className="text-sm text-slate-600">
+                <p className="text-sm text-secondary">
                   <span className="font-semibold">Description:</span> {e.description}
                 </p>
               )}
@@ -153,14 +153,14 @@ export default function ReviewEventsPage() {
                   <button
                     disabled={busy}
                     onClick={() => handleApprove(e.id)}
-                    className="flex-1 py-2 bg-emerald-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                    className="flex-1 py-2 bg-status-green-dark text-surface rounded-card text-sm font-semibold disabled:opacity-50"
                   >
                     Approve
                   </button>
                   <button
                     disabled={busy}
                     onClick={() => setReasonModal({ id: e.id, reason: '' })}
-                    className="flex-1 py-2 bg-amber-600 text-white rounded-lg text-sm font-semibold disabled:opacity-50"
+                    className="flex-1 py-2 bg-amber-600 text-surface rounded-card text-sm font-semibold disabled:opacity-50"
                   >
                     Request changes
                   </button>
@@ -174,25 +174,25 @@ export default function ReviewEventsPage() {
       {/* Reason modal */}
       {reasonModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-white rounded-lg shadow p-6 max-w-sm w-full space-y-4">
-            <h2 className="text-lg font-semibold text-slate-900">Request changes</h2>
+          <div className="bg-surface rounded-card border p-6 max-w-sm w-full space-y-4">
+            <h2 className="text-lg font-semibold text-primary">Request changes</h2>
             <textarea
               value={reasonModal.reason}
               onChange={(e) => setReasonModal({ ...reasonModal, reason: e.target.value })}
               placeholder="What changes should the club make?"
-              className="w-full h-24 px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full h-24 px-3 py-2 border border-border rounded-card"
             />
             <div className="flex gap-2">
               <button
                 onClick={() => setReasonModal(null)}
-                className="flex-1 py-2 bg-slate-200 text-slate-700 rounded-lg"
+                className="flex-1 py-2 bg-border text-secondary rounded-card"
               >
                 Cancel
               </button>
               <button
                 disabled={busy}
                 onClick={() => handleRequestChanges(reasonModal.id, reasonModal.reason)}
-                className="flex-1 py-2 bg-amber-600 text-white rounded-lg disabled:opacity-50"
+                className="flex-1 py-2 bg-amber-600 text-surface rounded-card disabled:opacity-50"
               >
                 {busy ? 'Sending...' : 'Send'}
               </button>

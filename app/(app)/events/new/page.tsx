@@ -126,22 +126,22 @@ export default function NewEventPage() {
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-slate-50 p-8">
+      <div className="min-h-screen bg-background p-8">
         <div className="max-w-md mx-auto">
-          <div className="bg-white rounded-lg shadow p-8 text-center space-y-4">
-            <p className="text-sm text-emerald-600 font-semibold">Request submitted</p>
-            <p className="text-4xl font-bold text-teal-700">{token}</p>
-            <p className="text-slate-600 text-sm">Your event reference number</p>
+          <div className="bg-surface rounded-card border p-8 text-center space-y-4">
+            <p className="text-sm text-status-green-dark font-semibold">Request submitted</p>
+            <p className="text-4xl font-bold text-accent">{token}</p>
+            <p className="text-secondary text-sm">Your event reference number</p>
             <div className="pt-4 space-y-2">
               <button
                 onClick={() => router.push('/events/mine')}
-                className="w-full py-2 bg-teal-700 text-white rounded-lg"
+                className="w-full py-2 bg-accent text-surface rounded-card"
               >
                 View my events
               </button>
               <button
                 onClick={() => router.push('/dashboard')}
-                className="w-full py-2 bg-slate-200 text-slate-700 rounded-lg"
+                className="w-full py-2 bg-border text-secondary rounded-card"
               >
                 Back to dashboard
               </button>
@@ -153,20 +153,20 @@ export default function NewEventPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Request event approval</h1>
-        {error && <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800">{error}</div>}
+        <h1 className="text-3xl font-bold text-primary mb-6">Request event approval</h1>
+        {error && <div className="mb-4 p-4 bg-status-red-light border border-status-red-dark rounded-card text-status-red-dark">{error}</div>}
 
-        <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow p-8 space-y-6">
+        <form onSubmit={handleSubmit} className="bg-surface rounded-card border p-8 space-y-6">
           {/* Club selection */}
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Your club</label>
+            <label className="block text-sm font-semibold text-primary mb-2">Your club</label>
             <select
               required
               value={formData.club_id}
               onChange={(e) => setFormData({ ...formData, club_id: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-border rounded-card"
             >
               <option value="">Select club</option>
               {clubs.map((c) => (
@@ -179,35 +179,35 @@ export default function NewEventPage() {
 
           {/* Event details */}
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Event name</label>
+            <label className="block text-sm font-semibold text-primary mb-2">Event name</label>
             <input
               type="text"
               required
               value={formData.event_name}
               onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-border rounded-card"
               placeholder="e.g., Annual Fest 2026"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Theme</label>
+            <label className="block text-sm font-semibold text-primary mb-2">Theme</label>
             <input
               type="text"
               required
               value={formData.theme}
               onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-border rounded-card"
               placeholder="e.g., Celebration of creativity"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Description</label>
+            <label className="block text-sm font-semibold text-primary mb-2">Description</label>
             <textarea
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg h-24"
+              className="w-full px-3 py-2 border border-border rounded-card h-24"
               placeholder="Event details and activities planned"
             />
           </div>
@@ -215,74 +215,74 @@ export default function NewEventPage() {
           {/* Date and time */}
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Date (≥7 days)</label>
+              <label className="block text-sm font-semibold text-primary mb-2">Date (≥7 days)</label>
               <input
                 type="date"
                 required
                 value={formData.proposed_date}
                 onChange={(e) => setFormData({ ...formData, proposed_date: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-border rounded-card"
                 min={format(addDays(nowIST(), 7), 'yyyy-MM-dd')}
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Start time</label>
+              <label className="block text-sm font-semibold text-primary mb-2">Start time</label>
               <input
                 type="time"
                 required
                 value={formData.start_time}
                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-border rounded-card"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">End time</label>
+              <label className="block text-sm font-semibold text-primary mb-2">End time</label>
               <input
                 type="time"
                 required
                 value={formData.end_time}
                 onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-border rounded-card"
               />
             </div>
           </div>
 
           {/* Hall, coordinator and contact */}
           <div>
-            <label htmlFor="hall" className="block text-sm font-semibold text-slate-900 mb-2">Hall</label>
-            <select id="hall" required value={formData.hall_id} onChange={(e) => setFormData({ ...formData, hall_id: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+            <label htmlFor="hall" className="block text-sm font-semibold text-primary mb-2">Hall</label>
+            <select id="hall" required value={formData.hall_id} onChange={(e) => setFormData({ ...formData, hall_id: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card">
               <option value="">Select a hall</option>
               {halls.map((hall) => <option key={hall.id} value={hall.id}>{hall.name}{hall.capacity ? ` (seats ${hall.capacity})` : ''}</option>)}
             </select>
           </div>
           <div>
-            <label htmlFor="coordinator" className="block text-sm font-semibold text-slate-900 mb-2">Faculty coordinator</label>
-            <input id="coordinator" type="text" required value={formData.faculty_coordinator} onChange={(e) => setFormData({ ...formData, faculty_coordinator: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            <label htmlFor="coordinator" className="block text-sm font-semibold text-primary mb-2">Faculty coordinator</label>
+            <input id="coordinator" type="text" required value={formData.faculty_coordinator} onChange={(e) => setFormData({ ...formData, faculty_coordinator: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card" />
           </div>
           <div>
-            <label htmlFor="phone" className="block text-sm font-semibold text-slate-900 mb-2">Contact phone</label>
-            <input id="phone" type="tel" required pattern="[0-9+ ]{7,15}" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+            <label htmlFor="phone" className="block text-sm font-semibold text-primary mb-2">Contact phone</label>
+            <input id="phone" type="tel" required pattern="[0-9+ ]{7,15}" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card" />
           </div>
 
           {/* Hall and attendees */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Expected attendees</label>
+              <label className="block text-sm font-semibold text-primary mb-2">Expected attendees</label>
               <input
                 type="number"
                 value={formData.attendees}
                 onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-border rounded-card"
                 placeholder="e.g., 200"
               />
             </div>
             <div>
-              <label className="block text-sm font-semibold text-slate-900 mb-2">Budget estimate (₹)</label>
+              <label className="block text-sm font-semibold text-primary mb-2">Budget estimate (₹)</label>
               <input
                 type="number"
                 value={formData.budget}
                 onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+                className="w-full px-3 py-2 border border-border rounded-card"
                 placeholder="e.g., 50000"
               />
             </div>
@@ -290,11 +290,11 @@ export default function NewEventPage() {
 
           {/* Category */}
           <div>
-            <label className="block text-sm font-semibold text-slate-900 mb-2">Category</label>
+            <label className="block text-sm font-semibold text-primary mb-2">Category</label>
             <select
               value={formData.category}
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-slate-300 rounded-lg"
+              className="w-full px-3 py-2 border border-border rounded-card"
             >
               <option value="cultural">Cultural</option>
               <option value="technical">Technical</option>
@@ -308,7 +308,7 @@ export default function NewEventPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 bg-teal-700 text-white rounded-lg font-semibold disabled:opacity-50"
+            className="w-full py-2 bg-accent text-surface rounded-card font-semibold disabled:opacity-50"
           >
             {loading ? 'Submitting...' : 'Submit event request'}
           </button>
