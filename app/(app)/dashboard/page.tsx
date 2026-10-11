@@ -15,11 +15,10 @@ export default function DashboardPage() {
   useEffect(() => {
     if (!profile) return;
     let cancelled = false;
-    setModel(undefined); setError(undefined);
     void loadDashboardData(profile).then((data) => { if (!cancelled) setModel(dashboardFor(profile, data)); }).catch(() => { if (!cancelled) setError("Your dashboard could not be loaded. Try again."); });
     return () => { cancelled = true; };
   }, [profile, attempt]);
-  if (error) return <EmptyState message={error} action={<Button onClick={() => setAttempt((value) => value + 1)}>Try again</Button>} />;
+  if (error) return <EmptyState message={error} action={<Button onClick={() => { setError(undefined); setModel(undefined); setAttempt((value) => value + 1); }}>Try again</Button>} />;
   if (!model) return <Skeleton label="Loading dashboard" />;
   return <div className="space-y-6">
     <PageHeader title="Dashboard" context={model.context} action={<Link href={model.action.href} className={buttonStyles()}>{model.action.label}</Link>} />

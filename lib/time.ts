@@ -2,7 +2,7 @@
 // All scheduling logic must use IST, never browser clock
 
 import { format, parseISO } from 'date-fns';
-import { toZonedTime } from 'date-fns-tz';
+import { formatInTimeZone, fromZonedTime, toZonedTime } from 'date-fns-tz';
 
 const IST = 'Asia/Kolkata';
 
@@ -50,17 +50,50 @@ export function slotFor(date: Date, periodId: string): { startTime: string; endT
 }
 
 /**
- * Validate canteen slot window:
+ * Validate canteen slot window against real instants:
  * - start must be >= 15 minutes from now
  * - end must be <= 60 minutes from now
- * All times in IST
  */
-export function isValidCanteenSlot(slotStart: Date, slotEnd: Date): boolean {
-  const now = nowIST();
-  const fifteenMinutesFromNow = new Date(now.getTime() + 15 * 60 * 1000);
-  const sixtyMinutesFromNow = new Date(now.getTime() + 60 * 60 * 1000);
+export function isValidCanteenSlot(slotStart: Date, slotEnd: Date, now: Date = new Date()): boolean {
+  const earliestStart = now.getTime() + 15 * 60 * 1000;
+  const latestEnd = now.getTime() + 60 * 60 * 1000;
+  return slotStart.getTime() >= earliestStart && slotEnd.getTime() <= latestEnd;
+}
 
-  return slotStart >= fifteenMinutesFromNow && slotEnd <= sixtyMinutesFromNow;
+/** Calendar date in IST as yyyy-MM-dd, `offsetDays` from today. */
+export function istDate(offsetDays = 0, now: Date = new Date()): string {
+  const day = formatInTimeZone(now, IST, 'yyyy-MM-dd');
+  if (!offsetDays) return day;
+  const shifted = new Date(`${day}T00:00:00Z`);
+  shifted.setUTCDate(shifted.getUTCDate() + offsetDays);
+  return shifted.toISOString().slice(0, 10);
+}
+
+/** Current wall-clock time in IST as HH:mm:ss. */
+export function istTime(now: Date = new Date()): string {
+  return formatInTimeZone(now, IST, 'HH:mm:ss');
+}
+
+/** The real instant of an IST wall-clock date (yyyy-MM-dd) and time (HH:mm[:ss]). */
+export function istInstant(date: string, time: string): Date {
+  return fromZonedTime(`${date}T${time.length === 5 ? `${time}:00` : time}`, IST);
+}
+
+/** 09:05:00 -> 9:05 AM */
+export function formatClock(time: string): string {
+  const [hours, minutes] = time.split(':').map(Number);
+  const suffix = hours >= 12 ? 'PM' : 'AM';
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')} ${suffix}`;
+}
+
+/** 2026-10-13 -> Tue, 13 Oct 2026 */
+export function formatDay(date: string): string {
+  return format(parseISO(date), 'EEE, d MMM yyyy');
+}
+
+/** Booking dates run from today to 14 days ahead, in IST. */
+export function isBookableDay(date: string, now: Date = new Date()): boolean {
+  return date >= istDate(0, now) && date <= istDate(14, now);
 }
 
 /**

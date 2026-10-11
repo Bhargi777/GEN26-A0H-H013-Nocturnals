@@ -1,290 +1,107 @@
-// Room booking data layer (Module A)
-import { createClient } from '../supabase/client';
-import { Database, RoomBooking, Block, Floor, Period, Room } from '../types/database';
+// Room booking data layer (Module A).
+// Reads go through RLS-protected selects; writes go through RPCs that check role,
+// date window, capacity and double booking in the database.
+import { getSupabase } from '../supabase/browser';
+import type { BlockRow, FloorRow, PeriodRow, RoomBookingRow, RoomRow, SlotStatusRow } from '../types/campus';
 
-// Browser client carries the signed-in session so RLS applies to every query.
-const supabase = createClient() as any;
-
-/**
- * Get all blocks owned by a department (for dept_office)
- */
-export async function getBlocksByDepartment(deptId: string): Promise<Block[]> {
-  const { data, error } = await supabase
-    .from('blocks')
-    .select('*')
-    .eq('owner_department_id', deptId);
-
-  if (error) throw error;
-  return data || [];
+function fail(error: { message: string } | null): asserts error is null {
+  if (error) throw new Error(error.message);
 }
 
-/**
- * Get all floors in a block
- */
-export async function getFloorsByBlock(blockId: string): Promise<Floor[]> {
-  const { data, error } = await supabase
-    .from('floors')
-    .select('*')
-    .eq('block_id', blockId)
-    .order('level');
+const BOOKING_COLUMNS =
+  'id, code, room_id, date, period_id, requested_by, reason, faculty_name, attendees, status, decision_note, created_at, ' +
+  'room:room_id(name, code, capacity), period:period_id(label, start_time, end_time), requester:requested_by(full_name)';
 
-  if (error) throw error;
-  return data || [];
+export async function listBlocks(): Promise<BlockRow[]> {
+  const { data, error } = await getSupabase().from('blocks').select('id, code, name, owner_department_id').order('name');
+  fail(error);
+  return data ?? [];
 }
 
-/**
- * Get all rooms on a floor
- */
-export async function getRoomsByFloor(floorId: string): Promise<Room[]> {
-  const { data, error } = await supabase
-    .from('rooms')
-    .select('*')
-    .eq('floor_id', floorId);
-
-  if (error) throw error;
-  return data || [];
+export async function listFloors(blockId: string): Promise<FloorRow[]> {
+  const { data, error } = await getSupabase().from('floors').select('id, block_id, level, label').eq('block_id', blockId).order('level');
+  fail(error);
+  return data ?? [];
 }
 
-/**
- * Get all periods (timetable slots)
- */
-export async function getPeriods(): Promise<Period[]> {
-  const { data, error } = await supabase
-    .from('periods')
-    .select('*')
-    .order('start_time');
-
-  if (error) throw error;
-  return data || [];
+export async function listBookableRooms(floorId: string): Promise<RoomRow[]> {
+  const { data, error } = await getSupabase()
+    .from('rooms').select('id, floor_id, code, name, kind, capacity, bookable')
+    .eq('floor_id', floorId).eq('bookable', true).order('name');
+  fail(error);
+  return data ?? [];
 }
 
-/**
- * Create a room booking request
- */
-export async function createRoomBooking(
-  roomId: string,
-  date: string,
-  periodId: string,
-  requestedBy: string,
-  reason: string,
-  facultyName: string,
-  attendees: number
-): Promise<RoomBooking> {
-  const { data, error } = await supabase
-    .from('room_bookings')
-    .insert({
-      room_id: roomId,
-      date,
-      period_id: periodId,
-      requested_by: requestedBy,
-      reason,
-      faculty_name: facultyName,
-      attendees,
-      status: 'PENDING',
-    })
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+export async function listPeriods(): Promise<PeriodRow[]> {
+  const { data, error } = await getSupabase().from('periods').select('id, label, start_time, end_time').order('start_time');
+  fail(error);
+  return data ?? [];
 }
 
-/**
- * Get booking requests for a CR (own requests)
- */
-export async function getMyRoomBookings(userId: string): Promise<RoomBooking[]> {
-  const { data, error } = await supabase
-    .from('room_bookings')
-    .select('*')
-    .eq('requested_by', userId)
-    .order('created_at', { ascending: false });
-
-  if (error) throw error;
-  return data || [];
+/** State of every period for one room and date: CLASS, BOOKED, PENDING (a request exists) or FREE. */
+export async function getSlotStatus(roomId: string, date: string): Promise<SlotStatusRow[]> {
+  const { data, error } = await getSupabase().rpc('room_slot_status', { p_room: roomId, p_date: date });
+  fail(error);
+  return data ?? [];
 }
 
-/**
- * Get all booking requests for a date/period in a block (for dept_office "Requests by date" view)
- */
-export async function getRoomBookingsByDateAndBlock(
-  blockId: string,
-  date: string
-): Promise<(RoomBooking & { room: Room; period: Period })[]> {
-  // This requires a join, so we fetch room_bookings for rooms in this block's floors
-  const { data: floors } = await supabase
-    .from('floors')
-    .select('id')
-    .eq('block_id', blockId);
-
-  if (!floors || floors.length === 0) return [];
-
-  const floorIds = floors.map((f: any) => f.id);
-
-  const { data: bookings, error } = await supabase
-    .from('room_bookings')
-    .select('*, room:room_id(name, code, capacity), period:period_id(*)')
-    .eq('date', date)
-    .in('room_id', (await Promise.all(
-      floorIds.map((fid: any) =>
-        supabase.from('rooms').select('id').eq('floor_id', fid)
-      )
-    )).flatMap((r: any) => r.data?.map((x: any) => x.id) || []))
-    .order('period_id');
-
-  if (error) throw error;
-  return (bookings || []) as any;
+export interface BookingInput {
+  roomId: string;
+  date: string;
+  periodId: string;
+  reason: string;
+  facultyName: string;
+  attendees: number;
 }
 
-/**
- * Get conflicting bookings (for "Conflicts" tab in dept office)
- */
-export async function getConflictingBookings(
-  blockId: string,
-  date: string,
-  periodId: string
-): Promise<RoomBooking[]> {
-  // Fetch all rooms in the block, then find bookings on that date/period
-  const { data: floors } = await supabase
-    .from('floors')
-    .select('id')
-    .eq('block_id', blockId);
-
-  if (!floors || floors.length === 0) return [];
-
-  const floorIds = floors.map((f: any) => f.id);
-  const roomIdsRes = await Promise.all(
-    floorIds.map((fid: any) => supabase.from('rooms').select('id').eq('floor_id', fid))
-  );
-  const roomIds = roomIdsRes.flatMap((r: any) => r.data?.map((x: any) => x.id) || []);
-
-  const { data, error } = await supabase
-    .from('room_bookings')
-    .select('*')
-    .eq('date', date)
-    .eq('period_id', periodId)
-    .in('room_id', roomIds)
-    .eq('status', 'PENDING');
-
-  if (error) throw error;
-  return data || [];
+export async function requestRoomBooking(input: BookingInput): Promise<RoomBookingRow> {
+  const { data, error } = await getSupabase().rpc('request_room_booking', {
+    p_room: input.roomId,
+    p_date: input.date,
+    p_period: input.periodId,
+    p_reason: input.reason,
+    p_faculty_name: input.facultyName,
+    p_attendees: input.attendees,
+  });
+  fail(error);
+  return data as RoomBookingRow;
 }
 
-/**
- * Approve a room booking (dept_office action)
- * Auto-rejects competing requests with note "Slot allocated to another request"
- */
-export async function approveRoomBooking(
-  bookingId: string,
-  decidedBy: string,
-  decisionNote?: string
-): Promise<RoomBooking> {
-  // Get the booking to find conflicts
-  const { data: booking } = await supabase
-    .from('room_bookings')
-    .select('*')
-    .eq('id', bookingId)
-    .single();
-
-  if (!booking) throw new Error('Booking not found');
-
-  // Auto-reject conflicting PENDING bookings
-  const { error: rejectError } = await supabase
-    .from('room_bookings')
-    .update({
-      status: 'REJECTED',
-      decided_by: decidedBy,
-      decision_note: 'Slot allocated to another request',
-    })
-    .eq('room_id', booking.room_id)
-    .eq('date', booking.date)
-    .eq('period_id', booking.period_id)
-    .eq('status', 'PENDING')
-    .neq('id', bookingId);
-
-  if (rejectError) throw rejectError;
-
-  // Approve this booking
-  const { data, error } = await supabase
-    .from('room_bookings')
-    .update({
-      status: 'APPROVED',
-      decided_by: decidedBy,
-      decision_note: decisionNote || null,
-    })
-    .eq('id', bookingId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+export async function getMyRoomBookings(userId: string): Promise<RoomBookingRow[]> {
+  const { data, error } = await getSupabase()
+    .from('room_bookings').select(BOOKING_COLUMNS).eq('requested_by', userId).order('created_at', { ascending: false });
+  fail(error);
+  return (data ?? []) as unknown as RoomBookingRow[];
 }
 
-/**
- * Reject a room booking
- */
-export async function rejectRoomBooking(
-  bookingId: string,
-  decidedBy: string,
-  decisionNote: string
-): Promise<RoomBooking> {
-  const { data, error } = await supabase
-    .from('room_bookings')
-    .update({
-      status: 'REJECTED',
-      decided_by: decidedBy,
-      decision_note: decisionNote,
-    })
-    .eq('id', bookingId)
-    .select()
-    .single();
-
-  if (error) throw error;
-  return data;
+export async function cancelRoomBooking(bookingId: string): Promise<void> {
+  const { error } = await getSupabase().rpc('cancel_room_booking', { p_id: bookingId });
+  fail(error);
 }
 
-/**
- * Get room availability for a specific date/period.
- * Unavailable when a timetable class holds the room that weekday and period,
- * unless it was cancelled for that date, or a booking is pending or approved.
- */
-export async function checkRoomAvailability(
-  roomId: string,
-  date: string,
-  periodId: string
-): Promise<boolean> {
-  // Calendar weekday of the date, independent of the runtime's timezone (0=Sun).
-  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
+/** Bookings the signed-in department staff may see (RLS limits them to blocks their department owns). */
+export async function getDepartmentBookings(): Promise<RoomBookingRow[]> {
+  const { data, error } = await getSupabase()
+    .from('room_bookings').select(BOOKING_COLUMNS).order('date').order('created_at');
+  fail(error);
+  return (data ?? []) as unknown as RoomBookingRow[];
+}
 
-  const { data: entry } = await supabase
-    .from('timetable_entries')
-    .select('id')
-    .eq('room_id', roomId)
-    .eq('weekday', weekday)
-    .eq('period_id', periodId)
-    .limit(1)
-    .maybeSingle();
+/** Approving also rejects competing pending requests for the same slot. */
+export async function decideRoomBooking(bookingId: string, approve: boolean, note?: string): Promise<void> {
+  const { error } = await getSupabase().rpc('decide_room_booking', { p_id: bookingId, p_approve: approve, p_note: note ?? null });
+  fail(error);
+}
 
-  if (entry) {
-    const { data: cancelled } = await supabase
-      .from('class_cancellations')
-      .select('id')
-      .eq('timetable_entry_id', entry.id)
-      .eq('date', date)
-      .limit(1)
-      .maybeSingle();
-    if (!cancelled) return false;
+/** Pending requests that share a room, date and period with another pending request. */
+export function findConflicts(bookings: RoomBookingRow[]): Set<string> {
+  const groups = new Map<string, string[]>();
+  for (const booking of bookings) {
+    if (booking.status !== 'PENDING') continue;
+    const key = `${booking.room_id}|${booking.date}|${booking.period_id}`;
+    groups.set(key, [...(groups.get(key) ?? []), booking.id]);
   }
-
-  // Several pending requests can exist for one slot, so read at most one row.
-  const { data: booking } = await supabase
-    .from('room_bookings')
-    .select('id')
-    .eq('room_id', roomId)
-    .eq('date', date)
-    .eq('period_id', periodId)
-    .in('status', ['APPROVED', 'PENDING'])
-    .limit(1)
-    .maybeSingle();
-
-  return !booking;
+  const conflicted = new Set<string>();
+  for (const ids of groups.values()) if (ids.length > 1) ids.forEach((id) => conflicted.add(id));
+  return conflicted;
 }

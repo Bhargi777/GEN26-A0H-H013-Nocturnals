@@ -1,194 +1,108 @@
-'use client';
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
-import { Block } from '@/lib/types/database';
-import {
-  getBlocksByDepartment,
-  getRoomBookingsByDateAndBlock,
-  approveRoomBooking,
-  rejectRoomBooking,
-} from '@/lib/db/rooms';
-import { nowIST } from '@/lib/time';
-import { format } from 'date-fns';
+import { useCallback, useEffect, useState } from "react";
+import { RoleGate } from "@/components/layout/role-gate";
+import { Badge, Button, Card, DataTable, EmptyState, FieldError, FormField, Input, PageHeader, Skeleton, StatusBadge, Textarea, useToast } from "@/components/ui";
+import { ROLES } from "@/lib/constants/roles";
+import { decideRoomBooking, findConflicts, getDepartmentBookings } from "@/lib/db/rooms";
+import { getSupabase } from "@/lib/supabase/browser";
+import { formatClock, formatDay } from "@/lib/time";
+import type { RoomBookingRow } from "@/lib/types/campus";
 
-const supabase = createClient<any>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
-
-type Tab = 'pending' | 'conflicts' | 'decided';
+type Tab = "pending" | "conflicts" | "decided";
+const TABS: { id: Tab; label: string }[] = [{ id: "pending", label: "Pending" }, { id: "conflicts", label: "Conflicts" }, { id: "decided", label: "Decided" }];
 
 export default function DeptRoomsPage() {
-  const router = useRouter();
-  const [profile, setProfile] = useState<any>(null);
-  const [blocks, setBlocks] = useState<Block[]>([]);
-  const [blockId, setBlockId] = useState('');
-  const [date, setDate] = useState(format(nowIST(), 'yyyy-MM-dd'));
-  const [tab, setTab] = useState<Tab>('pending');
-  const [bookings, setBookings] = useState<any[]>([]);
-  const [error, setError] = useState('');
-  const [busy, setBusy] = useState('');
+  return <RoleGate roles={[ROLES.DEPT_OFFICE, ROLES.DEPT_HEAD, ROLES.ADMIN]}><Queue /></RoleGate>;
+}
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push('/sign-in');
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-      if (!p || !['dept_office', 'dept_head', 'admin'].includes(p.role)) {
-        return router.push('/dashboard');
-      }
-      setProfile(p);
-      try {
-        const b = p.department_id ? await getBlocksByDepartment(p.department_id) : [];
-        setBlocks(b);
-        if (b[0]) setBlockId(b[0].id);
-      } catch (e: any) {
-        setError(e.message);
-      }
-    })();
-  }, [router]);
+function Queue() {
+  const toast = useToast();
+  const [rows, setRows] = useState<RoomBookingRow[]>();
+  const [error, setError] = useState<string>();
+  const [tab, setTab] = useState<Tab>("pending");
+  const [date, setDate] = useState("");
+  const [busy, setBusy] = useState<string>();
+  const [rejecting, setRejecting] = useState<{ booking: RoomBookingRow; note: string; error?: string }>();
 
   const load = useCallback(async () => {
-    if (!blockId) return;
-    try {
-      setBookings(await getRoomBookingsByDateAndBlock(blockId, date));
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }, [blockId, date]);
+    try { setRows(await getDepartmentBookings()); setError(undefined); }
+    catch { setError("Room requests could not be loaded. Try again."); }
+  }, []);
 
   useEffect(() => {
-    load();
+    const supabase = getSupabase();
+    const first = setTimeout(() => void load(), 0);
+    const channel = supabase.channel("dept-room-bookings")
+      .on("postgres_changes", { event: "*", schema: "public", table: "room_bookings" }, () => void load())
+      .subscribe();
+    return () => { clearTimeout(first); void supabase.removeChannel(channel); };
   }, [load]);
 
-  const act = async (id: string, kind: 'approve' | 'reject') => {
-    setBusy(id);
-    setError('');
+  if (error && !rows) return <EmptyState message={error} action={<Button onClick={() => void load()}>Try again</Button>} />;
+  if (!rows) return <Skeleton label="Loading room requests" />;
+
+  const conflicts = findConflicts(rows);
+  const inDate = rows.filter((row) => !date || row.date === date);
+  const visible = tab === "pending" ? inDate.filter((row) => row.status === "PENDING")
+    : tab === "conflicts" ? inDate.filter((row) => conflicts.has(row.id))
+    : inDate.filter((row) => row.status !== "PENDING");
+
+  async function approve(row: RoomBookingRow) {
+    if (busy) return;
+    setBusy(row.id);
     try {
-      if (kind === 'approve') await approveRoomBooking(id, profile.id);
-      else {
-        const note = window.prompt('Reason for rejection?');
-        if (!note) return;
-        await rejectRoomBooking(id, profile.id, note);
-      }
+      await decideRoomBooking(row.id, true);
+      toast({ message: `${row.code} approved.${conflicts.has(row.id) ? " Competing requests were rejected." : ""}` });
       await load();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setBusy('');
-    }
-  };
+    } catch (cause) { toast({ tone: "error", message: cause instanceof Error ? cause.message : "Approval failed. Try again." }); await load(); }
+    finally { setBusy(undefined); }
+  }
+  async function reject() {
+    if (!rejecting || busy) return;
+    const note = rejecting.note.trim();
+    if (note.length < 3) { setRejecting({ ...rejecting, error: "Enter a reason of at least 3 characters." }); return; }
+    setBusy(rejecting.booking.id);
+    try {
+      await decideRoomBooking(rejecting.booking.id, false, note);
+      toast({ message: `${rejecting.booking.code} rejected.` });
+      setRejecting(undefined);
+      await load();
+    } catch (cause) { setRejecting({ ...rejecting, error: cause instanceof Error ? cause.message : "Rejection failed. Try again." }); }
+    finally { setBusy(undefined); }
+  }
 
-  const pending = bookings.filter((b) => b.status === 'PENDING');
-  const slotKey = (b: any) => `${b.room_id}|${b.period_id}`;
-  const counts = pending.reduce((m: Record<string, number>, b) => {
-    m[slotKey(b)] = (m[slotKey(b)] || 0) + 1;
-    return m;
-  }, {});
-  const conflicts = pending.filter((b) => counts[slotKey(b)] > 1);
-  const decided = bookings.filter((b) => b.status !== 'PENDING');
-  const shown = tab === 'pending' ? pending : tab === 'conflicts' ? conflicts : decided;
-
-  const badge: Record<string, string> = {
-    PENDING: 'bg-amber-50 text-amber-800 border-amber-200',
-    APPROVED: 'bg-emerald-50 text-emerald-800 border-emerald-200',
-    REJECTED: 'bg-rose-50 text-rose-800 border-rose-200',
-    CANCELLED: 'bg-slate-50 text-slate-700 border-slate-200',
-  };
-
-  return (
-    <div className="min-h-screen bg-slate-50 p-8">
-      <div className="max-w-5xl mx-auto">
-        <h1 className="text-3xl font-bold text-slate-900 mb-6">Room Requests</h1>
-
-        <div className="flex flex-wrap gap-4 mb-6">
-          <select
-            value={blockId}
-            onChange={(e) => setBlockId(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg"
-          >
-            {blocks.map((b) => (
-              <option key={b.id} value={b.id}>
-                {b.name} ({b.code})
-              </option>
-            ))}
-          </select>
-          <input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-            className="px-3 py-2 border border-slate-300 rounded-lg"
-          />
-        </div>
-
-        <div className="flex gap-2 mb-6 border-b border-slate-200">
-          {(['pending', 'conflicts', 'decided'] as Tab[]).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`px-4 py-2 text-sm font-medium capitalize border-b-2 ${
-                tab === t ? 'border-teal-700 text-teal-700' : 'border-transparent text-slate-600'
-              }`}
-            >
-              {t}
-              {t === 'pending' && ` (${pending.length})`}
-              {t === 'conflicts' && ` (${conflicts.length})`}
-            </button>
-          ))}
-        </div>
-
-        {error && (
-          <div className="mb-4 p-4 bg-rose-50 border border-rose-200 rounded-lg text-rose-800">{error}</div>
-        )}
-
-        {shown.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-8 text-center text-slate-500">Nothing here</div>
-        ) : (
-          <div className="space-y-3">
-            {shown.map((b) => (
-              <div key={b.id} className="bg-white rounded-lg shadow p-5 flex justify-between gap-4">
-                <div>
-                  <p className="font-semibold text-slate-900">
-                    {b.room?.name} · {b.period?.label}
-                  </p>
-                  <p className="text-sm text-slate-600">
-                    {b.faculty_name} · {b.attendees} attendees
-                  </p>
-                  <p className="text-sm text-slate-800 mt-1">{b.reason}</p>
-                  {b.decision_note && (
-                    <p className="text-xs text-slate-500 mt-1">Note: {b.decision_note}</p>
-                  )}
-                </div>
-                <div className="flex flex-col items-end gap-2">
-                  <span className={`px-2 py-0.5 rounded-full text-xs border ${badge[b.status]}`}>
-                    {b.status}
-                  </span>
-                  {b.status === 'PENDING' && (
-                    <div className="flex gap-2">
-                      <button
-                        disabled={busy === b.id}
-                        onClick={() => act(b.id, 'approve')}
-                        className="px-3 py-1 text-sm bg-teal-700 text-white rounded-lg disabled:opacity-50"
-                      >
-                        Approve
-                      </button>
-                      <button
-                        disabled={busy === b.id}
-                        onClick={() => act(b.id, 'reject')}
-                        className="px-3 py-1 text-sm border border-slate-300 rounded-lg disabled:opacity-50"
-                      >
-                        Reject
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+  return <div className="space-y-6">
+    <PageHeader title="Room approvals" context="Requests for rooms in blocks your department owns. Approving a request rejects competing ones for the same slot." />
+    <div className="flex flex-wrap items-end gap-4">
+      <div role="tablist" aria-label="Request views" className="flex gap-2">
+        {TABS.map((item) => <button key={item.id} type="button" role="tab" id={`tab-${item.id}`} aria-selected={tab === item.id} aria-controls="queue-panel" onClick={() => setTab(item.id)}
+          className={`min-h-11 rounded-control border px-4 py-2 ${tab === item.id ? "border-accent bg-accent-light font-medium text-accent" : "bg-surface hover:bg-background"}`}>
+          {item.label} ({item.id === "pending" ? rows.filter((row) => row.status === "PENDING").length : item.id === "conflicts" ? conflicts.size : rows.filter((row) => row.status !== "PENDING").length})
+        </button>)}
       </div>
+      <div className="w-48"><FormField label="Date">{(control) => <Input {...control} type="date" value={date} onChange={(event) => setDate(event.target.value)} />}</FormField></div>
+      {date && <Button variant="ghost" onClick={() => setDate("")}>Show all dates</Button>}
     </div>
-  );
+    <FieldError>{error}</FieldError>
+
+    {rejecting && <Card className="max-w-xl space-y-3" role="group" aria-label={`Reject ${rejecting.booking.code}`}>
+      <h2>Reject {rejecting.booking.code}</h2>
+      <FormField label="Reason for rejecting" required error={rejecting.error}>{(control) => <Textarea {...control} autoFocus rows={3} maxLength={300} value={rejecting.note} onChange={(event) => setRejecting({ ...rejecting, note: event.target.value, error: undefined })} />}</FormField>
+      <div className="flex gap-3"><Button variant="danger" loading={busy === rejecting.booking.id} onClick={() => void reject()}>Reject request</Button><Button variant="secondary" onClick={() => setRejecting(undefined)}>Keep request</Button></div>
+    </Card>}
+
+    <div id="queue-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+      <DataTable caption={`${TABS.find((item) => item.id === tab)?.label} room requests`} rows={visible} rowKey={(row) => row.id} columns={[
+        { id: "code", header: "Request", cell: (row) => <span className="block"><span className="block font-medium">{row.code}</span>{conflicts.has(row.id) && <Badge tone="orange">Conflict</Badge>}</span>, sortValue: (row) => row.code },
+        { id: "room", header: "Room", cell: (row) => <span className="block"><span className="block font-medium">{row.room?.name ?? "Room"}</span><span className="block text-secondary">{row.attendees} attendees</span></span> },
+        { id: "when", header: "When", cell: (row) => <span className="block"><span className="block">{formatDay(row.date)}</span><span className="block text-secondary">{row.period ? `${row.period.label} · ${formatClock(row.period.start_time)}–${formatClock(row.period.end_time)}` : ""}</span></span>, sortValue: (row) => row.date },
+        { id: "who", header: "Requested by", cell: (row) => <span className="block"><span className="block">{row.requester?.full_name ?? "Unknown"}</span><span className="block text-secondary">Faculty: {row.faculty_name}</span><span className="block text-secondary">{row.reason}</span></span> },
+        { id: "status", header: "Status", cell: (row) => <span className="block space-y-1"><StatusBadge status={row.status} />{row.decision_note && <span className="block text-secondary">{row.decision_note}</span>}</span> },
+        { id: "action", header: "Action", cell: (row) => row.status === "PENDING"
+          ? <span className="flex flex-wrap gap-2"><Button size="sm" loading={busy === row.id} aria-label={`Approve ${row.code}`} onClick={() => void approve(row)}>Approve</Button><Button size="sm" variant="secondary" disabled={Boolean(busy)} aria-label={`Reject ${row.code}`} onClick={() => setRejecting({ booking: row, note: "" })}>Reject</Button></span>
+          : <span className="text-secondary">Decided</span> },
+      ]} emptyMessage={tab === "pending" ? "No pending room requests." : tab === "conflicts" ? "No competing requests." : "No decided requests yet."} />
+    </div>
+  </div>;
 }

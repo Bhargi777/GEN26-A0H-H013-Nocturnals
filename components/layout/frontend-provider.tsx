@@ -23,16 +23,27 @@ export function FrontendProvider({ children, adapter = supabaseAdapter }: { chil
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string>();
+  const fetchSession = useCallback(async () => {
+    const session = await adapter.getSession();
+    const items = session ? await adapter.getNotifications(session) : [];
+    return { session, items };
+  }, [adapter]);
   const refresh = useCallback(async () => {
     setError(undefined);
     try {
-      const session = await adapter.getSession();
-      const items = session ? await adapter.getNotifications(session) : [];
+      const { session, items } = await fetchSession();
       setProfile(session); setNotifications(items);
     } catch { setError("Account details could not be loaded. Try again."); }
     finally { setReady(true); }
-  }, [adapter]);
-  useEffect(() => { void refresh(); }, [refresh]);
+  }, [fetchSession]);
+  useEffect(() => {
+    let cancelled = false;
+    fetchSession()
+      .then(({ session, items }) => { if (!cancelled) { setProfile(session); setNotifications(items); } })
+      .catch(() => { if (!cancelled) setError("Account details could not be loaded. Try again."); })
+      .finally(() => { if (!cancelled) setReady(true); });
+    return () => { cancelled = true; };
+  }, [fetchSession]);
   useEffect(() => {
     if (!profile || !adapter.subscribeNotifications) return;
     let cancelled = false;
