@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { loadDashboardData } from "@/lib/db/dashboard";
 import { useFrontend } from "@/components/layout/frontend-provider";
 import { Button, Card, DataTable, EmptyState, PageHeader, Skeleton, StatusBadge, buttonStyles } from "@/components/ui";
 import { dashboardFor, type DashboardModel } from "./dashboard-model";
 
 export default function DashboardPage() {
-  const { adapter, profile } = useFrontend();
+  const { profile } = useFrontend();
   const [model, setModel] = useState<DashboardModel>();
   const [error, setError] = useState<string>();
   const [attempt, setAttempt] = useState(0);
@@ -15,9 +16,9 @@ export default function DashboardPage() {
     if (!profile) return;
     let cancelled = false;
     setModel(undefined); setError(undefined);
-    void adapter.getDashboard(profile).then((data) => { if (!cancelled) setModel(dashboardFor(profile, data.tickets, data.requests)); }).catch(() => { if (!cancelled) setError("Your dashboard could not be loaded. Try again."); });
+    void loadDashboardData(profile).then((data) => { if (!cancelled) setModel(dashboardFor(profile, data)); }).catch(() => { if (!cancelled) setError("Your dashboard could not be loaded. Try again."); });
     return () => { cancelled = true; };
-  }, [adapter, profile, attempt]);
+  }, [profile, attempt]);
   if (error) return <EmptyState message={error} action={<Button onClick={() => setAttempt((value) => value + 1)}>Try again</Button>} />;
   if (!model) return <Skeleton label="Loading dashboard" />;
   return <div className="space-y-6">
