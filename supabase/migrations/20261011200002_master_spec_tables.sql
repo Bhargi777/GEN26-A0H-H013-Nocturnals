@@ -40,8 +40,9 @@ create table if not exists periods (
 );
 
 -- Update rooms table to use floor_id instead of building_id, add grid positioning
-alter table rooms drop constraint if exists "rooms_building_id_fkey";
-alter table rooms drop column if exists building_id;
+-- building_id stays: service requests still locate rooms by building
+alter table rooms alter column building_id drop not null;
+alter table rooms alter column floor drop not null;
 alter table rooms add column if not exists floor_id uuid references floors(id) on delete cascade;
 alter table rooms add column if not exists code text;
 alter table rooms add column if not exists kind text check (kind in ('classroom', 'lab', 'hall', 'corridor', 'stairs', 'washroom', 'lift'));
@@ -94,9 +95,12 @@ create table if not exists room_bookings (
   decided_by uuid references profiles(id) on delete set null,
   decision_note text,
   created_at timestamptz not null default now(),
-  updated_at timestamptz not null default now(),
-  unique(room_id, date, period_id) where status = 'APPROVED'
+  updated_at timestamptz not null default now()
 );
+
+-- Hard guarantee against double booking: one APPROVED booking per room, date and period
+create unique index if not exists room_bookings_one_approved
+  on room_bookings (room_id, date, period_id) where status = 'APPROVED';
 
 create trigger handle_updated_at_room_bookings
   before update on room_bookings
@@ -135,6 +139,7 @@ create table if not exists event_requests (
   contact_phone text not null,
   budget_estimate numeric(12, 2),
   form_pdf_path text,
+  decision_note text,
   status event_request_status not null default 'SUBMITTED',
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -144,23 +149,11 @@ create trigger handle_updated_at_event_requests
   before update on event_requests
   for each row execute procedure handle_updated_at();
 
--- Exclusion constraint: prevent overlapping events in the same hall (for specific statuses)
-create table if not exists event_requests_check (
-  id uuid primary key default gen_random_uuid(),
-  hall_id uuid,
-  event_date date,
-  start_time time,
-  end_time time,
-  status event_request_status,
-  exclude using gist (
-    hall_id with =,
-    event_date with =,
-    tsrange(
-      event_date::timestamp + start_time,
-      event_date::timestamp + end_time
-    ) with &&
-  ) where (status in ('PENDING_DIRECTOR', 'APPROVED', 'CALENDARED'))
-);
+-- Prevent overlapping events in the same hall once past review
+alter table event_requests add constraint event_requests_no_hall_overlap exclude using gist (
+  hall_id with =,
+  tsrange(event_date::timestamp + start_time, event_date::timestamp + end_time) with &&
+) where (status in ('PENDING_DIRECTOR', 'APPROVED', 'CALENDARED'));
 
 -- ============================================================================
 -- STEP 4: Module D - Canteen Ordering
@@ -198,13 +191,13 @@ create table if not exists canteen_slots (
   unique(canteen_id, slot_date, start_time, end_time)
 );
 
-create type order_status as enum ('PLACED', 'PAID', 'COLLECTED', 'FORFEITED', 'LATE_WALKIN');
+create type order_status as enum ('PLACED', 'PAID', 'READY', 'COLLECTED', 'FORFEITED', 'LATE_WALKIN');
 
 create sequence if not exists orders_seq start 1000;
 
 create table if not exists orders (
   id uuid primary key default gen_random_uuid(),
-  code text not null,
+  code text not null default 'ORD-' || lpad(nextval('orders_seq')::text, 6, '0'),
   token text not null,
   canteen_id uuid not null references canteens(id) on delete restrict,
   user_id uuid not null references profiles(id) on delete cascade,
