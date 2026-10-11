@@ -270,7 +270,7 @@ begin
     if new.status = 'PENDING_DIRECTOR' then
       perform notify_roles(array['campus_director']::user_role[], 'Event awaiting approval ' || new.code, new.title, '/events/director');
     elsif new.status = 'APPROVED' then
-      perform notify_roles(array['events_dept']::user_role[], 'Approved event to calendar ' || new.code, new.title, '/events/director');
+      perform notify_roles(array['events_dept']::user_role[], 'Approved event to calendar ' || new.code, new.title, '/events/calendar');
     elsif new.status = 'SUBMITTED' then
       perform notify_roles(array['osa']::user_role[], 'Event resubmitted ' || new.code, new.title, '/events/review');
     end if;

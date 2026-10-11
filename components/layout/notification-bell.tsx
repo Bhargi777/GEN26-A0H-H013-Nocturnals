@@ -6,7 +6,7 @@ import { Bell } from "lucide-react";
 import { useFrontend } from "./frontend-provider";
 
 export function NotificationBell() {
-  const { notifications } = useFrontend();
+  const { notifications, markRead } = useFrontend();
   const details = useRef<HTMLDetailsElement>(null);
   const summary = useRef<HTMLElement>(null);
   const unread = notifications.filter((item) => !item.read_at).length;
@@ -22,7 +22,7 @@ export function NotificationBell() {
     <div className="fixed left-4 right-4 top-24 z-40 space-y-3 rounded-card border border-secondary bg-surface p-4 md:absolute md:left-auto md:right-0 md:top-full md:w-80">
       <h2>Notifications</h2>
       <p className="text-secondary">{unread} unread</p>
-      {latest.length ? <ul className="max-h-80 divide-y overflow-y-auto">{latest.map((item) => <li key={item.id}><Link href={item.link} onClick={close} className="block space-y-1 rounded-control py-3 hover:bg-background"><span className="block text-accent underline">{item.title}</span><span className="block text-secondary">{item.body}</span><span className="block font-medium">{item.read_at ? "Read" : "Unread"}</span></Link></li>)}</ul> : <p>You have no notifications.</p>}
+      {latest.length ? <ul className="max-h-80 divide-y overflow-y-auto">{latest.map((item) => <li key={item.id}><Link href={item.link} onClick={() => { close(); if (!item.read_at) void markRead(item.id).catch(() => undefined); }} className="block space-y-1 rounded-control py-3 hover:bg-background"><span className="block text-accent underline">{item.title}</span><span className="block text-secondary">{item.body}</span><span className="block font-medium">{item.read_at ? "Read" : "Unread"}</span></Link></li>)}</ul> : <p>You have no notifications.</p>}
       <Link href="/notifications" onClick={close} className="text-link inline-block py-2">View all notifications</Link>
     </div>
   </details>;

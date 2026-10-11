@@ -1,9 +1,28 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
 // Event request data layer (Module B)
 import { createClient } from '../supabase/client';
 import { Database, EventRequest, Club } from '../types/database';
 
 // Browser client carries the signed-in session so RLS applies to every query.
 const supabase = createClient() as any;
+
+/**
+ * The event pages were written against friendlier field names than the table uses.
+ * Reads add those names on top of the real columns; writes below map them back.
+ */
+function normalize(row: any): any {
+  if (!row) return row;
+  return {
+    ...row,
+    event_name: row.title,
+    theme: row.event_type,
+    category: row.event_type,
+    proposed_date: row.event_date,
+    attendees: row.expected_attendance,
+    budget: row.budget_estimate,
+    token: row.code,
+  };
+}
 
 /**
  * Get clubs for a user (club presidents)
@@ -14,7 +33,7 @@ export async function getClubsForUser(userId: string): Promise<Club[]> {
     .select('*');
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalize);
 }
 
 /**
@@ -29,6 +48,8 @@ export async function createEventRequest(params: {
   start_time: string;
   end_time: string;
   hall_id?: string | null;
+  faculty_coordinator?: string;
+  contact_phone?: string;
   attendees?: number;
   budget?: number;
   category?: string;
@@ -42,17 +63,18 @@ export async function createEventRequest(params: {
     .insert({
       club_id: params.club_id,
       requested_by: user.id,
-      event_name: params.event_name,
-      theme: params.theme,
-      description: params.description || null,
-      proposed_date: params.proposed_date,
+      title: params.event_name,
+      event_type: params.category || params.theme || 'other',
+      description: [params.theme, params.description].filter(Boolean).join(' - ') || params.event_name,
+      event_date: params.proposed_date,
       start_time: params.start_time,
       end_time: params.end_time,
-      hall_id: params.hall_id || null,
-      attendees: params.attendees || 0,
-      budget: params.budget || 0,
-      category: params.category || 'other',
-      poster_url: params.poster_url || null,
+      hall_id: params.hall_id,
+      faculty_coordinator: params.faculty_coordinator,
+      contact_phone: params.contact_phone,
+      expected_attendance: params.attendees || 0,
+      budget_estimate: params.budget || 0,
+      form_pdf_path: params.poster_url || null,
       status: 'SUBMITTED',
     })
     .select()
@@ -60,9 +82,8 @@ export async function createEventRequest(params: {
 
   if (error) throw error;
 
-  // Generate a token if not already in data (fallback for demo)
-  const token = data?.token || `EV${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
-  return { ...data, token };
+  // The database assigns the EV-###### reference.
+  return normalize(data);
 }
 
 /**
@@ -76,7 +97,7 @@ export async function getMyEventRequests(userId: string): Promise<EventRequest[]
     .order('created_at', { ascending: false });
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalize);
 }
 
 /**
@@ -90,7 +111,7 @@ export async function getEventRequestsForOSA(): Promise<EventRequest[]> {
     .order('created_at');
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalize);
 }
 
 /**
@@ -104,7 +125,7 @@ export async function getEventRequestsForDirector(): Promise<EventRequest[]> {
     .order('created_at');
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalize);
 }
 
 /**
@@ -118,7 +139,7 @@ export async function getApprovedEventRequests(): Promise<EventRequest[]> {
     .order('event_date');
 
   if (error) throw error;
-  return data || [];
+  return (data || []).map(normalize);
 }
 
 /**
@@ -133,7 +154,7 @@ export async function getEventRequest(id: string): Promise<EventRequest> {
 
   if (error) throw error;
   if (!data) throw new Error('Event request not found');
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -148,7 +169,7 @@ export async function osaApproveEventRequest(id: string): Promise<EventRequest> 
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -166,7 +187,7 @@ export async function osaRejectEventRequest(
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -184,7 +205,7 @@ export async function osaRequestChanges(
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -199,7 +220,7 @@ export async function directorApproveEventRequest(id: string): Promise<EventRequ
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -217,7 +238,7 @@ export async function directorRejectEventRequest(
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -232,7 +253,7 @@ export async function markEventCalendared(id: string): Promise<EventRequest> {
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**
@@ -247,7 +268,7 @@ export async function resubmitEventRequest(id: string): Promise<EventRequest> {
     .single();
 
   if (error) throw error;
-  return data;
+  return normalize(data);
 }
 
 /**

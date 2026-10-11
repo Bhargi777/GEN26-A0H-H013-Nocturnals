@@ -1,20 +1,19 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase/browser';
 import { createEventRequest, getClubsForUser } from '@/lib/db/events';
 import { nowIST, isValidCanteenSlot } from '@/lib/time';
 import { format, addDays, isBefore, differenceInHours } from 'date-fns';
 
-const supabase = createClient<any>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
+const supabase = getSupabase();
 
 export default function NewEventPage() {
   const router = useRouter();
   const [clubs, setClubs] = useState<any[]>([]);
+  const [halls, setHalls] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [submitted, setSubmitted] = useState(false);
@@ -29,6 +28,8 @@ export default function NewEventPage() {
     start_time: '',
     end_time: '',
     hall_id: '',
+    faculty_coordinator: '',
+    contact_phone: '',
     attendees: '',
     budget: '',
     category: 'cultural',
@@ -54,6 +55,8 @@ export default function NewEventPage() {
 
         const userClubs = await getClubsForUser(user.id);
         setClubs(userClubs);
+        const { data: hallRows } = await supabase.from('rooms').select('id, name, capacity').eq('kind', 'hall').eq('bookable', true).order('name');
+        setHalls(hallRows || []);
       } catch (e: any) {
         setError(e.message);
       }
@@ -103,7 +106,9 @@ export default function NewEventPage() {
         proposed_date: formData.proposed_date,
         start_time: formData.start_time,
         end_time: formData.end_time,
-        hall_id: formData.hall_id || null,
+        hall_id: formData.hall_id,
+        faculty_coordinator: formData.faculty_coordinator,
+        contact_phone: formData.contact_phone,
         attendees: parseInt(formData.attendees) || 0,
         budget: parseFloat(formData.budget) || 0,
         category: formData.category,
@@ -240,6 +245,23 @@ export default function NewEventPage() {
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg"
               />
             </div>
+          </div>
+
+          {/* Hall, coordinator and contact */}
+          <div>
+            <label htmlFor="hall" className="block text-sm font-semibold text-slate-900 mb-2">Hall</label>
+            <select id="hall" required value={formData.hall_id} onChange={(e) => setFormData({ ...formData, hall_id: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg">
+              <option value="">Select a hall</option>
+              {halls.map((hall) => <option key={hall.id} value={hall.id}>{hall.name}{hall.capacity ? ` (seats ${hall.capacity})` : ''}</option>)}
+            </select>
+          </div>
+          <div>
+            <label htmlFor="coordinator" className="block text-sm font-semibold text-slate-900 mb-2">Faculty coordinator</label>
+            <input id="coordinator" type="text" required value={formData.faculty_coordinator} onChange={(e) => setFormData({ ...formData, faculty_coordinator: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
+          </div>
+          <div>
+            <label htmlFor="phone" className="block text-sm font-semibold text-slate-900 mb-2">Contact phone</label>
+            <input id="phone" type="tel" required pattern="[0-9+ ]{7,15}" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
           </div>
 
           {/* Hall and attendees */}

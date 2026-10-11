@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
 import { Role, TicketStatus, TicketCategory, TicketPriority, AdminRequestStatus, AdminRequestType } from '../constants';
 
 export interface Department {

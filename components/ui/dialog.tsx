@@ -25,6 +25,7 @@ export function Dialog({ open, title, description, confirmLabel, danger = false,
     if (!element) return;
     if (!open) { element.close(); return; }
     const previous = document.activeElement as HTMLElement | null;
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- clears the previous failure when the dialog reopens
     setError(undefined);
     if (!element.open) element.showModal();
     return () => { element.close(); previous?.focus(); };

@@ -21,6 +21,7 @@ const newEvent = item("/events/new", "Request an event", Plus);
 const myEvents = item("/events/mine", "My events", Calendar);
 const eventReview = item("/events/review", "Event reviews", Calendar);
 const eventApproval = item("/events/director", "Event approvals", Calendar);
+const eventCalendar = item("/events/calendar", "Event calendar", Calendar);
 const canteen = item("/canteen", "Canteen", UtensilsCrossed);
 const myOrders = item("/canteen/orders", "My orders", ReceiptText);
 
@@ -33,13 +34,13 @@ const byRole: Record<Role, NavigationItem[]> = {
   [ROLES.TECHNICIAN]: [department],
   [ROLES.DEPT_OFFICE]: [department, roomQueue],
   [ROLES.DEPT_HEAD]: [department, roomQueue],
-  [ROLES.EVENTS_DEPT]: [eventApproval],
+  [ROLES.EVENTS_DEPT]: [eventCalendar],
   [ROLES.OSA]: [eventReview],
   [ROLES.CAMPUS_DIRECTOR]: [eventApproval],
   [ROLES.CANTEEN_KITCHEN]: [canteen],
   [ROLES.CANTEEN_COUNTER]: [canteen],
   [ROLES.CANTEEN_MANAGER]: [canteen],
-  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, canteen, myOrders],
+  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, canteen, myOrders],
 };
 
 export function navigationForRole(role?: Role | string): NavigationItem[] {

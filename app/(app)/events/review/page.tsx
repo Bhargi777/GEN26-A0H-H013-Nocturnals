@@ -1,14 +1,12 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { createClient } from '@supabase/supabase-js';
+import { getSupabase } from '@/lib/supabase/browser';
 import { getEventRequestsForOSA, osaApproveEventRequest, osaRequestChanges } from '@/lib/db/events';
 
-const supabase = createClient<any>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
+const supabase = getSupabase();
 
 const statusBadge: Record<string, string> = {
   SUBMITTED: 'bg-amber-50 text-amber-800 border-amber-200',

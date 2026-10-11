@@ -20,10 +20,10 @@ export default function NotificationsPage() {
   }
   return <div className="space-y-6">
     <PageHeader title="Notifications" context={`${unread} unread. Unread notifications appear first.`} action={<Button disabled={unread === 0 || Boolean(busy)} loading={busy === "all"} onClick={() => void mark()}>Mark all read</Button>} />
-    <DataTable caption="Campus notifications" rows={ordered} rowKey={(row) => row.id} rowHref={(row) => row.link} columns={[
-      { id: "notification", header: "Notification", cell: (row) => <span className="block max-w-md space-y-1"><span className="block font-medium">{row.title}</span><span className="block text-secondary">{row.body}</span></span> },
+    <DataTable caption="Campus notifications" rows={ordered} rowKey={(row) => row.id} columns={[
+      { id: "notification", header: "Notification", cell: (row) => <Link href={row.link} onClick={() => { if (!row.read_at) void markRead(row.id).catch(() => undefined); }} className="block max-w-md space-y-1 rounded-control hover:bg-background"><span className="block font-medium text-accent underline">{row.title}</span><span className="block text-secondary">{row.body}</span></Link> },
       { id: "read", header: "Read status", cell: (row) => <Badge tone={row.read_at ? "slate" : "blue"}>{row.read_at ? "Read" : "Unread"}</Badge> },
-      { id: "received", header: "Received", cell: (row) => <time dateTime={row.created_at}>{new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", year: "numeric", timeZone: "Asia/Kolkata" }).format(new Date(row.created_at))}</time> },
+      { id: "received", header: "Received", cell: (row) => <time dateTime={row.created_at}>{new Intl.DateTimeFormat("en-IN", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit", timeZone: "Asia/Kolkata" }).format(new Date(row.created_at))}</time> },
       { id: "action", header: "Action", cell: (row) => row.read_at ? <span className="text-secondary">Already read</span> : <Button variant="secondary" size="sm" aria-label={`Mark ${row.title} as read`} disabled={Boolean(busy)} loading={busy === row.id} onClick={() => void mark(row.id)}>Mark read</Button> },
     ]} emptyMessage="You have no notifications." emptyAction={<Link href="/dashboard" className={buttonStyles("secondary")}>Go to dashboard</Link>} />
   </div>;

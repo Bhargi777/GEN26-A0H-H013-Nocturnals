@@ -18,6 +18,7 @@ export function FileInput({ label, onChange, maxBytes = 5 * 1024 * 1024, disable
   const [error, setError] = useState<string>();
   const input = useRef<HTMLInputElement>(null);
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- the object URL only exists after mount
     if (!file) { setPreview(undefined); return; }
     const url = URL.createObjectURL(file);
     setPreview(url);
