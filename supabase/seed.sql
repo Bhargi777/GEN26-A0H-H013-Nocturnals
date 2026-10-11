@@ -223,7 +223,7 @@ insert into public.rooms (id, floor_id, building_id, name, floor, code, kind, ca
 
 -- Some wing rooms are in use on weekday mornings so the plan shows both states
 insert into public.timetable_entries (room_id, weekday, period_id, course, section, faculty_name)
-select r.id, w.d, p.id, 'Scheduled class', 'CSE-' || right(r.code, 1), 'Dr. Venkatesh Rao'
+select r.id, w.d, p.id, 'Elective lecture', 'CSE-' || right(r.code, 1), 'Visiting Faculty'
 from public.rooms r cross join (values (1), (2), (3), (4), (5)) as w(d)
 join public.periods p on p.label in ('Period 3', 'Period 4')
 where r.code in ('RB-F102', 'RB-C102', 'RB-D104', 'RB-D103', 'RB-D102', 'RB-A104', 'RB-A102', 'RB-LAB-102', 'FH-102');
