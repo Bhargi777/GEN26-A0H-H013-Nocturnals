@@ -2,6 +2,9 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { Database } from './lib/types/database'
 
+// Files a phone needs before anyone signs in: install manifest, service worker, offline page, icons, app links.
+const PUBLIC_PATHS = ['/sw.js', '/manifest.webmanifest', '/offline', '/icons', '/.well-known', '/downloads']
+
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -42,7 +45,7 @@ export async function proxy(request: NextRequest) {
   // /dashboard, /notifications, /service-requests, /requests, /office, /admin/reports
   // We can just protect everything except /sign-in, auth callbacks, and static files
   
-  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/')) {
+  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/') && !PUBLIC_PATHS.some((path) => request.nextUrl.pathname === path || request.nextUrl.pathname.startsWith(path + '/'))) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'
     return NextResponse.redirect(url)
