@@ -16,6 +16,14 @@ export const signUpSchema = signInSchema.extend({
   password: z.string().min(8, "Use at least 8 characters for your password.").max(128, "Password must be at most 128 characters."),
 });
 
+const DEMO_ACCOUNTS = [
+  ["Student", "arjun.s@example.edu"], ["Class rep", "cr.cse@example.edu"], ["Faculty", "dr.rao@example.edu"],
+  ["Dept office", "office.cse@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
+  ["Campus director", "director.campus@example.edu"], ["Events dept", "events.dept@example.edu"], ["Canteen counter", "counter.main@example.edu"],
+  ["Canteen kitchen", "kitchen.main@example.edu"], ["Canteen manager", "canteen.manager@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
+] as const;
+const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
+
 export function AuthForm({ mode = "sign-in" }: { mode?: "sign-in" | "sign-up" }) {
   const signingUp = mode === "sign-up";
   const { adapter, refresh } = useFrontend();
@@ -58,6 +66,18 @@ export function AuthForm({ mode = "sign-in" }: { mode?: "sign-in" | "sign-up" })
       {message && <p role="status" className="text-status-green-dark">{message}</p>}
       <Button type="submit" loading={busy} className="w-full">{signingUp ? "Create account" : "Sign in"}</Button>
     </form>
+    {demoMode && !signingUp && <section aria-labelledby="demo-heading" className="space-y-2 rounded-control border bg-background p-3">
+      <h2 id="demo-heading">Demo accounts</h2>
+      <p className="text-secondary">Sign in as a seeded user to see each role.</p>
+      <div className="flex flex-wrap gap-2">{DEMO_ACCOUNTS.map(([label, email]) => <Button key={email} size="sm" variant="secondary" disabled={busy} onClick={async () => {
+        setBusy(true); setError(undefined);
+        try {
+          const response = await adapter.signIn({ email, password: "password123" });
+          if (response.error) setError(response.error); else { await refresh(); router.replace("/dashboard"); }
+        } catch { setError("Demo sign-in failed. Is the local database running?"); }
+        finally { setBusy(false); }
+      }}>{label}</Button>)}</div>
+    </section>}
     <p className="text-secondary">{signingUp ? "Already have an account? " : "Need a campus account? "}<Link href={signingUp ? "/sign-in" : "/sign-up"} className="text-link">{signingUp ? "Sign in" : "Create an account"}</Link></p>
   </div>;
 }

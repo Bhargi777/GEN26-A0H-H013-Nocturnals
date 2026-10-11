@@ -227,3 +227,51 @@ select r.id, w.d, p.id, 'Scheduled class', 'CSE-' || right(r.code, 1), 'Dr. Venk
 from public.rooms r cross join (values (1), (2), (3), (4), (5)) as w(d)
 join public.periods p on p.label in ('Period 3', 'Period 4')
 where r.code in ('RB-F102', 'RB-C102', 'RB-D104', 'RB-D103', 'RB-D102', 'RB-A104', 'RB-A102', 'RB-LAB-102', 'FH-102');
+
+
+-- ============================================================================
+-- Demo day: an IT department office user, one event at each review stage,
+-- competing room requests, live canteen orders and the service-request story
+-- ============================================================================
+insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_user_meta_data, instance_id, aud, role, raw_app_meta_data, confirmation_token, recovery_token, email_change, email_change_token_new, created_at, updated_at)
+select v.id::uuid, v.email, v.pw, now(), v.meta::jsonb, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+  '{"provider":"email","providers":["email"]}'::jsonb, '', '', '', '', now(), now()
+from (values ('a5000000-0000-0000-0000-000000000017', 'office.it@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Ishita Nair"}')) as v(id, email, pw, meta);
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select gen_random_uuid(), u.id, u.id::text, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', now(), now(), now()
+from auth.users u where u.email = 'office.it@example.edu';
+update public.profiles set role = 'dept_office', department_id = 'd0000000-0000-0000-0000-000000000003' where email = 'office.it@example.edu';
+
+-- Events at three stages (inserted as the database owner, so the transition guard is skipped)
+insert into public.event_requests (club_id, requested_by, title, description, event_type, event_date, start_time, end_time, hall_id, expected_attendance, faculty_coordinator, contact_phone, budget_estimate, status)
+select 'c0000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000009', t.title, t.descr, t.kind,
+  (now() at time zone 'Asia/Kolkata')::date + t.days, t.start_t::time, t.end_t::time, t.hall::uuid, t.people, 'Dr. Venkatesh Rao', '9876543210', t.budget, t.status::event_request_status
+from (values
+  ('HackNight 2026', 'Overnight hackathon for first and second years.', 'technical', 12, '10:00', '18:00', 'e0000000-0000-0000-0000-000000000007', 120, 25000, 'SUBMITTED'),
+  ('Rhythm Fest', 'Inter-department music competition.', 'cultural', 15, '17:00', '21:00', 'e0000000-0000-0000-0000-000000000006', 400, 60000, 'PENDING_DIRECTOR'),
+  ('Open Source Day', 'Talks and a contribution sprint.', 'workshop', 20, '09:00', '16:00', 'e0000000-0000-0000-0000-000000000008', 90, 8000, 'APPROVED')
+) as t(title, descr, kind, days, start_t, end_t, hall, people, budget, status);
+
+-- Two competing pending requests for one slot, plus one approved booking
+insert into public.room_bookings (room_id, date, period_id, requested_by, reason, faculty_name, attendees, status)
+select r.id, (now() at time zone 'Asia/Kolkata')::date + 2, p.id, b.who::uuid, b.reason, b.faculty, b.people, b.status
+from public.rooms r, public.periods p, (values
+  ('a5000000-0000-0000-0000-000000000011', 'Revision class before the internal test', 'Dr. Venkatesh Rao', 40, 'PENDING'),
+  ('a5000000-0000-0000-0000-000000000003', 'Guest lecture on distributed systems', 'Dr. Venkatesh Rao', 35, 'PENDING')
+) as b(who, reason, faculty, people, status)
+where r.code = 'RB-F101' and p.label = 'Period 5';
+insert into public.room_bookings (room_id, date, period_id, requested_by, reason, faculty_name, attendees, status)
+select r.id, (now() at time zone 'Asia/Kolkata')::date + 3, p.id, 'a5000000-0000-0000-0000-000000000003', 'Project review', 'Dr. Venkatesh Rao', 20, 'APPROVED'
+from public.rooms r, public.periods p where r.code = 'RB-C103' and p.label = 'Period 6';
+
+-- Live orders at each stage on a later slot today (tokens DEMO-nnn avoid clashing with real MAIN-nnn)
+insert into public.orders (token, canteen_id, user_id, slot_id, status, total)
+select 'MAIN-9' || lpad(o.n::text, 2, '0'), 'c1000000-0000-0000-0000-000000000001', 'a5000000-0000-0000-0000-000000000001', s.id, o.status::order_status, o.total
+from (values (1, 'PLACED', 150), (2, 'PAID', 200), (3, 'READY', 100)) as o(n, status, total),
+  lateral (select id from public.canteen_slots where canteen_id = 'c1000000-0000-0000-0000-000000000001'
+    and slot_date + start_time > (now() at time zone 'Asia/Kolkata') + interval '30 minutes' order by slot_date, start_time limit 1) as s;
+insert into public.order_items (order_id, item_id, quantity, unit_price)
+select o.id, m.id, 1, m.price from public.orders o join public.menu_items m on m.canteen_id = o.canteen_id and m.name = case o.status when 'PLACED' then 'Biryani (Chicken)' when 'PAID' then 'Paneer Butter Masala' else 'Dosa' end
+where o.token like 'MAIN-9%';
+
+select public.svc_seed_demo_story();

@@ -54,3 +54,12 @@ export interface EventRow {
   status: EventStatusValue; created_at: string;
   club?: { name: string } | null; hall?: { name: string } | null;
 }
+
+export type CertificateType = "BONAFIDE" | "NOC";
+export type CertificateStatus = "PENDING_DEPT" | "PENDING_OFFICE" | "APPROVED" | "REJECTED";
+export interface CertificateRow {
+  id: string; code: string; type: CertificateType; purpose: string; status: CertificateStatus;
+  decision_note: string | null; created_at: string; decided_at: string | null; requester_id: string;
+  requester?: { full_name: string; roll_no: string | null; department?: { name: string } | null } | null;
+}
+export interface CertificateEvent { id: string; action: string; from_status: string | null; to_status: string | null; note: string | null; created_at: string; actor?: { full_name: string } | null }

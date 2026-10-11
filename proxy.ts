@@ -42,7 +42,7 @@ export async function proxy(request: NextRequest) {
   // /dashboard, /notifications, /service-requests, /requests, /office, /admin/reports, /verify
   // We can just protect everything except /sign-in, auth callbacks, and static files
   
-  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/')) {
+  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/') && !request.nextUrl.pathname.startsWith('/verify/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'
     return NextResponse.redirect(url)

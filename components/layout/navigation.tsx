@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Award, Bell, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { ROLES, type Role } from "@/app/(app)/ui/preview-contract";
 import { useFrontend } from "./frontend-provider";
 
@@ -22,25 +22,28 @@ const myEvents = item("/events/mine", "My events", Calendar);
 const eventReview = item("/events/review", "Event reviews", Calendar);
 const eventApproval = item("/events/director", "Event approvals", Calendar);
 const eventCalendar = item("/events/calendar", "Event calendar", Calendar);
+const certificates = item("/requests", "My certificates", Award);
+const newCertificate = item("/requests/new", "Request a certificate", Plus);
+const certificateReviews = item("/office", "Certificate reviews", Award);
 const canteen = item("/canteen", "Canteen", UtensilsCrossed);
 const myOrders = item("/canteen/orders", "My orders", ReceiptText);
 
 const requester = [myRequests, report];
 const byRole: Record<Role, NavigationItem[]> = {
-  [ROLES.STUDENT]: [...requester, canteen, myOrders],
+  [ROLES.STUDENT]: [...requester, certificates, newCertificate, canteen, myOrders],
   [ROLES.FACULTY]: [...requester, bookRoom, myBookings, canteen, myOrders],
-  [ROLES.CR]: [...requester, bookRoom, myBookings, canteen, myOrders],
-  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, canteen, myOrders],
+  [ROLES.CR]: [...requester, bookRoom, myBookings, certificates, newCertificate, canteen, myOrders],
+  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, certificates, newCertificate, canteen, myOrders],
   [ROLES.TECHNICIAN]: [department],
-  [ROLES.DEPT_OFFICE]: [department, roomQueue],
-  [ROLES.DEPT_HEAD]: [department, roomQueue],
+  [ROLES.DEPT_OFFICE]: [department, roomQueue, certificateReviews],
+  [ROLES.DEPT_HEAD]: [department, roomQueue, certificateReviews],
   [ROLES.EVENTS_DEPT]: [eventCalendar],
-  [ROLES.OSA]: [eventReview],
+  [ROLES.OSA]: [eventReview, certificateReviews],
   [ROLES.CAMPUS_DIRECTOR]: [eventApproval],
   [ROLES.CANTEEN_KITCHEN]: [canteen],
   [ROLES.CANTEEN_COUNTER]: [canteen],
   [ROLES.CANTEEN_MANAGER]: [canteen],
-  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, canteen, myOrders],
+  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, certificateReviews, canteen, myOrders],
 };
 
 export function navigationForRole(role?: Role | string): NavigationItem[] {
