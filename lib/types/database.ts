@@ -104,25 +104,24 @@ export type EventRequestStatus = 'SUBMITTED' | 'CHANGES_REQUESTED' | 'PENDING_DI
 
 export interface EventRequest {
   id: string;
-  code: string;
+  token?: string;
   club_id: string;
   requested_by: string;
-  title: string;
-  description: string;
-  event_type: string;
-  event_date: string;
+  event_name: string;
+  theme: string;
+  description?: string;
+  proposed_date: string;
   start_time: string;
   end_time: string;
-  hall_id: string;
-  expected_attendance: number;
-  resources_needed: string[];
-  faculty_coordinator: string;
-  contact_phone: string;
-  budget_estimate?: number;
-  form_pdf_path?: string;
+  hall_id?: string | null;
+  attendees?: number;
+  budget?: number;
+  category?: string;
+  poster_url?: string | null;
   status: EventRequestStatus;
+  decision_note?: string;
   created_at: string;
-  updated_at: string;
+  updated_at?: string;
 }
 
 export interface Canteen {

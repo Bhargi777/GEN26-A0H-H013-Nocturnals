@@ -20,46 +20,49 @@ export async function getClubsForUser(userId: string): Promise<Club[]> {
 /**
  * Create an event request
  */
-export async function createEventRequest(
-  clubId: string,
-  requestedBy: string,
-  title: string,
-  description: string,
-  eventType: string,
-  eventDate: string,
-  startTime: string,
-  endTime: string,
-  hallId: string,
-  expectedAttendance: number,
-  resourcesNeeded: string[],
-  facultyCoordinator: string,
-  contactPhone: string,
-  budgetEstimate?: number
-): Promise<EventRequest> {
+export async function createEventRequest(params: {
+  club_id: string;
+  event_name: string;
+  theme: string;
+  description?: string;
+  proposed_date: string;
+  start_time: string;
+  end_time: string;
+  hall_id?: string | null;
+  attendees?: number;
+  budget?: number;
+  category?: string;
+  poster_url?: string | null;
+}): Promise<EventRequest & { token?: string }> {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('event_requests')
     .insert({
-      club_id: clubId,
-      requested_by: requestedBy,
-      title,
-      description,
-      event_type: eventType,
-      event_date: eventDate,
-      start_time: startTime,
-      end_time: endTime,
-      hall_id: hallId,
-      expected_attendance: expectedAttendance,
-      resources_needed: resourcesNeeded,
-      faculty_coordinator: facultyCoordinator,
-      contact_phone: contactPhone,
-      budget_estimate: budgetEstimate || null,
+      club_id: params.club_id,
+      requested_by: user.id,
+      event_name: params.event_name,
+      theme: params.theme,
+      description: params.description || null,
+      proposed_date: params.proposed_date,
+      start_time: params.start_time,
+      end_time: params.end_time,
+      hall_id: params.hall_id || null,
+      attendees: params.attendees || 0,
+      budget: params.budget || 0,
+      category: params.category || 'other',
+      poster_url: params.poster_url || null,
       status: 'SUBMITTED',
     })
     .select()
     .single();
 
   if (error) throw error;
-  return data;
+
+  // Generate a token if not already in data (fallback for demo)
+  const token = data?.token || `EV${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+  return { ...data, token };
 }
 
 /**
@@ -83,7 +86,7 @@ export async function getEventRequestsForOSA(): Promise<EventRequest[]> {
   const { data, error } = await supabase
     .from('event_requests')
     .select('*')
-    .eq('status', 'SUBMITTED')
+    .in('status', ['SUBMITTED', 'CHANGES_REQUESTED', 'PENDING_DIRECTOR'])
     .order('created_at');
 
   if (error) throw error;
@@ -175,7 +178,7 @@ export async function osaRequestChanges(
 ): Promise<EventRequest> {
   const { data, error } = await supabase
     .from('event_requests')
-    .update({ status: 'CHANGES_REQUESTED' })
+    .update({ status: 'CHANGES_REQUESTED', decision_note: reason })
     .eq('id', id)
     .select()
     .single();
@@ -208,7 +211,7 @@ export async function directorRejectEventRequest(
 ): Promise<EventRequest> {
   const { data, error } = await supabase
     .from('event_requests')
-    .update({ status: 'REJECTED' })
+    .update({ status: 'REJECTED', decision_note: reason })
     .eq('id', id)
     .select()
     .single();
