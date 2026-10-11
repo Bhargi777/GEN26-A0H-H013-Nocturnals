@@ -1,319 +1,125 @@
-'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getSupabase } from '@/lib/supabase/browser';
-import { createEventRequest, getClubsForUser } from '@/lib/db/events';
-import { nowIST, isValidCanteenSlot } from '@/lib/time';
-import { format, addDays, isBefore, differenceInHours } from 'date-fns';
+import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
+import { RoleGate } from "@/components/layout/role-gate";
+import { Button, Card, FieldError, FormField, Input, PageHeader, Select, Skeleton, Textarea, buttonStyles } from "@/components/ui";
+import { ROLES } from "@/lib/constants/roles";
+import { createEventRequest, listClubs, listHalls } from "@/lib/db/events";
+import { istDate } from "@/lib/time";
+import type { ClubRow, EventRow, HallRow } from "@/lib/types/campus";
 
-const supabase = getSupabase();
+const TYPES = ["cultural", "technical", "sports", "workshop", "talk", "other"];
+type Field = "club" | "title" | "type" | "description" | "date" | "start" | "end" | "hall" | "coordinator" | "phone" | "attendance" | "budget";
 
 export default function NewEventPage() {
-  const router = useRouter();
-  const [clubs, setClubs] = useState<any[]>([]);
-  const [halls, setHalls] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [submitted, setSubmitted] = useState(false);
-  const [token, setToken] = useState('');
+  return <RoleGate roles={[ROLES.CLUB_PRESIDENT, ROLES.ADMIN]}><NewEvent /></RoleGate>;
+}
 
-  const [formData, setFormData] = useState({
-    club_id: '',
-    event_name: '',
-    theme: '',
-    description: '',
-    proposed_date: '',
-    start_time: '',
-    end_time: '',
-    hall_id: '',
-    faculty_coordinator: '',
-    contact_phone: '',
-    attendees: '',
-    budget: '',
-    category: 'cultural',
-    poster_url: '',
-  });
+const blank = { club: "", title: "", type: "cultural", description: "", date: "", start: "", end: "", hall: "", coordinator: "", phone: "", attendance: "", budget: "" };
+const minutes = (time: string) => Number(time.slice(0, 2)) * 60 + Number(time.slice(3, 5));
+
+function NewEvent() {
+  const form = useRef<HTMLFormElement>(null);
+  const [clubs, setClubs] = useState<ClubRow[]>();
+  const [halls, setHalls] = useState<HallRow[]>([]);
+  const [values, setValues] = useState(blank);
+  const [errors, setErrors] = useState<Partial<Record<Field, string>>>({});
+  const [formError, setFormError] = useState<string>();
+  const [loadError, setLoadError] = useState<string>();
+  const [busy, setBusy] = useState(false);
+  const [created, setCreated] = useState<EventRow>();
 
   useEffect(() => {
-    (async () => {
-      try {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return router.push('/sign-in');
+    let cancelled = false;
+    Promise.all([listClubs(), listHalls()])
+      .then(([clubRows, hallRows]) => { if (!cancelled) { setClubs(clubRows); setHalls(hallRows); } })
+      .catch(() => { if (!cancelled) setLoadError("The form could not be loaded. Refresh the page to try again."); });
+    return () => { cancelled = true; };
+  }, []);
 
-        // Check if user is club president
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', user.id)
-          .single();
+  const set = (key: keyof typeof blank) => (event: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => setValues((current) => ({ ...current, [key]: event.target.value }));
 
-        if (profile?.role !== 'club_president') {
-          return router.push('/dashboard');
-        }
-
-        const userClubs = await getClubsForUser(user.id);
-        setClubs(userClubs);
-        const { data: hallRows } = await supabase.from('rooms').select('id, name, capacity').eq('kind', 'hall').eq('bookable', true).order('name');
-        setHalls(hallRows || []);
-      } catch (e: any) {
-        setError(e.message);
-      }
-    })();
-  }, [router]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
-
-    try {
-      // Validate date: ≥7 days from now
-      const proposedDate = new Date(formData.proposed_date);
-      const sevenDaysFromNow = addDays(nowIST(), 7);
-      if (isBefore(proposedDate, sevenDaysFromNow)) {
-        setError('Event must be at least 7 days from now');
-        setLoading(false);
-        return;
-      }
-
-      // Validate time: 07:00–23:00 IST
-      const [startHour, startMin] = formData.start_time.split(':').map(Number);
-      const [endHour, endMin] = formData.end_time.split(':').map(Number);
-      if (startHour < 7 || endHour > 23) {
-        setError('Event time must be between 07:00 and 23:00 IST');
-        setLoading(false);
-        return;
-      }
-
-      // Validate duration: ≤8 hours
-      const startMinutes = startHour * 60 + startMin;
-      const endMinutes = endHour * 60 + endMin;
-      const durationHours = (endMinutes - startMinutes) / 60;
-      if (durationHours > 8 || durationHours <= 0) {
-        setError('Event duration must be between 0 and 8 hours');
-        setLoading(false);
-        return;
-      }
-
-      // Create event request
-      const eventRequest = await createEventRequest({
-        club_id: formData.club_id,
-        event_name: formData.event_name,
-        theme: formData.theme,
-        description: formData.description,
-        proposed_date: formData.proposed_date,
-        start_time: formData.start_time,
-        end_time: formData.end_time,
-        hall_id: formData.hall_id,
-        faculty_coordinator: formData.faculty_coordinator,
-        contact_phone: formData.contact_phone,
-        attendees: parseInt(formData.attendees) || 0,
-        budget: parseFloat(formData.budget) || 0,
-        category: formData.category,
-        poster_url: formData.poster_url || null,
-      });
-
-      setToken(eventRequest.token || '');
-      setSubmitted(true);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (submitted) {
-    return (
-      <div className="min-h-screen bg-background p-8">
-        <div className="max-w-md mx-auto">
-          <div className="bg-surface rounded-card border p-8 text-center space-y-4">
-            <p className="text-sm text-status-green-dark font-semibold">Request submitted</p>
-            <p className="text-4xl font-bold text-accent">{token}</p>
-            <p className="text-secondary text-sm">Your event reference number</p>
-            <div className="pt-4 space-y-2">
-              <button
-                onClick={() => router.push('/events/mine')}
-                className="w-full py-2 bg-accent text-surface rounded-card"
-              >
-                View my events
-              </button>
-              <button
-                onClick={() => router.push('/dashboard')}
-                className="w-full py-2 bg-border text-secondary rounded-card"
-              >
-                Back to dashboard
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  function validate() {
+    const found: Partial<Record<Field, string>> = {};
+    const hall = halls.find((item) => item.id === values.hall);
+    const attendance = Number(values.attendance);
+    const budget = values.budget === "" ? 0 : Number(values.budget);
+    if (!values.club) found.club = "Choose your club.";
+    if (values.title.trim().length < 3) found.title = "Enter the event name (at least 3 characters).";
+    if (values.description.trim().length < 10) found.description = "Describe the event in at least 10 characters.";
+    if (!values.date) found.date = "Choose a date.";
+    else if (values.date < istDate(7)) found.date = "Events must be requested at least 7 days ahead.";
+    if (!values.start) found.start = "Choose a start time.";
+    else if (values.start < "07:00") found.start = "Events cannot start before 7:00 AM.";
+    if (!values.end) found.end = "Choose an end time.";
+    else if (values.end > "23:00") found.end = "Events must end by 11:00 PM.";
+    else if (values.start && values.end <= values.start) found.end = "End time must be after the start time.";
+    else if (values.start && minutes(values.end) - minutes(values.start) > 480) found.end = "Events can run for at most 8 hours.";
+    if (!values.hall) found.hall = "Choose a hall.";
+    if (values.coordinator.trim().length < 2) found.coordinator = "Enter the faculty coordinator.";
+    if (!/^[0-9+ ]{7,15}$/.test(values.phone.trim())) found.phone = "Enter a phone number of 7 to 15 digits.";
+    if (!Number.isInteger(attendance) || attendance < 1) found.attendance = "Enter the expected attendance.";
+    else if (hall?.capacity && attendance > hall.capacity) found.attendance = `${hall.name} seats ${hall.capacity}.`;
+    if (!Number.isFinite(budget) || budget < 0) found.budget = "Enter a budget of 0 or more.";
+    return found;
   }
 
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-2xl mx-auto">
-        <h1 className="text-3xl font-bold text-primary mb-6">Request event approval</h1>
-        {error && <div className="mb-4 p-4 bg-status-red-light border border-status-red-dark rounded-card text-status-red-dark">{error}</div>}
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy) return;
+    setFormError(undefined);
+    const found = validate();
+    setErrors(found);
+    if (Object.keys(found).length) { requestAnimationFrame(() => form.current?.querySelector<HTMLElement>('[aria-invalid="true"]')?.focus()); return; }
+    setBusy(true);
+    try {
+      setCreated(await createEventRequest({
+        club_id: values.club, title: values.title.trim(), event_type: values.type, description: values.description.trim(),
+        event_date: values.date, start_time: values.start, end_time: values.end, hall_id: values.hall,
+        expected_attendance: Number(values.attendance), budget_estimate: values.budget === "" ? 0 : Number(values.budget),
+        faculty_coordinator: values.coordinator.trim(), contact_phone: values.phone.trim(),
+      }));
+    } catch (cause) { setFormError(cause instanceof Error ? cause.message : "The request could not be sent. Try again."); }
+    finally { setBusy(false); }
+  }
 
-        <form onSubmit={handleSubmit} className="bg-surface rounded-card border p-8 space-y-6">
-          {/* Club selection */}
-          <div>
-            <label className="block text-sm font-semibold text-primary mb-2">Your club</label>
-            <select
-              required
-              value={formData.club_id}
-              onChange={(e) => setFormData({ ...formData, club_id: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-card"
-            >
-              <option value="">Select club</option>
-              {clubs.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
+  if (loadError) return <Card><FieldError>{loadError}</FieldError></Card>;
+  if (!clubs) return <Skeleton label="Loading event form" />;
 
-          {/* Event details */}
-          <div>
-            <label className="block text-sm font-semibold text-primary mb-2">Event name</label>
-            <input
-              type="text"
-              required
-              value={formData.event_name}
-              onChange={(e) => setFormData({ ...formData, event_name: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-card"
-              placeholder="e.g., Annual Fest 2026"
-            />
-          </div>
+  if (created) return <Card role="status" className="max-w-md space-y-3 border-status-green-dark bg-status-green-light">
+    <p className="text-status-green-dark">Request submitted</p>
+    <p className="text-title tabular-nums">{created.code}</p>
+    <p>Student affairs will review it. You will be notified at every step.</p>
+    <div className="flex flex-wrap gap-3"><Link href="/events/mine" className={buttonStyles()}>View my events</Link><Button variant="secondary" onClick={() => { setCreated(undefined); setValues(blank); }}>Request another</Button></div>
+  </Card>;
 
-          <div>
-            <label className="block text-sm font-semibold text-primary mb-2">Theme</label>
-            <input
-              type="text"
-              required
-              value={formData.theme}
-              onChange={(e) => setFormData({ ...formData, theme: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-card"
-              placeholder="e.g., Celebration of creativity"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-primary mb-2">Description</label>
-            <textarea
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-card h-24"
-              placeholder="Event details and activities planned"
-            />
-          </div>
-
-          {/* Date and time */}
-          <div className="grid grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2">Date (≥7 days)</label>
-              <input
-                type="date"
-                required
-                value={formData.proposed_date}
-                onChange={(e) => setFormData({ ...formData, proposed_date: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-card"
-                min={format(addDays(nowIST(), 7), 'yyyy-MM-dd')}
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2">Start time</label>
-              <input
-                type="time"
-                required
-                value={formData.start_time}
-                onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-card"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2">End time</label>
-              <input
-                type="time"
-                required
-                value={formData.end_time}
-                onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-card"
-              />
-            </div>
-          </div>
-
-          {/* Hall, coordinator and contact */}
-          <div>
-            <label htmlFor="hall" className="block text-sm font-semibold text-primary mb-2">Hall</label>
-            <select id="hall" required value={formData.hall_id} onChange={(e) => setFormData({ ...formData, hall_id: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card">
-              <option value="">Select a hall</option>
-              {halls.map((hall) => <option key={hall.id} value={hall.id}>{hall.name}{hall.capacity ? ` (seats ${hall.capacity})` : ''}</option>)}
-            </select>
-          </div>
-          <div>
-            <label htmlFor="coordinator" className="block text-sm font-semibold text-primary mb-2">Faculty coordinator</label>
-            <input id="coordinator" type="text" required value={formData.faculty_coordinator} onChange={(e) => setFormData({ ...formData, faculty_coordinator: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card" />
-          </div>
-          <div>
-            <label htmlFor="phone" className="block text-sm font-semibold text-primary mb-2">Contact phone</label>
-            <input id="phone" type="tel" required pattern="[0-9+ ]{7,15}" value={formData.contact_phone} onChange={(e) => setFormData({ ...formData, contact_phone: e.target.value })} className="w-full px-3 py-2 border border-border rounded-card" />
-          </div>
-
-          {/* Hall and attendees */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2">Expected attendees</label>
-              <input
-                type="number"
-                value={formData.attendees}
-                onChange={(e) => setFormData({ ...formData, attendees: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-card"
-                placeholder="e.g., 200"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-semibold text-primary mb-2">Budget estimate (₹)</label>
-              <input
-                type="number"
-                value={formData.budget}
-                onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
-                className="w-full px-3 py-2 border border-border rounded-card"
-                placeholder="e.g., 50000"
-              />
-            </div>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-semibold text-primary mb-2">Category</label>
-            <select
-              value={formData.category}
-              onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-              className="w-full px-3 py-2 border border-border rounded-card"
-            >
-              <option value="cultural">Cultural</option>
-              <option value="technical">Technical</option>
-              <option value="sports">Sports</option>
-              <option value="academic">Academic</option>
-              <option value="social">Social</option>
-              <option value="other">Other</option>
-            </select>
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full py-2 bg-accent text-surface rounded-card font-semibold disabled:opacity-50"
-          >
-            {loading ? 'Submitting...' : 'Submit event request'}
-          </button>
-        </form>
-      </div>
-    </div>
-  );
+  return <div className="space-y-6">
+    <PageHeader title="Request an event" context="Student affairs reviews first, then the campus director. Plan at least 7 days ahead." />
+    <form ref={form} noValidate onSubmit={submit} className="max-w-3xl space-y-5 rounded-card border bg-surface p-4 md:p-6">
+      <fieldset disabled={busy} className="space-y-5">
+        <legend className="sr-only">Event details</legend>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField label="Club" required error={errors.club}>{(c) => <Select {...c} value={values.club} onChange={set("club")}><option value="">Select a club</option>{clubs.map((club) => <option key={club.id} value={club.id}>{club.name}</option>)}</Select>}</FormField>
+          <FormField label="Event type" required>{(c) => <Select {...c} value={values.type} onChange={set("type")}>{TYPES.map((type) => <option key={type} value={type}>{type[0].toUpperCase() + type.slice(1)}</option>)}</Select>}</FormField>
+        </div>
+        <FormField label="Event name" required error={errors.title}>{(c) => <Input {...c} value={values.title} maxLength={100} onChange={set("title")} placeholder="e.g. Annual Fest 2026" />}</FormField>
+        <FormField label="Description" required help="What will happen, who it is for, and what you need." error={errors.description}>{(c) => <Textarea {...c} value={values.description} maxLength={1000} onChange={set("description")} />}</FormField>
+        <div className="grid gap-4 md:grid-cols-3">
+          <FormField label="Date" required help="At least 7 days ahead." error={errors.date}>{(c) => <Input {...c} type="date" min={istDate(7)} value={values.date} onChange={set("date")} />}</FormField>
+          <FormField label="Start time" required error={errors.start}>{(c) => <Input {...c} type="time" min="07:00" value={values.start} onChange={set("start")} />}</FormField>
+          <FormField label="End time" required help="By 11:00 PM, up to 8 hours." error={errors.end}>{(c) => <Input {...c} type="time" max="23:00" value={values.end} onChange={set("end")} />}</FormField>
+        </div>
+        <div className="grid gap-4 md:grid-cols-2">
+          <FormField label="Hall" required error={errors.hall}>{(c) => <Select {...c} value={values.hall} onChange={set("hall")}><option value="">Select a hall</option>{halls.map((hall) => <option key={hall.id} value={hall.id}>{hall.name}{hall.capacity ? ` (seats ${hall.capacity})` : ""}</option>)}</Select>}</FormField>
+          <FormField label="Expected attendance" required error={errors.attendance}>{(c) => <Input {...c} type="number" inputMode="numeric" min={1} value={values.attendance} onChange={set("attendance")} />}</FormField>
+          <FormField label="Faculty coordinator" required error={errors.coordinator}>{(c) => <Input {...c} value={values.coordinator} maxLength={100} onChange={set("coordinator")} />}</FormField>
+          <FormField label="Contact phone" required error={errors.phone}>{(c) => <Input {...c} type="tel" value={values.phone} onChange={set("phone")} />}</FormField>
+          <FormField label="Budget estimate (₹)" help="Optional." error={errors.budget}>{(c) => <Input {...c} type="number" inputMode="decimal" min={0} value={values.budget} onChange={set("budget")} />}</FormField>
+        </div>
+      </fieldset>
+      <div aria-live="polite"><FieldError>{formError}</FieldError></div>
+      <Button type="submit" loading={busy} className="w-full sm:w-auto">Submit request</Button>
+    </form>
+  </div>;
 }

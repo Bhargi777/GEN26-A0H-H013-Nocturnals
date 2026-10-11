@@ -1,205 +1,47 @@
-'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
+"use client";
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
-import { getSupabase } from '@/lib/supabase/browser';
-import { getEventRequestsForOSA, osaApproveEventRequest, osaRequestChanges } from '@/lib/db/events';
+import { useState } from "react";
+import { EventSummary, useEvents } from "@/components/events/event-summary";
+import { ReviewActions } from "@/components/events/review-actions";
+import { RoleGate } from "@/components/layout/role-gate";
+import { Button, EmptyState, FieldError, PageHeader, Skeleton } from "@/components/ui";
+import { ROLES } from "@/lib/constants/roles";
+import { getEventRequestsForOSA, osaApproveEventRequest, osaRejectEventRequest, osaRequestChanges } from "@/lib/db/events";
+import type { EventStatusValue } from "@/lib/types/campus";
 
-const supabase = getSupabase();
-
-const statusBadge: Record<string, string> = {
-  SUBMITTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
-  CHANGES_REQUESTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
-  PENDING_DIRECTOR: 'bg-status-blue-light text-status-blue-dark border-status-blue-dark',
-  APPROVED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
-  REJECTED: 'bg-status-red-light text-status-red-dark border-status-red-dark',
-  CALENDARED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
-};
+type Tab = Extract<EventStatusValue, "SUBMITTED" | "CHANGES_REQUESTED" | "PENDING_DIRECTOR">;
+const TABS: { id: Tab; label: string }[] = [{ id: "SUBMITTED", label: "Submitted" }, { id: "CHANGES_REQUESTED", label: "Changes requested" }, { id: "PENDING_DIRECTOR", label: "With director" }];
 
 export default function ReviewEventsPage() {
-  const router = useRouter();
-  const [events, setEvents] = useState<any[]>([]);
-  const [error, setError] = useState('');
-  const [activeTab, setActiveTab] = useState<'SUBMITTED' | 'CHANGES_REQUESTED' | 'PENDING_DIRECTOR'>(
-    'SUBMITTED'
-  );
-  const [reasonModal, setReasonModal] = useState<{ id: string; reason: string } | null>(null);
-  const [busy, setBusy] = useState(false);
+  return <RoleGate roles={[ROLES.OSA, ROLES.ADMIN]}><Review /></RoleGate>;
+}
 
-  const load = useCallback(async () => {
-    try {
-      const allEvents = await getEventRequestsForOSA();
-      setEvents(allEvents);
-    } catch (e: any) {
-      setError(e.message);
-    }
-  }, []);
+function Review() {
+  const { events, error, reload } = useEvents(getEventRequestsForOSA, "events-review");
+  const [tab, setTab] = useState<Tab>("SUBMITTED");
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push('/sign-in');
+  if (error && !events) return <EmptyState message={error} action={<Button onClick={() => void reload()}>Try again</Button>} />;
+  if (!events) return <Skeleton label="Loading event requests" />;
+  const shown = events.filter((event) => event.status === tab);
 
-      // Check if user is OSA
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (profile?.role !== 'osa') {
-        return router.push('/dashboard');
-      }
-
-      await load();
-    })();
-
-    const ch = supabase
-      .channel('events-review')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'event_requests' }, load)
-      .subscribe();
-    return () => {
-      supabase.removeChannel(ch);
-    };
-  }, [load, router]);
-
-  const filtered = events.filter((e) => e.status === activeTab);
-
-  const handleApprove = async (id: string) => {
-    setBusy(true);
-    try {
-      await osaApproveEventRequest(id);
-      await load();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  const handleRequestChanges = async (id: string, reason: string) => {
-    if (!reason.trim()) {
-      setError('Please enter a reason for changes');
-      return;
-    }
-    setBusy(true);
-    try {
-      await osaRequestChanges(id, reason);
-      setReasonModal(null);
-      await load();
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-bold text-primary mb-6">Event requests (OSA review)</h1>
-        {error && <div className="mb-4 p-4 bg-status-red-light border border-status-red-dark rounded-card text-status-red-dark">{error}</div>}
-
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 border-b border-border">
-          {(['SUBMITTED', 'CHANGES_REQUESTED', 'PENDING_DIRECTOR'] as const).map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-4 py-2 font-semibold border-b-2 ${
-                activeTab === tab
-                  ? 'border-accent text-accent'
-                  : 'border-transparent text-secondary hover:text-primary'
-              }`}
-            >
-              {tab.replace(/_/g, ' ')}
-            </button>
-          ))}
-        </div>
-
-        {/* Events grid */}
-        <div className="grid md:grid-cols-2 gap-4">
-          {filtered.length === 0 && <p className="text-secondary col-span-full">No events in this category</p>}
-          {filtered.map((e) => (
-            <div key={e.id} className="bg-surface rounded-card border p-5 space-y-3">
-              <div>
-                <p className="text-lg font-semibold text-primary">{e.event_name}</p>
-                <p className="text-sm text-secondary">{e.theme}</p>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-sm text-secondary">
-                <p>
-                  <span className="font-semibold">Date:</span> {e.proposed_date}
-                </p>
-                <p>
-                  <span className="font-semibold">Time:</span> {e.start_time}–{e.end_time}
-                </p>
-                <p>
-                  <span className="font-semibold">Attendees:</span> {e.attendees}
-                </p>
-                <p>
-                  <span className="font-semibold">Budget:</span> ₹{e.budget}
-                </p>
-              </div>
-              {e.description && (
-                <p className="text-sm text-secondary">
-                  <span className="font-semibold">Description:</span> {e.description}
-                </p>
-              )}
-
-              {/* Actions */}
-              {activeTab === 'SUBMITTED' && (
-                <div className="flex gap-2 pt-3">
-                  <button
-                    disabled={busy}
-                    onClick={() => handleApprove(e.id)}
-                    className="flex-1 py-2 bg-status-green-dark text-surface rounded-card text-sm font-semibold disabled:opacity-50"
-                  >
-                    Approve
-                  </button>
-                  <button
-                    disabled={busy}
-                    onClick={() => setReasonModal({ id: e.id, reason: '' })}
-                    className="flex-1 py-2 bg-amber-600 text-surface rounded-card text-sm font-semibold disabled:opacity-50"
-                  >
-                    Request changes
-                  </button>
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Reason modal */}
-      {reasonModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4">
-          <div className="bg-surface rounded-card border p-6 max-w-sm w-full space-y-4">
-            <h2 className="text-lg font-semibold text-primary">Request changes</h2>
-            <textarea
-              value={reasonModal.reason}
-              onChange={(e) => setReasonModal({ ...reasonModal, reason: e.target.value })}
-              placeholder="What changes should the club make?"
-              className="w-full h-24 px-3 py-2 border border-border rounded-card"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={() => setReasonModal(null)}
-                className="flex-1 py-2 bg-border text-secondary rounded-card"
-              >
-                Cancel
-              </button>
-              <button
-                disabled={busy}
-                onClick={() => handleRequestChanges(reasonModal.id, reasonModal.reason)}
-                className="flex-1 py-2 bg-amber-600 text-surface rounded-card disabled:opacity-50"
-              >
-                {busy ? 'Sending...' : 'Send'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+  return <div className="space-y-6">
+    <PageHeader title="Event reviews" context="Approve events to send them to the campus director, or ask the club to change them." />
+    <div role="tablist" aria-label="Request views" className="flex flex-wrap gap-2">
+      {TABS.map((item) => <button key={item.id} type="button" role="tab" id={`tab-${item.id}`} aria-selected={tab === item.id} aria-controls="events-panel" onClick={() => setTab(item.id)}
+        className={`min-h-11 rounded-control border px-4 py-2 ${tab === item.id ? "border-accent bg-accent-light font-medium text-accent" : "bg-surface hover:bg-background"}`}>
+        {item.label} ({events.filter((event) => event.status === item.id).length})
+      </button>)}
     </div>
-  );
+    <FieldError>{error}</FieldError>
+    <div id="events-panel" role="tabpanel" aria-labelledby={`tab-${tab}`}>
+      {shown.length === 0 ? <p className="text-secondary">No events in this view.</p> :
+        <ul className="space-y-4">{shown.map((event) => <li key={event.id}><EventSummary event={event}>
+          {tab === "SUBMITTED" && <ReviewActions code={event.code} onDone={reload} actions={[
+            { label: "Approve", run: () => osaApproveEventRequest(event.id), done: "sent to the campus director." },
+            { label: "Request changes", variant: "secondary", reasonLabel: "What should the club change?", run: (reason) => osaRequestChanges(event.id, reason), done: "changes requested." },
+            { label: "Reject", variant: "danger", reasonLabel: "Reason for rejecting", run: (reason) => osaRejectEventRequest(event.id, reason), done: "rejected." },
+          ]} />}
+        </EventSummary></li>)}</ul>}
+    </div>
+  </div>;
 }

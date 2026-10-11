@@ -1,132 +1,44 @@
-'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any -- legacy module: typed rewrite pending */
+"use client";
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { getSupabase } from '@/lib/supabase/browser';
-import { getMyEventRequests, resubmitEventRequest } from '@/lib/db/events';
-
-const supabase = getSupabase();
-
-const statusBadge: Record<string, string> = {
-  SUBMITTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
-  CHANGES_REQUESTED: 'bg-status-amber-light text-status-amber-dark border-status-amber-dark',
-  PENDING_DIRECTOR: 'bg-status-blue-light text-status-blue-dark border-status-blue-dark',
-  APPROVED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
-  REJECTED: 'bg-status-red-light text-status-red-dark border-status-red-dark',
-  CALENDARED: 'bg-status-green-light text-status-green-dark border-status-green-dark',
-};
+import Link from "next/link";
+import { useCallback, useState } from "react";
+import { EventSummary, useEvents } from "@/components/events/event-summary";
+import { RoleGate } from "@/components/layout/role-gate";
+import { useFrontend } from "@/components/layout/frontend-provider";
+import { Button, EmptyState, FieldError, PageHeader, Skeleton, buttonStyles, useToast } from "@/components/ui";
+import { ROLES } from "@/lib/constants/roles";
+import { getMyEventRequests, resubmitEventRequest } from "@/lib/db/events";
 
 export default function MyEventsPage() {
-  const router = useRouter();
-  const [events, setEvents] = useState<any[]>([]);
-  const [error, setError] = useState('');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [resubmitting, setResubmitting] = useState<string | null>(null);
+  return <RoleGate roles={[ROLES.CLUB_PRESIDENT, ROLES.ADMIN]}><MyEvents /></RoleGate>;
+}
 
-  useEffect(() => {
-    (async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return router.push('/sign-in');
-      try {
-        const myEvents = await getMyEventRequests(user.id);
-        setEvents(myEvents);
-      } catch (e: any) {
-        setError(e.message);
-      }
-    })();
-  }, [router]);
+function MyEvents() {
+  const { profile } = useFrontend();
+  const toast = useToast();
+  const userId = profile?.id ?? "";
+  const load = useCallback(() => getMyEventRequests(userId), [userId]);
+  const { events, error, reload } = useEvents(load, `my-events-${userId}`);
+  const [busy, setBusy] = useState<string>();
+  const [actionError, setActionError] = useState<string>();
 
-  const handleResubmit = async (id: string) => {
-    setResubmitting(id);
-    try {
-      await resubmitEventRequest(id);
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const updated = await getMyEventRequests(user.id);
-        setEvents(updated);
-      }
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setResubmitting(null);
-    }
-  };
+  async function resubmit(id: string, code: string) {
+    if (busy) return;
+    setBusy(id); setActionError(undefined);
+    try { await resubmitEventRequest(id); toast({ message: `${code} sent back for review.` }); await reload(); }
+    catch (cause) { setActionError(cause instanceof Error ? cause.message : "The request could not be resubmitted. Try again."); }
+    finally { setBusy(undefined); }
+  }
 
-  return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-3xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-primary">My events</h1>
-          <button onClick={() => router.push('/events/new')} className="text-sm text-accent underline">
-            Request new event
-          </button>
-        </div>
-        {error && <div className="mb-4 p-4 bg-status-red-light border border-status-red-dark rounded-card text-status-red-dark">{error}</div>}
-        <div className="space-y-3">
-          {events.length === 0 && (
-            <div className="bg-surface rounded-card border p-8 text-center text-secondary">No events yet</div>
-          )}
-          {events.map((e) => (
-            <div key={e.id} className="bg-surface rounded-card border p-5">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-lg font-semibold text-primary">{e.event_name}</p>
-                  <p className="text-sm text-secondary">{e.theme}</p>
-                  <p className="text-xs text-secondary mt-1">
-                    {e.proposed_date} · {e.start_time}–{e.end_time}
-                  </p>
-                </div>
-                <span className={`px-2 py-0.5 rounded-full text-xs border ${statusBadge[e.status]}`}>{e.status}</span>
-              </div>
+  if (error && !events) return <EmptyState message={error} action={<Button onClick={() => void reload()}>Try again</Button>} />;
+  if (!events) return <Skeleton label="Loading your events" />;
 
-              {/* Expandable details */}
-              {expandedId === e.id && (
-                <div className="mt-4 pt-4 border-t border-border space-y-3 text-sm">
-                  <p>
-                    <span className="font-semibold text-secondary">Attendees:</span> {e.attendees}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-secondary">Budget:</span> ₹{e.budget}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-secondary">Category:</span> {e.category}
-                  </p>
-                  {e.description && (
-                    <p>
-                      <span className="font-semibold text-secondary">Description:</span> {e.description}
-                    </p>
-                  )}
-                  {e.decision_note && (
-                    <p className="bg-amber-50 border border-amber-200 p-2 rounded text-status-amber-dark">
-                      <span className="font-semibold">Feedback:</span> {e.decision_note}
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* Actions */}
-              <div className="mt-4 flex gap-2">
-                <button
-                  onClick={() => setExpandedId(expandedId === e.id ? null : e.id)}
-                  className="text-sm text-accent underline"
-                >
-                  {expandedId === e.id ? 'Hide' : 'Show'} details
-                </button>
-                {e.status === 'CHANGES_REQUESTED' && (
-                  <button
-                    disabled={resubmitting === e.id}
-                    onClick={() => handleResubmit(e.id)}
-                    className="text-sm text-accent underline disabled:opacity-50"
-                  >
-                    {resubmitting === e.id ? 'Resubmitting...' : 'Resubmit'}
-                  </button>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="space-y-6">
+    <PageHeader title="My events" context="Every event you have requested and where it stands." action={<Link href="/events/new" className={buttonStyles()}>Request an event</Link>} />
+    <div aria-live="polite"><FieldError>{actionError ?? error}</FieldError></div>
+    {events.length === 0 ? <EmptyState message="You have not requested any events yet." action={<Link href="/events/new" className={buttonStyles("secondary")}>Request an event</Link>} /> :
+      <ul className="space-y-4">{events.map((event) => <li key={event.id}><EventSummary event={event}>
+        {event.status === "CHANGES_REQUESTED" && <Button loading={busy === event.id} onClick={() => void resubmit(event.id, event.code)}>Resubmit for review</Button>}
+      </EventSummary></li>)}</ul>}
+  </div>;
 }

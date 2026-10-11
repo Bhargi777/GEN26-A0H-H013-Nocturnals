@@ -44,3 +44,13 @@ export interface DashboardData {
   orders: DashboardOrder[];
   unavailableItems: number;
 }
+
+export interface ClubRow { id: string; code: string; name: string }
+export interface HallRow { id: string; name: string; capacity: number | null }
+export interface EventRow {
+  id: string; code: string; title: string; event_type: string; description: string;
+  event_date: string; start_time: string; end_time: string; expected_attendance: number; budget_estimate: number | null;
+  faculty_coordinator: string; contact_phone: string; decision_note: string | null;
+  status: EventStatusValue; created_at: string;
+  club?: { name: string } | null; hall?: { name: string } | null;
+}

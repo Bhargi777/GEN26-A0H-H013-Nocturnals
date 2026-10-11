@@ -33,7 +33,7 @@ Role set is the 14-value `user_role` enum, mirrored in `lib/constants/roles.ts` 
 - **Page pattern:** client pages wrap content in `<RoleGate roles={[...]}>` (UI hiding only; RLS/RPCs enforce), load via the `lib/db` function, and subscribe with `supabase.channel().on("postgres_changes", ...)`. Staff canteen screens share `components/canteen/use-canteen-orders.ts`. Route-group `loading.tsx`/`error.tsx` use `components/ui/route-error.tsx`.
 - **Dashboard:** `app/(app)/dashboard/dashboard-model.ts` is a pure `dashboardFor(profile, data)` covering all 14 roles; `lib/db/dashboard.ts` loads only the tables each role needs.
 - **Service requests** (`app/(app)/service-requests`) is the oldest module and uses server components with `_lib/` helpers. `lib/ai/*` is its triage logic (Anthropic).
-- **Events** pages are legacy: `lib/db/events.ts` maps the pages' field names (`event_name`, `proposed_date`, ...) to the real columns (`title`, `event_date`, ...), and `no-explicit-any` is disabled in those files.
+- **Events** (`app/(app)/events/*`): typed `lib/db/events.ts` (selects embed club and hall; status moves are plain updates checked by the `event_request_guard` trigger). Reviewer pages share `components/events/event-summary.tsx` (`EventSummary`, `useEvents` with realtime) and `review-actions.tsx` (`ReviewActions` with inline reason box).
 
 ## Styling
 
