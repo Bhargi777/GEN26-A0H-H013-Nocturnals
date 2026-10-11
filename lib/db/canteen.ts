@@ -1,11 +1,11 @@
 // Canteen ordering data layer (Module D)
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../supabase/client';
 import { Database, Canteen, MenuItem, CanteenSlot, Order, OrderItem } from '../types/database';
+import { format } from 'date-fns';
+import { nowIST } from '../time';
 
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
+// Browser client carries the signed-in session so RLS applies to every query.
+const supabase = createClient() as any;
 
 /**
  * Get all canteens
@@ -139,18 +139,17 @@ export async function createOrder(
   items: Array<{ itemId: string; quantity: number }>,
   total: number
 ): Promise<{ order: Order; token: string }> {
-  // Generate token: per canteen per day (e.g., C2-047)
+  // Token is <canteen code>-NNN, counted per canteen per IST day (e.g. C2-047).
   const canteen = await getCanteen(canteenId);
-  const canteenCode = canteen.code.charAt(0);
+  const istDay = format(nowIST(), 'yyyy-MM-dd');
 
   const { count } = await supabase
     .from('orders')
-    .select('*', { count: 'exact', head: true })
+    .select('id', { count: 'exact', head: true })
     .eq('canteen_id', canteenId)
-    .gte('created_at', new Date().toISOString().split('T')[0]);
+    .gte('created_at', `${istDay}T00:00:00+05:30`);
 
-  const tokenNum = ((count || 0) + 1).toString().padStart(3, '0');
-  const token = `${canteenCode}${tokenNum}`;
+  const token = `${canteen.code}-${String((count || 0) + 1).padStart(3, '0')}`;
   const code = `ORD-${Date.now()}`; // Simple code format
 
   const { data: orderData, error: orderError } = await supabase

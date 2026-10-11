@@ -1,11 +1,9 @@
 // Room booking data layer (Module A)
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../supabase/client';
 import { Database, RoomBooking, Block, Floor, Period, Room } from '../types/database';
 
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
+// Browser client carries the signed-in session so RLS applies to every query.
+const supabase = createClient() as any;
 
 /**
  * Get all blocks owned by a department (for dept_office)
@@ -245,18 +243,39 @@ export async function rejectRoomBooking(
 }
 
 /**
- * Get room availability for a specific date/period
+ * Get room availability for a specific date/period.
+ * Unavailable when a timetable class holds the room that weekday and period,
+ * unless it was cancelled for that date, or a booking is pending or approved.
  */
 export async function checkRoomAvailability(
   roomId: string,
   date: string,
   periodId: string
 ): Promise<boolean> {
-  // Room is available if:
-  // 1. No APPROVED bookings for same room/date/period
-  // 2. No timetable class (unless cancelled)
-  // 3. Not pending either
+  // Calendar weekday of the date, independent of the runtime's timezone (0=Sun).
+  const weekday = new Date(`${date}T00:00:00Z`).getUTCDay();
 
+  const { data: entry } = await supabase
+    .from('timetable_entries')
+    .select('id')
+    .eq('room_id', roomId)
+    .eq('weekday', weekday)
+    .eq('period_id', periodId)
+    .limit(1)
+    .maybeSingle();
+
+  if (entry) {
+    const { data: cancelled } = await supabase
+      .from('class_cancellations')
+      .select('id')
+      .eq('timetable_entry_id', entry.id)
+      .eq('date', date)
+      .limit(1)
+      .maybeSingle();
+    if (!cancelled) return false;
+  }
+
+  // Several pending requests can exist for one slot, so read at most one row.
   const { data: booking } = await supabase
     .from('room_bookings')
     .select('id')
@@ -264,7 +283,8 @@ export async function checkRoomAvailability(
     .eq('date', date)
     .eq('period_id', periodId)
     .in('status', ['APPROVED', 'PENDING'])
-    .single();
+    .limit(1)
+    .maybeSingle();
 
   return !booking;
 }

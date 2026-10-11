@@ -1,11 +1,9 @@
 // Event request data layer (Module B)
-import { createClient } from '@supabase/supabase-js';
+import { createClient } from '../supabase/client';
 import { Database, EventRequest, Club } from '../types/database';
 
-const supabase = createClient<Database>(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-) as any;
+// Browser client carries the signed-in session so RLS applies to every query.
+const supabase = createClient() as any;
 
 /**
  * Get clubs for a user (club presidents)
