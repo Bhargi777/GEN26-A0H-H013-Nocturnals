@@ -1,6 +1,14 @@
 -- Web push: per-user subscriptions and a trigger that hands every new notification to the app's push route.
 create extension if not exists pg_net;
 
+-- An earlier draft of push support may already exist (own-endpoint unique key, its own trigger and sender): replace it.
+drop trigger if exists notification_push_trigger on notifications;
+do $$ declare f record; begin
+  for f in select oid::regprocedure as sig from pg_proc where proname = 'send_web_push' and pronamespace = 'public'::regnamespace loop
+    execute 'drop function ' || f.sig;
+  end loop;
+end $$;
+
 create table if not exists push_subscriptions (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null references profiles(id) on delete cascade,
@@ -10,7 +18,10 @@ create table if not exists push_subscriptions (
   created_at timestamptz not null default now()
 );
 create index if not exists idx_push_subscriptions_user on push_subscriptions(user_id);
+create unique index if not exists push_subscriptions_endpoint_key on push_subscriptions(endpoint);
 alter table push_subscriptions enable row level security;
+drop policy if exists "Users manage own push subscriptions" on push_subscriptions;
+drop policy if exists "Own push subscriptions" on push_subscriptions;
 create policy "Own push subscriptions" on push_subscriptions for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
