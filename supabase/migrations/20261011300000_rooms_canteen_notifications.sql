@@ -89,6 +89,26 @@ language sql stable security definer set search_path = public as $$
   order by p.start_time
 $$;
 
+-- One period across every room of a floor, for the floor plan: CLASS, BOOKED, PENDING, FREE or CLOSED
+create or replace function public.floor_availability(p_floor uuid, p_date date, p_period uuid)
+returns table (room_id uuid, state text)
+language sql stable security definer set search_path = public as $$
+  select r.id,
+    case
+      when not coalesce(r.bookable, false) then 'CLOSED'
+      when exists (
+        select 1 from timetable_entries t
+        where t.room_id = r.id and t.period_id = p_period and t.weekday = extract(dow from p_date)::int
+          and not exists (select 1 from class_cancellations c where c.timetable_entry_id = t.id and c.date = p_date)
+      ) then 'CLASS'
+      when exists (select 1 from room_bookings b where b.room_id = r.id and b.date = p_date and b.period_id = p_period and b.status = 'APPROVED') then 'BOOKED'
+      when exists (select 1 from room_bookings b where b.room_id = r.id and b.date = p_date and b.period_id = p_period and b.status = 'PENDING') then 'PENDING'
+      else 'FREE'
+    end
+  from rooms r where r.floor_id = p_floor
+$$;
+grant execute on function public.floor_availability(uuid, date, uuid) to authenticated;
+
 create or replace function public.request_room_booking(
   p_room uuid, p_date date, p_period uuid, p_reason text, p_faculty_name text, p_attendees int
 ) returns room_bookings

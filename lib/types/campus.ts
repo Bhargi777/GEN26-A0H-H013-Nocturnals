@@ -3,12 +3,13 @@
 
 export type RoomBookingStatus = "PENDING" | "APPROVED" | "REJECTED" | "CANCELLED";
 export type SlotState = "CLASS" | "BOOKED" | "PENDING" | "FREE";
+export type PlanState = SlotState | "CLOSED";
 export type OrderStatusValue = "PLACED" | "PAID" | "READY" | "COLLECTED" | "FORFEITED" | "LATE_WALKIN";
 export type EventStatusValue = "SUBMITTED" | "CHANGES_REQUESTED" | "PENDING_DIRECTOR" | "APPROVED" | "REJECTED" | "CALENDARED";
 
 export interface BlockRow { id: string; code: string; name: string; owner_department_id: string }
-export interface FloorRow { id: string; block_id: string; level: number; label: string }
-export interface RoomRow { id: string; floor_id: string; code: string; name: string; kind: string; capacity: number | null; bookable: boolean }
+export interface FloorRow { id: string; block_id: string; level: number; label: string; grid_cols: number; grid_rows: number }
+export interface RoomRow { id: string; floor_id: string; code: string; name: string; kind: string; capacity: number | null; bookable: boolean; grid_x: number | null; grid_y: number | null; grid_w: number | null; grid_h: number | null }
 export interface PeriodRow { id: string; label: string; start_time: string; end_time: string }
 export interface SlotStatusRow { period_id: string; state: SlotState }
 

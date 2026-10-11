@@ -2,7 +2,7 @@
 // Reads go through RLS-protected selects; writes go through RPCs that check role,
 // date window, capacity and double booking in the database.
 import { getSupabase } from '../supabase/browser';
-import type { BlockRow, FloorRow, PeriodRow, RoomBookingRow, RoomRow, SlotStatusRow } from '../types/campus';
+import type { BlockRow, FloorRow, PeriodRow, PlanState, RoomBookingRow, RoomRow, SlotStatusRow } from '../types/campus';
 
 function fail(error: { message: string } | null): asserts error is null {
   if (error) throw new Error(error.message);
@@ -19,15 +19,16 @@ export async function listBlocks(): Promise<BlockRow[]> {
 }
 
 export async function listFloors(blockId: string): Promise<FloorRow[]> {
-  const { data, error } = await getSupabase().from('floors').select('id, block_id, level, label').eq('block_id', blockId).order('level');
+  const { data, error } = await getSupabase().from('floors').select('id, block_id, level, label, grid_cols, grid_rows').eq('block_id', blockId).order('level');
   fail(error);
   return data ?? [];
 }
 
-export async function listBookableRooms(floorId: string): Promise<RoomRow[]> {
+/** Every room on the floor, including closed ones, so the plan shows the whole layout. */
+export async function listFloorRooms(floorId: string): Promise<RoomRow[]> {
   const { data, error } = await getSupabase()
-    .from('rooms').select('id, floor_id, code, name, kind, capacity, bookable')
-    .eq('floor_id', floorId).eq('bookable', true).order('name');
+    .from('rooms').select('id, floor_id, code, name, kind, capacity, bookable, grid_x, grid_y, grid_w, grid_h')
+    .eq('floor_id', floorId).order('grid_y').order('grid_x');
   fail(error);
   return data ?? [];
 }
@@ -43,6 +44,13 @@ export async function getSlotStatus(roomId: string, date: string): Promise<SlotS
   const { data, error } = await getSupabase().rpc('room_slot_status', { p_room: roomId, p_date: date });
   fail(error);
   return data ?? [];
+}
+
+/** State of every room on a floor for one date and period (floor plan colours). */
+export async function getFloorAvailability(floorId: string, date: string, periodId: string): Promise<Record<string, PlanState>> {
+  const { data, error } = await getSupabase().rpc('floor_availability', { p_floor: floorId, p_date: date, p_period: periodId });
+  fail(error);
+  return Object.fromEntries((data ?? []).map((row: { room_id: string; state: PlanState }) => [row.room_id, row.state]));
 }
 
 export interface BookingInput {
