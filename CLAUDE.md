@@ -2,7 +2,7 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-CampusConnect: Next.js 16 (App Router, React 19, `cacheComponents` on), TypeScript strict, Supabase (Postgres + Auth + Realtime), Tailwind v4, installable PWA with web push. Modules: service requests, rooms (floor plans), events + campus calendar, canteen, notifications, admin reports.
+CampusConnect: Next.js 16 (App Router, React 19, `cacheComponents` on), TypeScript strict, Supabase (Postgres + Auth + Realtime), Tailwind v4, installable PWA with web push, Android TWA app, and an assistant. Modules: service requests, rooms (floor plans), events + campus calendar, canteen, notifications, admin reports.
 
 `AGENTS.md` says this Next.js has breaking changes: read the relevant guide in `node_modules/next/dist/docs/` before writing framework code (e.g. `middleware` is now `proxy.ts`). The docs only exist after `npm install`.
 
@@ -38,11 +38,14 @@ Roles: 14-value `user_role` enum mirrored in `lib/constants/roles.ts`; `app/(app
 - **Dashboard:** `app/(app)/dashboard/dashboard-model.ts` is a pure `dashboardFor(profile, data)` for all 14 roles; `lib/db/dashboard.ts` loads only what each role needs.
 - **Service requests** is the oldest module (server components, `_lib/`, server actions in `actions.ts`). Server pages that read the clock must `await requestTime()` (it calls `connection()`), or `cacheComponents` fails the build with a `Date.now()` prerender error. `lib/ai/*` is the triage logic (Anthropic key optional; keyword fallback).
 - **PWA:** `app/manifest.ts`, hand-written `public/sw.js` (offline page, static cache, push and notification-click handlers), `components/pwa/pwa-provider.tsx` (registers the worker, install banner, optional `NEXT_PUBLIC_APK_URL`), `components/pwa/push-opt-in.tsx` (subscribe, test button). Icons come from `scripts/generate-icons.py`.
+- **Assistant:** `components/assistant/assistant-panel.tsx` (header "Ask" button, Ctrl+K) posts to `app/api/assistant/route.ts`, which runs as the caller's session (RLS applies) and rate-limits with `assistant_hit()`. `lib/ai/assistant/engine.ts` has the tools, an offline router (`parse.ts`: intent, IST dates, period, headcount) and a Claude tool loop used only when `ANTHROPIC_API_KEY` is set. Help text lives in `kb_chunks` (seeded in `20261011700000_assistant.sql`) and is searched by `search_kb` (full-text + trigram). Room proposals are never booked by the server; the user confirms in the panel, which calls `request_room_booking`.
+- **Admin:** `/admin/users` assigns roles through `admin_set_profile` (one manager per canteen, one president per club, admins cannot demote themselves). There is no public sign-up: `/sign-up` is gone and hosted auth has `[auth] enable_signup = false`; `[auth.email] enable_signup` must stay `true` or email login itself is disabled.
+- **Android app:** `android/twa-manifest.json` is the Bubblewrap config (package `app.campusconnect.portal`); the generated project, `android.keystore` and `keystore-password.txt` stay git-ignored and must be kept to publish updates. Rebuild with JDK 17 (`~/.bubblewrap/config.json`) via `npx @bubblewrap/cli build`, copy `app-release-signed.apk` to `public/downloads/campusconnect.apk`; `public/.well-known/assetlinks.json` holds the signing fingerprint.
 - No corner popups: `useToast` shows errors as a top banner and announces successes to screen readers only; the bell is a plain link.
 
 ## Styling
 
-`tailwind.config.ts` (loaded by `@config` in `app/globals.css`, keep it) **replaces** the default theme. Only these colors exist: `background surface border primary secondary accent(-hover/-light) status-{slate,blue,amber,green,orange,red}-{light,dark}`; fonts `text-body/section/title`; radii `control`/`card`; a custom spacing scale. Default palette classes (`slate-*`, `red-*`, `amber-50`, ...) silently do nothing. The page is light-only. Use `components/ui/*` and the `.control` class.
+`tailwind.config.ts` (loaded by `@config` in `app/globals.css`, keep it) **replaces** the default theme. Only these colors exist: `background surface border primary secondary accent(-hover/-light) status-{slate,blue,amber,green,orange,red}-{light,dark}`; fonts `text-body/section/title`; radii `control`/`card`; a custom spacing scale. Default palette classes (`slate-*`, `red-*`, `amber-50`, ...) silently do nothing. The page is light-only; the accent is crimson and the home screen is a tile grid built from `navigationForRole`. Use `components/ui/*` and the `.control` class.
 
 ## Time
 
@@ -50,4 +53,4 @@ All scheduling is IST. Use `lib/time.ts` (`istDate`, `istTime`, `istInstant`, `i
 
 ## Deploy and conventions
 
-Hosted: Supabase project `szqpthkoufzuvhizvvew` (linked via `supabase link`; `supabase db push`) and Vercel project `campusconnect` (`vercel deploy --prod`). `NEXT_PUBLIC_*` vars are baked at build time, so set Vercel env vars before deploying. `README.md` has the live URL and the feature table. Conventional commits; `README.md` lists per-dev branches and ownership and `goals/*.md` hold per-module specs. Do not push to git without being asked.
+Hosted: Supabase project `szqpthkoufzuvhizvvew` (linked via `supabase link`; `supabase db push`; `supabase config push` applies the whole `[auth]` section of `config.toml`, so check `site_url` and the sign-up flags first) and Vercel project `campusconnect` (`vercel deploy --prod`). `NEXT_PUBLIC_*` vars are baked at build time, so set Vercel env vars before deploying. `README.md` has the live URL and the feature table. Conventional commits; `README.md` lists per-dev branches and ownership and `goals/*.md` hold per-module specs. Do not push to git without being asked.
