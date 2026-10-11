@@ -38,7 +38,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       </header>
       <main id="main-content" tabIndex={-1} className="mx-auto max-w-screen-xl space-y-6 p-4 md:p-6">
         {!ready ? <Skeleton label="Loading account" /> : error ? <EmptyState message={error} action={<Button onClick={() => void refresh()}>Try again</Button>} /> : <>
-          {profile && <div className="rounded-card border bg-accent-light p-3 text-accent">Sample data preview · <Link href="/ui" className="underline">Change preview role</Link></div>}
+          {profile?.email.endsWith(".invalid") && <div className="rounded-card border bg-accent-light p-3 text-accent">Sample data preview · <Link href="/ui" className="underline">Change preview role</Link></div>}
           {profile || pathname === "/ui" ? children : <div className="space-y-4"><EmptyState message="Sign in with your campus account to view your requests." action={<Link href="/sign-in" className={buttonStyles()}>Sign in</Link>} /><Link href="/ui" className="text-link">Open the component preview</Link></div>}
         </>}
       </main>

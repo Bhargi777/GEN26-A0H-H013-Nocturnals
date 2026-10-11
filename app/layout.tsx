@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import { Suspense, type ReactNode } from "react";
 import "./globals.css";
 import { FrontendProvider } from "@/components/layout/frontend-provider";
 
@@ -13,7 +13,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <body className="bg-background font-sans text-body text-primary antialiased">
-        <FrontendProvider>{children}</FrontendProvider>
+        <Suspense fallback={<p role="status" className="p-4 text-secondary">Loading…</p>}><FrontendProvider>{children}</FrontendProvider></Suspense>
       </body>
     </html>
   );

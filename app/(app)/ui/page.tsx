@@ -14,7 +14,7 @@ function Gallery() {
   const [imageName, setImageName] = useState<string>();
   const toast = useToast();
   const { refresh } = useFrontend();
-  const [role, setRole] = useState<Role>(ROLES.student);
+  const [role, setRole] = useState<Role>(ROLES.STUDENT);
   const parsed = filterSchema.safeParse(filters);
   const rows = parsed.success ? previewTickets.filter((ticket) => (!filters.search || `${ticket.code} ${ticket.title}`.toLowerCase().includes(filters.search.toLowerCase())) && (!filters.status || ticket.status === filters.status) && (!filters.category || ticket.category === filters.category) && (!filters.from || ticket.created_at.slice(0, 10) >= filters.from) && (!filters.to || ticket.created_at.slice(0, 10) <= filters.to)) : [];
   return <div className="space-y-6">

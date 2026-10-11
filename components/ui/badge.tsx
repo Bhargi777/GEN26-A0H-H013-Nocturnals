@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { REQUEST_STATUS, STATUS_LABELS, TICKET_STATUS, type Status } from "@/app/(app)/ui/preview-contract";
+import { MODULE_STATUS as M, REQUEST_STATUS, STATUS_LABELS, TICKET_STATUS, type Status } from "@/app/(app)/ui/preview-contract";
 
 export type BadgeTone = "slate" | "blue" | "amber" | "green" | "orange" | "red";
 const styles: Record<BadgeTone, string> = {
@@ -12,6 +12,9 @@ const statusTones: Record<Status, BadgeTone> = {
   [TICKET_STATUS.inProgress]: "amber", [TICKET_STATUS.resolved]: "green", [TICKET_STATUS.reopened]: "orange",
   [REQUEST_STATUS.pendingDept]: "blue", [REQUEST_STATUS.pendingOffice]: "blue",
   [REQUEST_STATUS.approved]: "green", [REQUEST_STATUS.rejected]: "red",
+  [M.pending]: "amber", [M.submitted]: "amber", [M.changesRequested]: "orange", [M.placed]: "amber",
+  [M.pendingDirector]: "blue", [M.paid]: "blue", [M.calendared]: "green", [M.ready]: "green",
+  [M.collected]: "slate", [M.cancelled]: "slate", [M.forfeited]: "red", [M.lateWalkin]: "orange",
 };
 export function Badge({ tone = "slate", children }: { tone?: BadgeTone; children: ReactNode }) {
   return <span className={`inline-flex rounded-control px-2 py-1 text-body font-medium ${styles[tone]}`}>{children}</span>;

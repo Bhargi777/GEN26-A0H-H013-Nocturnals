@@ -1,7 +1,8 @@
 "use client";
 
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
-import { previewAdapter, type FrontendAdapter } from "@/app/(app)/ui/preview-adapter";
+import type { FrontendAdapter } from "@/app/(app)/ui/preview-adapter";
+import { supabaseAdapter } from "@/lib/frontend/supabase-adapter";
 import type { Notification, Profile } from "@/app/(app)/ui/preview-contract";
 import { ToastProvider } from "@/components/ui/toast";
 
@@ -17,7 +18,7 @@ interface FrontendState {
 }
 const FrontendContext = createContext<FrontendState | null>(null);
 
-export function FrontendProvider({ children, adapter = previewAdapter }: { children: ReactNode; adapter?: FrontendAdapter }) {
+export function FrontendProvider({ children, adapter = supabaseAdapter }: { children: ReactNode; adapter?: FrontendAdapter }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [ready, setReady] = useState(false);
@@ -32,6 +33,13 @@ export function FrontendProvider({ children, adapter = previewAdapter }: { child
     finally { setReady(true); }
   }, [adapter]);
   useEffect(() => { void refresh(); }, [refresh]);
+  useEffect(() => {
+    if (!profile || !adapter.subscribeNotifications) return;
+    let cancelled = false;
+    const reload = () => { void adapter.getNotifications(profile).then((items) => { if (!cancelled) setNotifications(items); }).catch(() => undefined); };
+    const stop = adapter.subscribeNotifications(profile, reload);
+    return () => { cancelled = true; stop(); };
+  }, [adapter, profile]);
 
   async function signOut() {
     await adapter.signOut();

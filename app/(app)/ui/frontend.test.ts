@@ -4,53 +4,83 @@ import { navigationForRole } from "@/components/layout/navigation";
 import { signInSchema, signUpSchema } from "@/app/(auth)/auth-form";
 import { emptyFilters, filterSchema } from "@/components/ui/filter-bar";
 import { relativeTime } from "@/components/ui/timeline";
-import { PREVIEW_DEPARTMENT_ID, PREVIEW_USER_ID, previewRequests, previewTickets } from "./fixtures";
-import { ROLES, type Profile, type Role } from "./preview-contract";
+import { emptyDashboardData } from "../dashboard/dashboard-model";
+import { ROLES, type Role } from "./preview-contract";
+import type { DashboardData } from "@/lib/types/campus";
 
-const profile = (role: Role): Profile => ({ id: PREVIEW_USER_ID, full_name: "Role preview", email: "preview@example.invalid", role, department_id: PREVIEW_DEPARTMENT_ID });
+const at = (day: number) => `2026-10-${String(day).padStart(2, "0")}T08:00:00Z`;
+const ticket = (n: number, status: string) => ({ id: `t${n}`, code: `SR-${n}`, title: `Ticket ${n}`, status, created_at: at(n), requester_id: "u", assigned_department_id: "d" });
+const data: DashboardData = {
+  tickets: [ticket(1, "OPEN"), ticket(2, "IN_PROGRESS"), ticket(3, "RESOLVED"), ticket(4, "CLOSED")],
+  bookings: [
+    { id: "b1", code: "RB-1", status: "PENDING", created_at: at(5), date: "2026-10-20", room: { name: "Lab 101" } },
+    { id: "b2", code: "RB-2", status: "APPROVED", created_at: at(6), date: "2026-10-21", room: { name: "LH 1" } },
+  ],
+  events: [
+    { id: "e1", code: "EV-1", title: "Hack night", status: "SUBMITTED", created_at: at(7) },
+    { id: "e2", code: "EV-2", title: "Concert", status: "PENDING_DIRECTOR", created_at: at(8) },
+    { id: "e3", code: "EV-3", title: "Quiz", status: "APPROVED", created_at: at(9) },
+  ],
+  orders: [
+    { id: "o1", code: "ORD-1", token: "MAIN-001", status: "PLACED", total: 100, created_at: at(10) },
+    { id: "o2", code: "ORD-2", token: "MAIN-002", status: "PAID", total: 50, created_at: at(11) },
+    { id: "o3", code: "ORD-3", token: "MAIN-003", status: "READY", total: 70, created_at: at(12) },
+  ],
+  unavailableItems: 2,
+};
+const model = (role: Role, source: DashboardData = data) => dashboardFor({ role }, source);
 
-describe("dashboard role boundaries", () => {
-  it.each([ROLES.student, ROLES.faculty])("shows only the requester's counts and latest five for %s", (role) => {
-    const result = dashboardFor(profile(role), previewTickets, previewRequests);
-    expect(result.stats.map((item) => item.value)).toEqual([3, 2]);
-    expect(result.rows).toHaveLength(5);
-    expect(result.rows.map((item) => item.code)).toEqual(["AR-000205", "AR-000204", "SR-000106", "SR-000105", "AR-000202"]);
-    expect(result.rows.some((item) => item.id === "sr-104" || item.id === "ar-203")).toBe(false);
+describe("dashboard for every role", () => {
+  it.each(Object.values(ROLES))("%s gets stats, an action and at most five rows", (role) => {
+    const result = model(role);
+    expect(result.stats.length).toBeGreaterThan(0);
+    expect(result.action.href.startsWith("/")).toBe(true);
+    expect(result.rows.length).toBeLessThanOrEqual(5);
+    expect(model(role, emptyDashboardData).rows).toEqual([]);
   });
-  it.each([ROLES.technician, ROLES.deptAdmin])("shows the department's oldest unresolved tickets for %s", (role) => {
-    const result = dashboardFor(profile(role), previewTickets, previewRequests);
-    expect(result.rows.map((item) => item.code)).toEqual(["SR-000101", "SR-000103", "SR-000104"]);
-    expect(result.stats.reduce((total, item) => total + item.value, 0)).toBe(4);
-    expect(result.action.href).toBe("/service-requests/queue");
+  it("shows a student their open tickets and active orders", () => {
+    expect(model(ROLES.STUDENT).stats.map((item) => item.value)).toEqual([2, 3]);
   });
-  it("limits office work to pending office review", () => {
-    const result = dashboardFor(profile(ROLES.officeStaff), previewTickets, previewRequests);
-    expect(result.stats[0].value).toBe(2);
-    expect(result.rows.map((item) => item.code)).toEqual(["AR-000203", "AR-000201"]);
+  it("shows faculty pending and approved room counts", () => {
+    expect(model(ROLES.FACULTY).stats.map((item) => item.value)).toEqual([2, 1, 1]);
   });
-  it("allows administrators to see campus totals", () => {
-    expect(dashboardFor(profile(ROLES.admin), previewTickets, previewRequests).stats.map((item) => item.value)).toEqual([4, 3]);
+  it("lists the oldest unresolved tickets for technicians", () => {
+    expect(model(ROLES.TECHNICIAN).rows.map((row) => row.code)).toEqual(["SR-1", "SR-2"]);
   });
-  it("handles an empty queue without missing counts", () => {
-    const result = dashboardFor(profile(ROLES.technician), [], []);
-    expect(result.rows).toEqual([]);
-    expect(result.stats.every((item) => item.value === 0)).toBe(true);
+  it("queues only submitted events for student affairs", () => {
+    expect(model(ROLES.OSA).rows.map((row) => row.code)).toEqual(["EV-1"]);
+  });
+  it("queues only director-pending events for the campus director", () => {
+    expect(model(ROLES.CAMPUS_DIRECTOR).rows.map((row) => row.code)).toEqual(["EV-2"]);
+  });
+  it("queues paid orders for the kitchen and unpaid orders for the counter", () => {
+    expect(model(ROLES.CANTEEN_KITCHEN).rows.map((row) => row.code)).toEqual(["ORD-2"]);
+    expect(model(ROLES.CANTEEN_COUNTER).rows.map((row) => row.code)).toEqual(["ORD-1"]);
+  });
+  it("reports unavailable menu items to the manager", () => {
+    expect(model(ROLES.CANTEEN_MANAGER).stats.at(-1)?.value).toBe(2);
   });
 });
 
 describe("navigation contract", () => {
-  it("keeps office navigation focused on its queue", () => {
-    expect(navigationForRole(ROLES.officeStaff).map((item) => item.href)).toEqual(["/dashboard", "/office"]);
+  it("always starts with the dashboard and ends with notifications", () => {
+    for (const role of Object.values(ROLES)) {
+      const routes = navigationForRole(role).map((item) => item.href);
+      expect(routes[0]).toBe("/dashboard");
+      expect(routes.at(-1)).toBe("/notifications");
+      expect(new Set(routes).size).toBe(routes.length);
+    }
   });
-  it("retains personal routes for department roles", () => {
-    const personal = navigationForRole(ROLES.student).map((item) => item.href);
-    for (const role of [ROLES.technician, ROLES.deptAdmin]) expect(navigationForRole(role).map((item) => item.href)).toEqual(expect.arrayContaining([...personal, "/service-requests/queue"]));
+  it("sends only room requesters to the booking form", () => {
+    expect(navigationForRole(ROLES.FACULTY).map((item) => item.href)).toContain("/rooms");
+    expect(navigationForRole(ROLES.STUDENT).map((item) => item.href)).not.toContain("/rooms");
   });
-  it("gives administrators every module route without duplicates", () => {
-    const routes = navigationForRole(ROLES.admin).map((item) => item.href);
-    expect(routes).toHaveLength(8);
-    expect(new Set(routes).size).toBe(routes.length);
-    expect(routes).toContain("/admin/reports");
+  it("gives department staff the room approval queue", () => {
+    for (const role of [ROLES.DEPT_OFFICE, ROLES.DEPT_HEAD]) expect(navigationForRole(role).map((item) => item.href)).toContain("/rooms/dept");
+  });
+  it("gives administrators every module route", () => {
+    const routes = navigationForRole(ROLES.ADMIN).map((item) => item.href);
+    expect(routes).toEqual(expect.arrayContaining(["/rooms", "/rooms/dept", "/events/review", "/events/director", "/canteen"]));
   });
 });
 
