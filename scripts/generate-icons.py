@@ -1,7 +1,7 @@
 """Generates the PWA and Android icons: python3 scripts/generate-icons.py"""
 from PIL import Image, ImageDraw, ImageFont
 
-TEAL = (15, 118, 110)
+TEAL = (169, 36, 74)
 WHITE = (255, 255, 255)
 FONT = "/System/Library/Fonts/Helvetica.ttc"
 

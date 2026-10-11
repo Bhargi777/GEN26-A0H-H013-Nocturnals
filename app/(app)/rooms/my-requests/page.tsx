@@ -12,7 +12,7 @@ import { formatClock, formatDay, istDate } from "@/lib/time";
 import type { RoomBookingRow } from "@/lib/types/campus";
 
 export default function MyRoomRequestsPage() {
-  return <RoleGate roles={[ROLES.FACULTY, ROLES.CR, ROLES.ADMIN]}><Requests /></RoleGate>;
+  return <RoleGate roles={[ROLES.FACULTY, ROLES.CR]}><Requests /></RoleGate>;
 }
 
 function Requests() {

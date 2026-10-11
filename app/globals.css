@@ -2,7 +2,7 @@
 @config "../tailwind.config.ts";
 
 :root {
-  --background: #F8FAFC;
+  --background: #EBEEF7;
   --foreground: #0F172A;
   color-scheme: light;
 }
@@ -17,14 +17,14 @@
 @layer base {
   * { @apply border-border; }
   body { margin: 0; background: var(--background); color: var(--foreground); font-family: var(--font-sans); }
-  :focus-visible { outline: 2px solid #0F766E; outline-offset: 3px; }
+  :focus-visible { outline: 2px solid #A9244A; outline-offset: 3px; }
   button, input, textarea, select { font: inherit; }
   button, a, input, select, textarea { touch-action: manipulation; }
   button:disabled { cursor: not-allowed; }
   h1 { @apply text-title; }
   h2, h3 { @apply text-section; }
   input, select, textarea { min-width: 0; }
-  ::selection { background: #F0FDFA; color: #0F172A; }
+  ::selection { background: #FBEAF0; color: #0F172A; }
 }
 
 @layer components {

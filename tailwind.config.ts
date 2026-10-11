@@ -6,12 +6,12 @@ const config = {
     colors: {
       transparent: "transparent",
       current: "currentColor",
-      background: "#F8FAFC",
+      background: "#EBEEF7",
       surface: "#FFFFFF",
       border: "#E2E8F0",
       primary: "#0F172A",
       secondary: "#475569",
-      accent: { DEFAULT: "#0F766E", hover: "#115E59", light: "#F0FDFA" },
+      accent: { DEFAULT: "#A9244A", hover: "#8A1B3B", light: "#FBEAF0" },
       // Muted status pairs are the semantic colors permitted by the team rules.
       status: {
         slate: { light: "#F1F5F9", dark: "#334155" },

@@ -90,7 +90,10 @@ describe("navigation contract", () => {
   });
   it("gives administrators every module route", () => {
     const routes = navigationForRole(ROLES.ADMIN).map((item) => item.href);
-    expect(routes).toEqual(expect.arrayContaining(["/rooms", "/rooms/dept", "/events/review", "/events/director", "/canteen"]));
+    expect(routes).toEqual(expect.arrayContaining(["/admin/users", "/rooms/dept", "/events/review", "/events/director", "/canteen"]));
+    // administrators manage people, not service requests or room booking
+    expect(routes).not.toContain("/service-requests");
+    expect(routes).not.toContain("/rooms");
   });
 });
 

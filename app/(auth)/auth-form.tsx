@@ -79,6 +79,6 @@ export function AuthForm({ mode = "sign-in" }: { mode?: "sign-in" | "sign-up" })
         finally { setBusy(false); }
       }}>{label}</Button>)}</div>
     </section>}
-    <p className="text-secondary">{signingUp ? "Already have an account? " : "Need a campus account? "}<Link href={signingUp ? "/sign-in" : "/sign-up"} className="text-link">{signingUp ? "Sign in" : "Create an account"}</Link></p>
+    <p className="text-secondary">Accounts are created by your campus administrator.</p>
   </div>;
 }

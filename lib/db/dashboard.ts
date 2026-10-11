@@ -51,7 +51,6 @@ export async function loadDashboardData(profile: Profile): Promise<DashboardData
       if (profile.canteen_id) run(supabase.from("menu_items").select("id").eq("available", false).eq("canteen_id", profile.canteen_id), (rows: unknown[]) => { data.unavailableItems = rows.length; });
       break;
     case ROLES.ADMIN:
-      run(supabase.from("service_tickets").select(ticketCols).order("created_at", { ascending: false }).limit(LIMIT), (rows: DashboardTicket[]) => { data.tickets = rows; });
       bookings(false); events(false); orders(false);
       break;
   }

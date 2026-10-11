@@ -132,15 +132,14 @@ export function dashboardFor(profile: Pick<Profile, "role"> & { canteen_id?: str
     case ROLES.ADMIN:
     default:
       return {
-        context: "Track service requests, rooms, events and canteen orders across campus.", heading: "Five most recent service requests",
+        context: "Manage people and roles, and keep an eye on rooms, events and the canteen.", heading: "Five most recent event requests",
         stats: [
-          { label: "Open service requests", value: openTickets },
           { label: "Pending room requests", value: count(bookings, (booking) => booking.status === "PENDING") },
           { label: "Events in review", value: count(events, (event) => ["SUBMITTED", "PENDING_DIRECTOR", "CHANGES_REQUESTED"].includes(event.status)) },
           { label: "Active canteen orders", value: count(orders, activeOrder) },
         ],
-        rows: byAge(recentTickets, true),
-        action: { label: "Open department queue", href: "/service-requests/queue" },
+        rows: byAge(events.map((event) => eventRow(event, "/events/review")), true),
+        action: { label: "Assign roles", href: "/admin/users" },
       };
   }
 }

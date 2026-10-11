@@ -14,7 +14,7 @@ import type { BlockRow, FloorRow, PeriodRow, PlanState, RoomRow } from "@/lib/ty
 type Errors = Partial<Record<"block" | "floor" | "room" | "date" | "period" | "attendees" | "faculty" | "reason", string>>;
 
 export default function RoomBookingPage() {
-  return <RoleGate roles={[ROLES.FACULTY, ROLES.CR, ROLES.ADMIN]}><BookingForm /></RoleGate>;
+  return <RoleGate roles={[ROLES.FACULTY, ROLES.CR]}><BookingForm /></RoleGate>;
 }
 
 function BookingForm() {

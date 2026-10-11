@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Bell, CalendarDays, ChartNoAxesColumn, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Bell, CalendarDays, UserCog, ChartNoAxesColumn, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { ROLES, type Role } from "@/app/(app)/ui/preview-contract";
 import { useFrontend } from "./frontend-provider";
 
@@ -25,6 +25,7 @@ const eventCalendar = item("/events/calendar", "Calendar queue", Calendar);
 const campusCalendar = item("/calendar", "Campus calendar", CalendarDays);
 const myClasses = item("/rooms/classes", "My classes", Calendar);
 const reports = item("/admin/reports", "Campus pulse", ChartNoAxesColumn);
+const assignRoles = item("/admin/users", "Assign roles", UserCog);
 const canteen = item("/canteen", "Canteen", UtensilsCrossed);
 const myOrders = item("/canteen/orders", "My orders", ReceiptText);
 
@@ -54,7 +55,7 @@ const byRole: Record<Role, NavigationItem[]> = {
   [ROLES.CANTEEN_KITCHEN]: [],
   [ROLES.CANTEEN_COUNTER]: [],
   [ROLES.CANTEEN_MANAGER]: [],
-  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, reports, canteen, myOrders],
+  [ROLES.ADMIN]: [assignRoles, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, reports, canteen],
 };
 
 export function navigationForRole(role?: Role | string, canteenId?: string | null): NavigationItem[] {
