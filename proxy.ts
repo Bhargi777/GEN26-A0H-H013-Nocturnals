@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { Database } from './lib/types/database'
 
 // Files a phone needs before anyone signs in: install manifest, service worker, offline page, icons, app links.
-const PUBLIC_PATHS = ['/sw.js', '/manifest.webmanifest', '/offline', '/icons', '/.well-known', '/downloads']
+const PUBLIC_PATHS = ['/sw.js', '/manifest.webmanifest', '/offline', '/icons', '/.well-known', '/downloads', '/api/push']
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
