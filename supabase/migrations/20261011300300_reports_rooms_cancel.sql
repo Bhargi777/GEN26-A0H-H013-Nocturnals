@@ -42,8 +42,7 @@ begin
             from orders o join canteen_slots s on s.id = o.slot_id where o.status <> 'FORFEITED' group by 1) x
     ), '[]'::jsonb),
     'canteen_totals', (select jsonb_build_object('orders', count(*), 'revenue', coalesce(sum(total) filter (where status in ('PAID', 'READY', 'COLLECTED')), 0)) from orders),
-    'events_by_status', coalesce((select jsonb_object_agg(status, n) from (select status::text, count(*) n from event_requests group by status) s), '{}'::jsonb),
-    'certificates_by_status', coalesce((select jsonb_object_agg(status, n) from (select status::text, count(*) n from admin_requests group by status) s), '{}'::jsonb)
+    'events_by_status', coalesce((select jsonb_object_agg(status, n) from (select status::text, count(*) n from event_requests group by status) s), '{}'::jsonb)
   );
 end $$;
 grant execute on function public.campus_report() to authenticated;

@@ -7,7 +7,6 @@ export interface CampusReport {
   canteen_by_hour: { hour: number; orders: number }[];
   canteen_totals: { orders: number; revenue: number };
   events_by_status: Record<string, number>;
-  certificates_by_status: Record<string, number>;
 }
 
 export async function loadCampusReport(): Promise<CampusReport> {

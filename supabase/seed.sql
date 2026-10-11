@@ -275,3 +275,56 @@ select o.id, m.id, 1, m.price from public.orders o join public.menu_items m on m
 where o.token like 'MAIN-9%';
 
 select public.svc_seed_demo_story();
+
+
+-- ============================================================================
+-- Scoped staff: one kitchen, counter and manager per canteen, one president per club,
+-- and office/technician staff for every department
+-- ============================================================================
+insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_user_meta_data, instance_id, aud, role, raw_app_meta_data, confirmation_token, recovery_token, email_change, email_change_token_new, created_at, updated_at)
+select v.id::uuid, v.email, v.pw, now(), v.meta::jsonb, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
+  '{"provider":"email","providers":["email"]}'::jsonb, '', '', '', '', now(), now()
+from (values
+  ('a5000000-0000-0000-0000-000000000100', 'kitchen.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Kitchen"}'),
+  ('a5000000-0000-0000-0000-000000000101', 'counter.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Counter"}'),
+  ('a5000000-0000-0000-0000-000000000102', 'manager.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Manager"}'),
+  ('a5000000-0000-0000-0000-000000000103', 'kitchen.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Kitchen"}'),
+  ('a5000000-0000-0000-0000-000000000104', 'counter.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Counter"}'),
+  ('a5000000-0000-0000-0000-000000000105', 'manager.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Manager"}'),
+  ('a5000000-0000-0000-0000-000000000106', 'ieee.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Ieee Club President"}'),
+  ('a5000000-0000-0000-0000-000000000107', 'dance.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Dance Club President"}'),
+  ('a5000000-0000-0000-0000-000000000108', 'music.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Music Club President"}'),
+  ('a5000000-0000-0000-0000-000000000109', 'sports.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Sports Club President"}'),
+  ('a5000000-0000-0000-0000-000000000110', 'tech.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Tech Club President"}'),
+  ('a5000000-0000-0000-0000-000000000111', 'arts.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Arts Club President"}'),
+  ('a5000000-0000-0000-0000-000000000112', 'drama.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Drama Club President"}'),
+  ('a5000000-0000-0000-0000-000000000113', 'office.elec@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "ELEC Office"}'),
+  ('a5000000-0000-0000-0000-000000000114', 'office.fac@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "FAC Office"}'),
+  ('a5000000-0000-0000-0000-000000000115', 'office.sao@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "SAO Office"}'),
+  ('a5000000-0000-0000-0000-000000000116', 'tech.fac@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Facilities Technician"}'),
+  ('a5000000-0000-0000-0000-000000000117', 'hod.it@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "IT Head"}'),
+  ('a5000000-0000-0000-0000-000000000118', 'tech.cse@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "CSE Technician"}')
+) as v(id, email, pw, meta);
+insert into auth.identities (id, user_id, provider_id, identity_data, provider, last_sign_in_at, created_at, updated_at)
+select gen_random_uuid(), u.id, u.id::text, jsonb_build_object('sub', u.id::text, 'email', u.email, 'email_verified', true), 'email', now(), now(), now()
+from auth.users u where not exists (select 1 from auth.identities i where i.user_id = u.id);
+update public.profiles set role = 'canteen_kitchen', canteen_id = 'c1000000-0000-0000-0000-000000000002' where email = 'kitchen.north@example.edu';
+update public.profiles set role = 'canteen_counter', canteen_id = 'c1000000-0000-0000-0000-000000000002' where email = 'counter.north@example.edu';
+update public.profiles set role = 'canteen_manager', canteen_id = 'c1000000-0000-0000-0000-000000000002' where email = 'manager.north@example.edu';
+update public.profiles set role = 'canteen_kitchen', canteen_id = 'c1000000-0000-0000-0000-000000000003' where email = 'kitchen.south@example.edu';
+update public.profiles set role = 'canteen_counter', canteen_id = 'c1000000-0000-0000-0000-000000000003' where email = 'counter.south@example.edu';
+update public.profiles set role = 'canteen_manager', canteen_id = 'c1000000-0000-0000-0000-000000000003' where email = 'manager.south@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000002' where email = 'ieee.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000003' where email = 'dance.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000004' where email = 'music.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000005' where email = 'sports.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000006' where email = 'tech.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000007' where email = 'arts.president@example.edu';
+update public.profiles set role = 'club_president', club_id = 'c0000000-0000-0000-0000-000000000008' where email = 'drama.president@example.edu';
+update public.profiles set role = 'dept_office', department_id = 'd0000000-0000-0000-0000-000000000002' where email = 'office.elec@example.edu';
+update public.profiles set role = 'dept_office', department_id = 'd0000000-0000-0000-0000-000000000004' where email = 'office.fac@example.edu';
+update public.profiles set role = 'dept_office', department_id = 'd0000000-0000-0000-0000-000000000005' where email = 'office.sao@example.edu';
+update public.profiles set role = 'technician', department_id = 'd0000000-0000-0000-0000-000000000004' where email = 'tech.fac@example.edu';
+update public.profiles set role = 'dept_head', department_id = 'd0000000-0000-0000-0000-000000000003' where email = 'hod.it@example.edu';
+update public.profiles set role = 'technician', department_id = 'd0000000-0000-0000-0000-000000000001' where email = 'tech.cse@example.edu';
+update public.profiles set canteen_id = 'c1000000-0000-0000-0000-000000000001' where email in ('kitchen.main@example.edu', 'counter.main@example.edu', 'canteen.manager@example.edu');

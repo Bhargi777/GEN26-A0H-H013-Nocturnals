@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useFrontend } from "@/components/layout/frontend-provider";
 import { Button, Card, EmptyState, PageHeader, Skeleton, buttonStyles } from "@/components/ui";
@@ -15,13 +16,17 @@ const SCREENS: { path: string; label: string; roles: Role[] }[] = [
   { path: "manage", label: "Menu and slots", roles: [ROLES.CANTEEN_MANAGER, ROLES.ADMIN] },
 ];
 const STAFF: Role[] = [ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER];
+const HOME: Partial<Record<Role, string>> = { [ROLES.CANTEEN_KITCHEN]: "kitchen", [ROLES.CANTEEN_COUNTER]: "counter", [ROLES.CANTEEN_MANAGER]: "manage" };
 
 export default function CanteenPage() {
   const { profile } = useFrontend();
+  const router = useRouter();
+  const staffHome = profile && STAFF.includes(profile.role) && profile.canteen_id ? `/canteen/${profile.canteen_id}/${HOME[profile.role]}` : undefined;
   const [canteens, setCanteens] = useState<CanteenRow[]>();
   const [error, setError] = useState<string>();
   const [attempt, setAttempt] = useState(0);
 
+  useEffect(() => { if (staffHome) router.replace(staffHome); }, [staffHome, router]);
   useEffect(() => {
     let cancelled = false;
     listCanteens()
@@ -31,6 +36,9 @@ export default function CanteenPage() {
   }, [attempt]);
 
   if (!profile) return null;
+  if (STAFF.includes(profile.role)) {
+    return profile.canteen_id ? <Skeleton label="Opening your canteen" rows={2} /> : <EmptyState message="Your account is not assigned to a canteen yet. Ask an administrator to assign one." action={<Link href="/dashboard" className={buttonStyles("secondary")}>Back to dashboard</Link>} />;
+  }
   if (error) return <EmptyState message={error} action={<Button onClick={() => { setError(undefined); setAttempt((value) => value + 1); }}>Try again</Button>} />;
   if (!canteens) return <Skeleton label="Loading canteens" />;
 

@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { Card, PageHeader, StatusBadge, Timeline } from "@/components/ui";
 import { AdminActions } from "@/components/service-requests/admin-actions";
 import { FlashToast } from "@/components/service-requests/flash-toast";
-import { RequesterActions } from "@/components/service-requests/requester-actions";
+import { CloseRequestActions, RequesterActions } from "@/components/service-requests/requester-actions";
 import { TechnicianActions } from "@/components/service-requests/technician-actions";
 import { ROLES, TICKET_STATUSES, type TicketStatus } from "@/lib/constants";
 import { getCurrentProfile } from "@/lib/db/shared";
@@ -46,7 +46,7 @@ export default async function TicketPage({
 
   const ticket = await loadTicketDetail(decodeURIComponent(code), profile.id);
   if (!ticket) notFound();
-  const now = requestTime();
+  const now = await requestTime();
 
   // The database decides what each role may do; these flags only choose which controls to show.
   const adminCanManage =
@@ -97,6 +97,9 @@ export default async function TicketPage({
               code={ticket.code}
               status={ticket.status === TICKET_STATUSES.ASSIGNED ? "ASSIGNED" : "IN_PROGRESS"}
             />
+          )}
+          {(ticket.status === TICKET_STATUSES.REOPENED || ticket.status === TICKET_STATUSES.OPEN) && ticket.requester_id === profile.id && (
+            <CloseRequestActions ticketId={ticket.id} code={ticket.code} reopened={ticket.status === TICKET_STATUSES.REOPENED} />
           )}
           {ticket.status === TICKET_STATUSES.RESOLVED && ticket.requester_id === profile.id && (
             <RequesterActions

@@ -2,7 +2,7 @@
 
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { RoleGate } from "@/components/layout/role-gate";
+import { CanteenGate } from "@/components/canteen/canteen-gate";
 import { Badge, Button, DataTable, EmptyState, FieldError, FormField, Input, PageHeader, Select, Skeleton, useToast } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
 import { createSlots, deleteSlot, listMenu, listSlots, saveMenuItem, setItemAvailable, updateSlotCapacity, type SlotOption } from "@/lib/db/canteen";
@@ -11,7 +11,7 @@ import { formatClock, istDate } from "@/lib/time";
 import type { MenuItemRow } from "@/lib/types/campus";
 
 export default function ManagePage() {
-  return <RoleGate roles={[ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Manage /></RoleGate>;
+  return <CanteenGate roles={[ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Manage /></CanteenGate>;
 }
 
 interface ItemForm { id?: string; name: string; price: string; category: string; veg: string }

@@ -1,3 +1,4 @@
+import { smallestK } from "@/lib/algo/heap";
 import { ROLES } from "@/lib/constants/roles";
 import type { DashboardBooking, DashboardData, DashboardEvent, DashboardOrder, DashboardTicket } from "@/lib/types/campus";
 import { STATUS_LABELS, TICKET_STATUS as T, type Profile, type Status } from "../ui/preview-contract";
@@ -15,15 +16,17 @@ export const emptyDashboardData: DashboardData = { tickets: [], bookings: [], ev
 
 const unresolved = (ticket: DashboardTicket) => ticket.status !== T.resolved && ticket.status !== T.closed;
 const count = <T,>(rows: T[], test: (row: T) => boolean) => rows.filter(test).length;
+// Top five by age with a bounded heap: O(n log 5) instead of sorting every row.
 const byAge = (rows: DashboardRow[], newestFirst: boolean) =>
-  [...rows].sort((a, b) => (Date.parse(a.created_at) - Date.parse(b.created_at)) * (newestFirst ? -1 : 1)).slice(0, 5);
+  smallestK(rows, 5, (a, b) => (Date.parse(a.created_at) - Date.parse(b.created_at)) * (newestFirst ? -1 : 1));
 
 const ticketRow = (ticket: DashboardTicket): DashboardRow => ({ id: ticket.id, code: ticket.code, title: ticket.title, status: ticket.status as Status, created_at: ticket.created_at, href: `/service-requests/${ticket.code}` });
 const bookingRow = (booking: DashboardBooking, href: string): DashboardRow => ({ id: booking.id, code: booking.code, title: `${booking.room?.name ?? "Room"} · ${booking.date}`, status: booking.status, created_at: booking.created_at, href });
 const eventRow = (event: DashboardEvent, href: string): DashboardRow => ({ id: event.id, code: event.code, title: event.title, status: event.status, created_at: event.created_at, href });
 const orderRow = (order: DashboardOrder, href: string): DashboardRow => ({ id: order.id, code: order.code, title: `Token ${order.token} · ₹${order.total}`, status: order.status, created_at: order.created_at, href });
 
-export function dashboardFor(profile: Pick<Profile, "role">, data: DashboardData): DashboardModel {
+export function dashboardFor(profile: Pick<Profile, "role"> & { canteen_id?: string | null }, data: DashboardData): DashboardModel {
+  const canteen = (screen: string) => (profile.canteen_id ? `/canteen/${profile.canteen_id}/${screen}` : "/dashboard");
   const { tickets, bookings, events, orders } = data;
   const openTickets = count(tickets, unresolved);
   const ticketStats = Object.values(T).map((status) => ({ label: STATUS_LABELS[status], value: count(tickets, (ticket) => ticket.status === status) }));
@@ -106,8 +109,8 @@ export function dashboardFor(profile: Pick<Profile, "role">, data: DashboardData
       return {
         context: "Orders paid at the counter are waiting to be prepared.", heading: "Oldest orders to prepare",
         stats: [{ label: "To prepare", value: queue.length }, { label: "Ready for pickup", value: count(orders, (order) => order.status === "READY") }],
-        rows: byAge(queue.map((order) => orderRow(order, "/canteen")), false),
-        action: { label: "Open kitchen screen", href: "/canteen" },
+        rows: byAge(queue.map((order) => orderRow(order, canteen("kitchen"))), false),
+        action: { label: "Open kitchen screen", href: canteen("kitchen") },
       };
     }
     case ROLES.CANTEEN_COUNTER: {
@@ -115,16 +118,16 @@ export function dashboardFor(profile: Pick<Profile, "role">, data: DashboardData
       return {
         context: "Take payment, then hand over ready orders.", heading: "Oldest orders awaiting payment",
         stats: [{ label: "Awaiting payment", value: queue.length }, { label: "Ready for pickup", value: count(orders, (order) => order.status === "READY") }, { label: "Collected today", value: count(orders, (order) => order.status === "COLLECTED") }],
-        rows: byAge(queue.map((order) => orderRow(order, "/canteen")), false),
-        action: { label: "Open counter screen", href: "/canteen" },
+        rows: byAge(queue.map((order) => orderRow(order, canteen("counter"))), false),
+        action: { label: "Open counter screen", href: canteen("counter") },
       };
     }
     case ROLES.CANTEEN_MANAGER:
       return {
         context: "Today's orders and menu status.", heading: "Five most recent orders",
         stats: [{ label: "Orders today", value: orders.length }, { label: "Active orders", value: count(orders, activeOrder) }, { label: "Unavailable menu items", value: data.unavailableItems }],
-        rows: byAge(orders.map((order) => orderRow(order, "/canteen")), true),
-        action: { label: "Manage canteen", href: "/canteen" },
+        rows: byAge(orders.map((order) => orderRow(order, canteen("manage"))), true),
+        action: { label: "Manage menu and slots", href: canteen("manage") },
       };
     case ROLES.ADMIN:
     default:

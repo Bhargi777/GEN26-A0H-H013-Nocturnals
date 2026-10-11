@@ -287,6 +287,19 @@ export async function stillBrokenAction(
   return runTransition(code, { ticketId, toStatus: TICKET_STATUSES.REOPENED, note });
 }
 
+const closeSchema = z.object({
+  ...ticketRef,
+  note: z.string().trim().max(1000, "Keep the note under 1000 characters.").optional(),
+});
+
+/** Requester closes a reopened (or still open) request themselves, for example when it is no longer needed. */
+export async function closeRequestAction(input: z.input<typeof closeSchema>): Promise<ActionResult> {
+  const parsed = closeSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0].message };
+  const { ticketId, code, note } = parsed.data;
+  return runTransition(code, { ticketId, toStatus: TICKET_STATUSES.CLOSED, note: note || "Closed by the requester." });
+}
+
 const assignSchema = z.object({
   ...ticketRef,
   technicianId: z.string().min(1, "Choose a technician."),

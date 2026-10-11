@@ -3,13 +3,13 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCanteenOrders } from "@/components/canteen/use-canteen-orders";
-import { RoleGate } from "@/components/layout/role-gate";
+import { CanteenGate } from "@/components/canteen/canteen-gate";
 import { Button, EmptyState, Skeleton } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
 import { getCanteen } from "@/lib/db/canteen";
 
 export default function DisplayPage() {
-  return <RoleGate roles={[ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Board /></RoleGate>;
+  return <CanteenGate roles={[ROLES.CANTEEN_KITCHEN, ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Board /></CanteenGate>;
 }
 
 function Board() {

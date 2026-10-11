@@ -75,7 +75,7 @@ export default async function QueuePage({
       ? all
       : all.filter((t) => t.status !== TICKET_STATUSES.CLOSED);
   const tickets = byPriorityThenAge(visible);
-  const now = requestTime();
+  const now = await requestTime();
   const overdueCount = tickets.filter((t) => isOverdue(t, now)).length;
   const filtered = Boolean(
     params.status || params.category || params.priority || params.building || params.show,

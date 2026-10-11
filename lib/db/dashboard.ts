@@ -48,7 +48,7 @@ export async function loadDashboardData(profile: Profile): Promise<DashboardData
     case ROLES.CANTEEN_KITCHEN: case ROLES.CANTEEN_COUNTER: orders(false); break;
     case ROLES.CANTEEN_MANAGER:
       orders(false);
-      run(supabase.from("menu_items").select("id").eq("available", false), (rows: unknown[]) => { data.unavailableItems = rows.length; });
+      if (profile.canteen_id) run(supabase.from("menu_items").select("id").eq("available", false).eq("canteen_id", profile.canteen_id), (rows: unknown[]) => { data.unavailableItems = rows.length; });
       break;
     case ROLES.ADMIN:
       run(supabase.from("service_tickets").select(ticketCols).order("created_at", { ascending: false }).limit(LIMIT), (rows: DashboardTicket[]) => { data.tickets = rows; });

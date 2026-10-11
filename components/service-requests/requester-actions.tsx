@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { Button, Card, FormField, Textarea } from "@/components/ui";
 import {
+  closeRequestAction,
   confirmFixedAction,
   stillBrokenAction,
   type ActionResult,
@@ -152,6 +153,40 @@ export function RequesterActions({
           {error}
         </p>
       )}
+    </Card>
+  );
+}
+
+/** For a reopened or still-open request: the requester can close it without waiting for a fix. */
+export function CloseRequestActions({ ticketId, code, reopened }: { ticketId: string; code: string; reopened: boolean }) {
+  const [note, setNote] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  return (
+    <Card role="region" aria-labelledby="close-heading" className="space-y-3">
+      <div className="space-y-1">
+        <h2 id="close-heading">{reopened ? "Close this reopened request" : "Close this request"}</h2>
+        <p className="text-secondary">
+          {reopened ? "It was reopened after the first fix. If it is sorted, or no longer needed, you can close it here." : "If you no longer need this, you can close it here."}
+        </p>
+      </div>
+      <form
+        className="space-y-3"
+        onSubmit={(event) => {
+          event.preventDefault();
+          setError(null);
+          startTransition(async () => {
+            const result = await closeRequestAction({ ticketId, code, note });
+            if (!result.ok) setError(result.error);
+          });
+        }}
+      >
+        <FormField id="close-note" label="Note (optional)">
+          {(control) => <Textarea {...control} rows={2} maxLength={1000} value={note} onChange={(event) => setNote(event.target.value)} />}
+        </FormField>
+        {error && <p role="alert" className="text-status-red-dark">{error}</p>}
+        <Button type="submit" variant="secondary" loading={pending}>Close request</Button>
+      </form>
     </Card>
   );
 }

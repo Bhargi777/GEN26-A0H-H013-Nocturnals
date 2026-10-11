@@ -63,6 +63,16 @@ describe("dashboard for every role", () => {
 });
 
 describe("navigation contract", () => {
+  it("gives canteen staff links to their own canteen only", () => {
+    const routes = navigationForRole(ROLES.CANTEEN_KITCHEN, "abc").map((item) => item.href);
+    expect(routes).toContain("/canteen/abc/kitchen");
+    expect(routes.some((href) => href === "/canteen")).toBe(false);
+    expect(navigationForRole(ROLES.CANTEEN_MANAGER, "abc").map((item) => item.href)).toContain("/canteen/abc/manage");
+    expect(navigationForRole(ROLES.CANTEEN_COUNTER).map((item) => item.href)).not.toContain("/canteen/undefined/counter");
+  });
+  it("shows the campus calendar to every role", () => {
+    for (const role of Object.values(ROLES)) expect(navigationForRole(role).map((item) => item.href)).toContain("/calendar");
+  });
   it("always starts with the dashboard and ends with notifications", () => {
     for (const role of Object.values(ROLES)) {
       const routes = navigationForRole(role).map((item) => item.href);
@@ -89,7 +99,17 @@ describe("input validation and dates", () => {
     expect(signInSchema.safeParse({ email: "campus", password: "" }).success).toBe(false);
   });
   it("leaves the accepted campus domains to the server", () => {
-    expect(signUpSchema.safeParse({ fullName: "Campus applicant", email: "applicant@outside.example", password: "long-enough-password" }).success).toBe(true);
+    expect(signUpSchema.safeParse({ fullName: "Campus applicant", email: "applicant@outside.example", password: "long-enough-password1" }).success).toBe(true);
+  });
+  it("requires letters and a number in the registration password", () => {
+    const base = { fullName: "Campus applicant", email: "applicant@campus.example" };
+    expect(signUpSchema.safeParse({ ...base, password: "onlyletterspassword" }).success).toBe(false);
+    expect(signUpSchema.safeParse({ ...base, password: "12345678901" }).success).toBe(false);
+    expect(signUpSchema.safeParse({ ...base, password: "letters12345" }).success).toBe(true);
+  });
+  it("rejects digits or symbols in a name", () => {
+    expect(signUpSchema.safeParse({ fullName: "R2D2 <script>", email: "a@campus.example", password: "letters12345" }).success).toBe(false);
+    expect(signUpSchema.safeParse({ fullName: "Ananya O'Neil-Rao", email: "a@campus.example", password: "letters12345" }).success).toBe(true);
   });
   it("rejects a short registration password", () => {
     expect(signUpSchema.safeParse({ fullName: "Campus applicant", email: "applicant@campus.example", password: "short" }).success).toBe(false);

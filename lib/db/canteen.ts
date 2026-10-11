@@ -11,7 +11,7 @@ function fail(error: { message: string } | null): asserts error is null {
 
 const ORDER_COLUMNS =
   'id, code, token, canteen_id, user_id, slot_id, status, total, created_at, ' +
-  'slot:slot_id(slot_date, start_time, end_time), canteen:canteen_id(name), order_items(quantity, unit_price, item:item_id(name))';
+  'slot:slot_id(slot_date, start_time, end_time), canteen:canteen_id(name), order_items(id, quantity, unit_price, given, item:item_id(name))';
 
 /** "2 × Biryani, 1 × Tea" */
 export function itemsSummary(order: OrderRow): string {
@@ -87,6 +87,11 @@ export async function listCanteenOrders(canteenId: string, statuses: OrderStatus
 
 export async function advanceOrder(orderId: string, to: OrderStatusValue): Promise<void> {
   const { error } = await getSupabase().rpc('advance_order', { p_id: orderId, p_to: to });
+  fail(error);
+}
+
+export async function setItemGiven(itemId: string, given: boolean): Promise<void> {
+  const { error } = await getSupabase().rpc('set_item_given', { p_item: itemId, p_given: given });
   fail(error);
 }
 

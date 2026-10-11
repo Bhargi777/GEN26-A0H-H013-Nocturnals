@@ -39,10 +39,10 @@ export async function proxy(request: NextRequest) {
   const isAuthRoute = request.nextUrl.pathname.startsWith('/sign-in')
   
   // The app will have these routes (from team rules): 
-  // /dashboard, /notifications, /service-requests, /requests, /office, /admin/reports, /verify
+  // /dashboard, /notifications, /service-requests, /requests, /office, /admin/reports
   // We can just protect everything except /sign-in, auth callbacks, and static files
   
-  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/') && !request.nextUrl.pathname.startsWith('/verify/')) {
+  if (!user && !isAuthRoute && !request.nextUrl.pathname.startsWith('/auth/')) {
     const url = request.nextUrl.clone()
     url.pathname = '/sign-in'
     return NextResponse.redirect(url)

@@ -6,7 +6,7 @@ import { FrontendProvider } from "@/components/layout/frontend-provider";
 
 export const metadata: Metadata = {
   title: { default: "CampusConnect", template: "%s | CampusConnect" },
-  description: "Campus service requests and administrative certificates",
+  description: "Campus services: requests, rooms, events and canteen",
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

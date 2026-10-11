@@ -12,15 +12,16 @@ export const signInSchema = z.object({
   password: z.string().min(1, "Enter your password.").max(128, "Password must be at most 128 characters."),
 });
 export const signUpSchema = signInSchema.extend({
-  fullName: z.string().trim().min(2, "Enter your full name.").max(100, "Name must be at most 100 characters."),
-  password: z.string().min(8, "Use at least 8 characters for your password.").max(128, "Password must be at most 128 characters."),
+  fullName: z.string().trim().min(2, "Enter your full name.").max(100, "Name must be at most 100 characters.").regex(/^[\p{L}][\p{L} .'-]*$/u, "Use letters only in your name."),
+  password: z.string().min(8, "Use at least 8 characters for your password.").max(128, "Password must be at most 128 characters.")
+    .refine((value) => /[A-Za-z]/.test(value) && /\d/.test(value), "Use letters and at least one number in your password."),
 });
 
 const DEMO_ACCOUNTS = [
   ["Student", "arjun.s@example.edu"], ["Class rep", "cr.cse@example.edu"], ["Faculty", "dr.rao@example.edu"],
   ["Dept office", "office.cse@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
-  ["Campus director", "director.campus@example.edu"], ["Events dept", "events.dept@example.edu"], ["Canteen counter", "counter.main@example.edu"],
-  ["Canteen kitchen", "kitchen.main@example.edu"], ["Canteen manager", "canteen.manager@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
+  ["Campus director", "director.campus@example.edu"], ["Events dept", "events.dept@example.edu"], ["Main counter", "counter.main@example.edu"],
+  ["Main kitchen", "kitchen.main@example.edu"], ["Main manager", "canteen.manager@example.edu"], ["North kitchen", "kitchen.north@example.edu"], ["North manager", "manager.north@example.edu"], ["IT office", "office.it@example.edu"], ["IEEE president", "ieee.president@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
 ] as const;
 const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 

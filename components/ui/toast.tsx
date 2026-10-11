@@ -22,10 +22,15 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     const id = `${prefix}-${++counter.current}`;
     setMessages((previous) => [...previous.slice(-2), { ...message, id }]);
   }, [prefix]);
-  return <ToastContext.Provider value={notify}>{children}
-    <div role="region" aria-label="Feedback" className="fixed bottom-4 right-4 z-50 w-[calc(100%-32px)] max-w-sm space-y-2">
-      {messages.map((message) => <Toast key={message.id} {...message} onDismiss={() => setMessages((previous) => previous.filter((item) => item.id !== message.id))} />)}
-    </div>
+  // No corner popups. Successes are announced to screen readers only; a failure stays as a slim banner at the top until dismissed.
+  const errors = messages.filter((message) => message.tone === "error").slice(-1);
+  const announcements = messages.filter((message) => message.tone !== "error").slice(-1);
+  return <ToastContext.Provider value={notify}>
+    {errors.length > 0 && <div role="region" aria-label="Problems" className="sticky top-0 z-50 mx-auto w-full max-w-screen-xl p-2">
+      {errors.map((message) => <Toast key={message.id} {...message} onDismiss={() => setMessages((previous) => previous.filter((item) => item.id !== message.id))} />)}
+    </div>}
+    {children}
+    <div role="status" aria-live="polite" className="sr-only">{announcements.map((message) => <p key={message.id}>{message.message}</p>)}</div>
   </ToastContext.Provider>;
 }
 

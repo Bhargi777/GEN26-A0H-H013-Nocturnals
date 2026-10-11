@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Award, Bell, ChartNoAxesColumn, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
+import { Bell, CalendarDays, ChartNoAxesColumn, Building2, Calendar, ClipboardList, DoorOpen, LayoutDashboard, ListChecks, Plus, ReceiptText, UtensilsCrossed, type LucideIcon } from "lucide-react";
 import { ROLES, type Role } from "@/app/(app)/ui/preview-contract";
 import { useFrontend } from "./frontend-provider";
 
@@ -21,43 +21,52 @@ const newEvent = item("/events/new", "Request an event", Plus);
 const myEvents = item("/events/mine", "My events", Calendar);
 const eventReview = item("/events/review", "Event reviews", Calendar);
 const eventApproval = item("/events/director", "Event approvals", Calendar);
-const eventCalendar = item("/events/calendar", "Event calendar", Calendar);
-const certificates = item("/requests", "My certificates", Award);
-const newCertificate = item("/requests/new", "Request a certificate", Plus);
-const certificateReviews = item("/office", "Certificate reviews", Award);
+const eventCalendar = item("/events/calendar", "Calendar queue", Calendar);
+const campusCalendar = item("/calendar", "Campus calendar", CalendarDays);
 const myClasses = item("/rooms/classes", "My classes", Calendar);
 const reports = item("/admin/reports", "Campus pulse", ChartNoAxesColumn);
 const canteen = item("/canteen", "Canteen", UtensilsCrossed);
 const myOrders = item("/canteen/orders", "My orders", ReceiptText);
 
-const requester = [myRequests, report];
-const byRole: Record<Role, NavigationItem[]> = {
-  [ROLES.STUDENT]: [...requester, certificates, newCertificate, canteen, myOrders],
-  [ROLES.FACULTY]: [...requester, bookRoom, myBookings, myClasses, canteen, myOrders],
-  [ROLES.CR]: [...requester, bookRoom, myBookings, certificates, newCertificate, canteen, myOrders],
-  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, certificates, newCertificate, canteen, myOrders],
-  [ROLES.TECHNICIAN]: [department],
-  [ROLES.DEPT_OFFICE]: [department, roomQueue, certificateReviews],
-  [ROLES.DEPT_HEAD]: [department, roomQueue, certificateReviews],
-  [ROLES.EVENTS_DEPT]: [eventCalendar],
-  [ROLES.OSA]: [eventReview, certificateReviews],
-  [ROLES.CAMPUS_DIRECTOR]: [eventApproval, reports],
-  [ROLES.CANTEEN_KITCHEN]: [canteen],
-  [ROLES.CANTEEN_COUNTER]: [canteen],
-  [ROLES.CANTEEN_MANAGER]: [canteen],
-  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, certificateReviews, reports, canteen, myOrders],
+const canteenLinks = (canteenId?: string | null, role?: string): NavigationItem[] => {
+  if (!canteenId) return [];
+  const base = `/canteen/${canteenId}`;
+  const screens: Record<string, NavigationItem[]> = {
+    canteen_kitchen: [item(`${base}/kitchen`, "Kitchen", UtensilsCrossed), item(`${base}/display`, "Display board", ReceiptText)],
+    canteen_counter: [item(`${base}/counter`, "Counter", UtensilsCrossed), item(`${base}/display`, "Display board", ReceiptText)],
+    canteen_manager: [item(`${base}/manage`, "Menu and slots", UtensilsCrossed), item(`${base}/display`, "Display board", ReceiptText)],
+  };
+  return screens[role ?? ""] ?? [];
 };
 
-export function navigationForRole(role?: Role | string): NavigationItem[] {
+const requester = [myRequests, report];
+const byRole: Record<Role, NavigationItem[]> = {
+  [ROLES.STUDENT]: [...requester, canteen, myOrders],
+  [ROLES.FACULTY]: [...requester, bookRoom, myBookings, myClasses, canteen, myOrders],
+  [ROLES.CR]: [...requester, bookRoom, myBookings, canteen, myOrders],
+  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, canteen, myOrders],
+  [ROLES.TECHNICIAN]: [department],
+  [ROLES.DEPT_OFFICE]: [department, roomQueue],
+  [ROLES.DEPT_HEAD]: [department, roomQueue],
+  [ROLES.EVENTS_DEPT]: [eventCalendar],
+  [ROLES.OSA]: [eventReview],
+  [ROLES.CAMPUS_DIRECTOR]: [eventApproval, reports],
+  [ROLES.CANTEEN_KITCHEN]: [],
+  [ROLES.CANTEEN_COUNTER]: [],
+  [ROLES.CANTEEN_MANAGER]: [],
+  [ROLES.ADMIN]: [...requester, department, bookRoom, roomQueue, newEvent, eventReview, eventApproval, eventCalendar, reports, canteen, myOrders],
+};
+
+export function navigationForRole(role?: Role | string, canteenId?: string | null): NavigationItem[] {
   const specific = role ? byRole[role as Role] : undefined;
-  return [dashboard, ...(specific ?? []), notifications];
+  return [dashboard, ...(specific ?? []), ...canteenLinks(canteenId, role), campusCalendar, notifications];
 }
 
 export function Navigation({ role, onNavigate }: { role?: Role; onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { notifications: inbox } = useFrontend();
+  const { notifications: inbox, profile } = useFrontend();
   const unread = inbox.filter((entry) => !entry.read_at).length;
-  const items = navigationForRole(role);
+  const items = navigationForRole(role, profile?.canteen_id);
   const active = [...items].sort((a, b) => b.href.length - a.href.length).find((entry) => pathname === entry.href || pathname.startsWith(`${entry.href}/`))?.href;
   return <nav aria-label="Main navigation" className="space-y-1">{items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-current={active === href ? "page" : undefined} onClick={onNavigate} className={`flex min-h-11 items-center gap-2 rounded-control px-3 py-2 ${active === href ? "bg-accent-light font-medium text-accent" : "text-secondary hover:bg-background hover:text-primary"}`}>
     <Icon size={16} aria-hidden="true" className="shrink-0" /><span className="min-w-0 flex-1">{label}</span>

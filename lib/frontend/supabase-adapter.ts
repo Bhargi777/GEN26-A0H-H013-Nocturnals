@@ -19,7 +19,7 @@ export const supabaseAdapter: FrontendAdapter = {
   async getSession() {
     const { data: { user } } = await db().auth.getUser();
     if (!user) return null;
-    const { data, error } = await db().from("profiles").select("id, full_name, email, role, department_id").eq("id", user.id).maybeSingle();
+    const { data, error } = await db().from("profiles").select("id, full_name, email, role, department_id, canteen_id, club_id").eq("id", user.id).maybeSingle();
     if (error) throw new Error(error.message);
     return (data as Profile | null) ?? null;
   },

@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useCanteenOrders } from "@/components/canteen/use-canteen-orders";
-import { RoleGate } from "@/components/layout/role-gate";
+import { CanteenGate } from "@/components/canteen/canteen-gate";
+import { Handover } from "@/components/canteen/handover";
 import { Badge, Button, Card, EmptyState, FieldError, FormField, Input, PageHeader, Skeleton, buttonStyles, useToast } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
 import { advanceOrder, forfeitUnpaidOrders, itemsSummary } from "@/lib/db/canteen";
@@ -12,7 +13,7 @@ import { formatClock } from "@/lib/time";
 import type { OrderRow, OrderStatusValue } from "@/lib/types/campus";
 
 export default function CounterPage() {
-  return <RoleGate roles={[ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Counter /></RoleGate>;
+  return <CanteenGate roles={[ROLES.CANTEEN_COUNTER, ROLES.CANTEEN_MANAGER, ROLES.ADMIN]}><Counter /></CanteenGate>;
 }
 
 function Counter() {
@@ -65,7 +66,7 @@ function Counter() {
               <p className="text-secondary">{itemsSummary(order)}</p>
               <p className="text-secondary">Pickup {order.slot ? `${formatClock(order.slot.start_time)}–${formatClock(order.slot.end_time)}` : ""}</p>
               {section.status === "PLACED" && <Button loading={busy === order.id} className="w-full" aria-label={`Mark ${order.token} paid`} onClick={() => void move(order, "PAID", `${order.token} marked paid.`)}>Mark paid</Button>}
-              {section.status === "READY" && <Button loading={busy === order.id} className="w-full" aria-label={`Mark ${order.token} collected`} onClick={() => void move(order, "COLLECTED", `${order.token} collected.`)}>Mark collected</Button>}
+              {section.status === "READY" && <Handover order={order} onDone={reload} />}
             </Card></li>)}
           </ul>}
         </section>;

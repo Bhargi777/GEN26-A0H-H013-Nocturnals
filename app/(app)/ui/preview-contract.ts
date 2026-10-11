@@ -32,7 +32,7 @@ export const STATUS_LABELS: Record<Status, string> = {
   [MODULE_STATUS.lateWalkin]: "Late walk-in",
 };
 
-export interface Profile { id: string; full_name: string; email: string; role: Role; department_id: string | null }
+export interface Profile { id: string; full_name: string; email: string; role: Role; department_id: string | null; canteen_id?: string | null; club_id?: string | null }
 export interface Ticket {
   id: string; code: string; requester_id: string; title: string; category: typeof CATEGORIES[number];
   status: TicketStatus; assigned_department_id: string; created_at: string;

@@ -38,6 +38,7 @@ export default async function MyTicketsPage({
     ),
   );
   const filtered = Boolean(params.status || params.category);
+  const now = await requestTime();
 
   return (
     <div className="space-y-6">
@@ -99,7 +100,7 @@ export default async function MyTicketsPage({
           />
         )
       ) : (
-        <MyTicketsTable rows={tickets} now={requestTime()} />
+        <MyTicketsTable rows={tickets} now={now} />
       )}
     </div>
   );

@@ -85,14 +85,13 @@ Seeded accounts all use the password `password123`. With `NEXT_PUBLIC_DEMO_MODE=
 | Rooms | faculty, class reps, department office | floor plans with live availability per date and period, "find me a room", approval queue, class cancellation frees the room |
 | Events | club presidents, student affairs, campus director, events department | request, review, approve, calendar, notified at every step |
 | Canteen | students, counter, kitchen, manager | menu, cart, 15 minute pickup slots (IST), tokens, realtime kitchen and counter screens, display board |
-| Certificates | students, department office, student affairs | bonafide and NOC requests, PDF with QR code, public verification at `/verify/<number>` |
-| Campus pulse | admin, campus director | one page of service, room, canteen, event and certificate numbers |
+| Campus pulse | admin, campus director | one page of service, room, canteen and event numbers |
 | Notifications | everyone | created by database triggers on every status change, live in the nav |
 
 ## Architecture and security
 
 - Next.js App Router and Supabase. The browser only ever holds the anon key and a cookie session, so every query runs as the signed-in user under row-level security.
-- Anything that needs a cross-user check is a `SECURITY DEFINER` function: `request_room_booking`, `decide_room_booking`, `place_order`, `advance_order`, `create_admin_request`, `decide_admin_request`, `cancel_class`, `campus_report` and others. They validate role, IST date windows, capacity and prices in SQL, so a modified client cannot skip a rule.
+- Anything that needs a cross-user check is a `SECURITY DEFINER` function: `request_room_booking`, `decide_room_booking`, `place_order`, `advance_order`, `cancel_class`, `campus_report` and others. They validate role, IST date windows, capacity and prices in SQL, so a modified client cannot skip a rule.
 - Double booking is prevented by a partial unique index; event hall clashes by an exclusion constraint; role changes by a trigger.
 - Notifications are inserted by triggers, never by the client.
-- `proxy.ts` redirects signed-out requests to `/sign-in`; only `/verify/*` is public.
+- `proxy.ts` redirects signed-out requests to `/sign-in`.

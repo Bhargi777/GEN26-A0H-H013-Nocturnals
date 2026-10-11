@@ -30,7 +30,7 @@ export interface OrderRow {
   status: OrderStatusValue; total: number; created_at: string;
   slot?: { slot_date: string; start_time: string; end_time: string } | null;
   canteen?: { name: string } | null;
-  order_items?: { quantity: number; unit_price: number; item: { name: string } | null }[];
+  order_items?: { id: string; quantity: number; unit_price: number; given: boolean; item: { name: string } | null }[];
 }
 
 export interface DashboardTicket { id: string; code: string; title: string; status: string; created_at: string; requester_id: string; assigned_department_id: string | null }
@@ -55,11 +55,7 @@ export interface EventRow {
   club?: { name: string } | null; hall?: { name: string } | null;
 }
 
-export type CertificateType = "BONAFIDE" | "NOC";
-export type CertificateStatus = "PENDING_DEPT" | "PENDING_OFFICE" | "APPROVED" | "REJECTED";
-export interface CertificateRow {
-  id: string; code: string; type: CertificateType; purpose: string; status: CertificateStatus;
-  decision_note: string | null; created_at: string; decided_at: string | null; requester_id: string;
-  requester?: { full_name: string; roll_no: string | null; department?: { name: string } | null } | null;
+export interface CalendarEvent {
+  id: string; code: string; title: string; event_type: string; club_name: string; hall_name: string | null;
+  event_date: string; start_time: string; end_time: string; status: "APPROVED" | "CALENDARED";
 }
-export interface CertificateEvent { id: string; action: string; from_status: string | null; to_status: string | null; note: string | null; created_at: string; actor?: { full_name: string } | null }

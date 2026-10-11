@@ -1,3 +1,5 @@
+import { connection } from "next/server";
+
 const relative = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
 
 const UNITS: [Intl.RelativeTimeFormatUnit, number][] = [
@@ -27,7 +29,8 @@ export function formatDateTime(iso: string): string {
   return dateTime.format(new Date(iso));
 }
 
-/** The time a server page is rendered at, read once per request. */
-export function requestTime(): number {
+/** The time a server page is rendered at, read once per request. Awaiting connection() marks the page as request-time, so the clock is never prerendered. */
+export async function requestTime(): Promise<number> {
+  await connection();
   return Date.now();
 }
