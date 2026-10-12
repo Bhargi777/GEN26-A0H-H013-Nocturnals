@@ -7,6 +7,6 @@ export default function OfflinePage() {
     <p className="font-semibold text-accent">ourAmrita</p>
     <h1>You are offline</h1>
     <p className="text-secondary">Rooms, orders and requests need a connection so they are always up to date. Check your Wi-Fi or mobile data and try again.</p>
-    <a href="/dashboard" className="inline-flex min-h-11 items-center justify-center rounded-control border border-accent bg-accent px-4 py-2 font-medium text-surface">Try again</a>
+    <a href="/dashboard" className="inline-flex min-h-11 items-center justify-center rounded-control border border-accent bg-accent px-4 py-2 font-medium text-on-accent">Try again</a>
   </main>;
 }

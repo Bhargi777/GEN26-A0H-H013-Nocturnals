@@ -71,6 +71,6 @@ export function Navigation({ role, onNavigate }: { role?: Role; onNavigate?: () 
   const active = [...items].sort((a, b) => b.href.length - a.href.length).find((entry) => pathname === entry.href || pathname.startsWith(`${entry.href}/`))?.href;
   return <nav aria-label="Main navigation" className="space-y-1">{items.map(({ href, label, icon: Icon }) => <Link key={href} href={href} aria-current={active === href ? "page" : undefined} onClick={onNavigate} className={`flex min-h-11 items-center gap-2 rounded-control px-3 py-2 ${active === href ? "bg-accent-light font-medium text-accent" : "text-secondary hover:bg-background hover:text-primary"}`}>
     <Icon size={16} aria-hidden="true" className="shrink-0" /><span className="min-w-0 flex-1">{label}</span>
-    {href === "/notifications" && unread > 0 && <span className="rounded-full bg-accent px-2 text-surface" aria-label={`${unread} unread`}>{unread}</span>}
+    {href === "/notifications" && unread > 0 && <span className="rounded-full bg-accent px-2 text-on-accent" aria-label={`${unread} unread`}>{unread}</span>}
   </Link>)}</nav>;
 }

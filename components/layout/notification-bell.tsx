@@ -8,7 +8,7 @@ import { useFrontend } from "./frontend-provider";
 export function NotificationBell() {
   const { notifications } = useFrontend();
   const unread = notifications.filter((item) => !item.read_at).length;
-  return <Link href="/notifications" aria-label={`Notifications, ${unread} unread`} className="flex min-h-11 items-center gap-2 rounded-control px-2 text-surface">
+  return <Link href="/notifications" aria-label={`Notifications, ${unread} unread`} className="flex min-h-11 items-center gap-2 rounded-control px-2 text-on-accent">
     <Bell size={16} aria-hidden="true" /><span aria-hidden="true">{unread}</span>
   </Link>;
 }

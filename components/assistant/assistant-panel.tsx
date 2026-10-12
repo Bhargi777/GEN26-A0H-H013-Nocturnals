@@ -91,14 +91,14 @@ export function AssistantPanel() {
   }
 
   return <>
-    <button ref={trigger} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-controls={id} className="inline-flex min-h-11 items-center gap-2 rounded-control border border-surface px-3 py-2 font-medium text-surface hover:bg-accent-hover">
+    <button ref={trigger} type="button" onClick={() => setOpen(true)} aria-haspopup="dialog" aria-controls={id} className="inline-flex min-h-11 items-center gap-2 rounded-control border border-on-accent px-3 py-2 font-medium text-on-accent hover:bg-accent-hover">
       <MessageCircleQuestion size={18} aria-hidden="true" /><span className="hidden sm:inline">Ask</span><span className="sr-only sm:hidden">Ask ourAmrita</span>
     </button>
     <dialog ref={dialog} id={id} aria-labelledby={`${id}-title`} onKeyDown={keepDialogFocus} onClose={() => { setOpen(false); trigger.current?.focus(); }} onCancel={(event) => { event.preventDefault(); setOpen(false); }}
       className="m-0 ml-auto h-dvh max-h-none w-full max-w-md rounded-none border-l bg-surface p-0 text-primary backdrop:bg-primary/40">
       <div className="flex h-full flex-col">
-        <div className="flex items-center justify-between gap-3 bg-accent px-4 py-3 text-surface">
-          <h2 id={`${id}-title`} className="text-surface">Ask ourAmrita</h2>
+        <div className="flex items-center justify-between gap-3 bg-accent px-4 py-3 text-on-accent">
+          <h2 id={`${id}-title`} className="text-on-accent">Ask ourAmrita</h2>
           <button type="button" aria-label="Close assistant" onClick={() => setOpen(false)} className="rounded-control p-2 hover:bg-accent-hover"><X size={18} aria-hidden="true" /></button>
         </div>
         <div ref={list} className="flex-1 space-y-3 overflow-y-auto p-4" aria-live="polite">
@@ -106,7 +106,7 @@ export function AssistantPanel() {
             <p className="text-secondary">Ask about rules, your orders and requests, or what is on. I can also find a room and prepare the request for you to confirm.</p>
             <ul className="space-y-2">{suggestions.map((suggestion) => <li key={suggestion}><button type="button" onClick={() => void ask(suggestion)} className="w-full rounded-control border bg-background px-3 py-2 text-left hover:bg-accent-light">{suggestion}</button></li>)}</ul>
           </div>}
-          {turns.map((turn, index) => <div key={index} className={turn.role === "user" ? "ml-8 rounded-card bg-accent px-3 py-2 text-surface" : "mr-8 space-y-2 rounded-card border bg-background px-3 py-2"}>
+          {turns.map((turn, index) => <div key={index} className={turn.role === "user" ? "ml-8 rounded-card bg-accent px-3 py-2 text-on-accent" : "mr-8 space-y-2 rounded-card border bg-background px-3 py-2"}>
             <p className="whitespace-pre-line break-words">{turn.content}</p>
             {turn.reply?.sources.length ? <p className="text-secondary">From: {[...new Set(turn.reply.sources)].join(" · ")}</p> : null}
             {turn.reply?.links.length ? <p className="flex flex-wrap gap-3">{turn.reply.links.map((link) => <Link key={link.href} href={link.href} onClick={() => setOpen(false)} className="text-link">{link.label}</Link>)}</p> : null}
