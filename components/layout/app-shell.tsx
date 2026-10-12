@@ -10,7 +10,6 @@ import { MobileNavigation } from "./mobile-navigation";
 import { navigationForRole } from "./navigation";
 import { NotificationBell } from "./notification-bell";
 import { AssistantPanel } from "@/components/assistant/assistant-panel";
-import { ThemeToggle } from "./theme-provider";
 
 /** Home / Section breadcrumb: the section label comes from the role's navigation, else a tidied path segment. */
 function useCrumb(): string | undefined {
@@ -33,25 +32,24 @@ export function AppShell({ children }: { children: ReactNode }) {
   const [leaving, setLeaving] = useState(false);
   return <div className="min-h-screen">
     <a href="#main-content" className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-control focus:bg-surface focus:p-3">Skip to content</a>
-    <header className="bg-accent text-on-accent">
+    <header className="bg-accent text-surface">
       <div className="flex min-h-16 flex-wrap items-center justify-between gap-3 px-4 py-3 md:px-8">
         <div className="flex min-w-0 items-center gap-3">
           {profile && <MobileNavigation role={profile.role} />}
-          <Link href="/dashboard" className="min-w-0 truncate text-title text-on-accent">ourAmrita</Link>
+          <Link href="/dashboard" className="min-w-0 truncate text-title text-surface">ourAmrita</Link>
         </div>
         <div className="flex items-center gap-3">
           {profile && <p className="hidden min-w-0 text-right sm:block"><span className="block break-words font-medium">{profile.full_name}</span><span className="block opacity-90">{ROLE_LABELS[profile.role]}</span></p>}
           {profile && <AssistantPanel />}
           <NotificationBell />
-          <ThemeToggle />
           {profile
-            ? <button type="button" disabled={leaving} className="inline-flex min-h-11 items-center rounded-control border border-on-accent px-3 py-2 font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60" onClick={async () => {
+            ? <button type="button" disabled={leaving} className="inline-flex min-h-11 items-center rounded-control border border-surface px-3 py-2 font-medium text-surface hover:bg-accent-hover disabled:opacity-60" onClick={async () => {
               setLeaving(true);
               try { await signOut(); router.replace("/sign-in"); }
               catch { toast({ tone: "error", message: "Sign-out failed. Try again." }); }
               finally { setLeaving(false); }
             }}>Sign out</button>
-            : <Link href="/sign-in" className="font-medium text-on-accent underline">Sign in</Link>}
+            : <Link href="/sign-in" className="font-medium text-surface underline">Sign in</Link>}
         </div>
       </div>
     </header>

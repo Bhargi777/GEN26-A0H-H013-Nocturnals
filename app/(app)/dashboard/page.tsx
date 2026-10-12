@@ -30,7 +30,7 @@ function Portrait({ name }: { name: string }) {
 function Tile({ href, label, icon: Icon }: { href: string; label: string; icon: React.ComponentType<{ size?: number; "aria-hidden"?: boolean }> }) {
   return <Link href={href} className="group relative flex min-h-14 items-center overflow-hidden rounded-control border bg-surface py-3 pl-4 pr-24 uppercase text-accent hover:bg-background">
     <span className="min-w-0 break-words">{label}</span>
-    <span aria-hidden="true" className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-accent pl-4 text-on-accent [clip-path:polygon(25%_0,100%_0,100%_100%,0_100%)] group-hover:bg-accent-hover"><Icon size={18} aria-hidden /></span>
+    <span aria-hidden="true" className="absolute inset-y-0 right-0 flex w-20 items-center justify-center bg-accent pl-4 text-surface [clip-path:polygon(25%_0,100%_0,100%_100%,0_100%)] group-hover:bg-accent-hover"><Icon size={18} aria-hidden /></span>
   </Link>;
 }
 
@@ -74,7 +74,7 @@ export default function DashboardPage() {
           <Link href={alert.link} className="flex items-start gap-3 text-link no-underline">
             <ChevronRight size={16} aria-hidden="true" className="mt-1 shrink-0 text-secondary" />
             <CircleHelp size={18} aria-hidden="true" className="mt-0.5 shrink-0 text-secondary" />
-            <span className="min-w-0 break-words">{alert.title}{!alert.read_at && <span className="ml-2 rounded-full bg-accent px-2 text-on-accent">new</span>}</span>
+            <span className="min-w-0 break-words">{alert.title}{!alert.read_at && <span className="ml-2 rounded-full bg-accent px-2 text-surface">new</span>}</span>
           </Link>
         </li>)}</ul>}
         <Link href="/notifications" className="text-link inline-block py-1">View all notifications</Link>

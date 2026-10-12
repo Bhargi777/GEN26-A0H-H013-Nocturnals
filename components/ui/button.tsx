@@ -5,10 +5,10 @@ export type ButtonSize = "sm" | "md";
 
 export function buttonStyles(variant: ButtonVariant = "primary", size: ButtonSize = "md") {
   const variants = {
-    primary: "border-accent bg-accent text-on-accent hover:border-accent-hover hover:bg-accent-hover",
+    primary: "border-accent bg-accent text-surface hover:border-accent-hover hover:bg-accent-hover",
     secondary: "border-secondary bg-surface text-primary hover:bg-background",
     ghost: "border-transparent bg-transparent text-accent hover:bg-accent-light",
-    danger: "border-danger bg-danger text-danger-foreground hover:underline",
+    danger: "border-status-red-dark bg-status-red-dark text-surface hover:underline",
   };
   return `inline-flex shrink-0 items-center justify-center gap-2 rounded-control border font-medium disabled:opacity-60 ${variants[variant]} ${size === "sm" ? "min-h-8 px-3 py-1" : "min-h-11 px-4 py-2"}`;
 }
@@ -28,3 +28,4 @@ export function Button({ variant, size, loading = false, disabled, className = "
     </button>
   );
 }
+

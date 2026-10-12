@@ -79,7 +79,7 @@ export function RequesterActions({
                   key={value}
                   className={`flex min-h-11 w-11 cursor-pointer items-center justify-center rounded-control border font-medium has-[:focus-visible]:outline has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-accent ${
                     rating === value
-                      ? "border-accent bg-accent text-on-accent"
+                      ? "border-accent bg-accent text-surface"
                       : "border-secondary bg-surface hover:bg-background"
                   }`}
                 >

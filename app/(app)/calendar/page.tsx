@@ -87,7 +87,7 @@ export default function CampusCalendarPage() {
             const isSelected = day.date === selected;
             return <button key={day.date} type="button" role="gridcell" aria-selected={isSelected} aria-label={`${formatDay(day.date)}, ${list.length} events`} onClick={() => setSelected(day.date)}
               className={`min-h-24 space-y-1 bg-surface p-2 text-left align-top hover:bg-background ${day.inMonth ? "" : "text-secondary"} ${isSelected ? "outline outline-2 -outline-offset-2 outline-accent" : ""}`}>
-              <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${day.date === today ? "bg-accent text-on-accent" : ""}`}>{Number(day.date.slice(8))}</span>
+              <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${day.date === today ? "bg-accent text-surface" : ""}`}>{Number(day.date.slice(8))}</span>
               {list.slice(0, 2).map((event) => <span key={event.id} className="block truncate rounded-control bg-accent-light px-1 text-accent">{event.title}</span>)}
               {list.length > 2 && <span className="block text-secondary">+{list.length - 2} more</span>}
             </button>;
