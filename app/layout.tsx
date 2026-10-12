@@ -10,7 +10,7 @@ export const metadata: Metadata = {
   description: "Campus services: requests, rooms, events and canteen",
   applicationName: "ourAmrita",
   appleWebApp: { capable: true, title: "ourAmrita", statusBarStyle: "default" },
-  icons: { icon: "/icons/amrita.svg", apple: "/icons/amrita-apple-touch.png" },
+  icons: { icon: "/icons/amrita.svg", apple: "/apple-touch-icon.png" },
 };
 
 export const viewport: Viewport = { themeColor: "#A9244A", viewportFit: "cover", width: "device-width", initialScale: 1 };

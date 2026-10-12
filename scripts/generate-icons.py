@@ -20,7 +20,7 @@ def icon(size: int, artwork_size: int) -> Image.Image:
 ICONS.mkdir(parents=True, exist_ok=True)
 icon(192, 172).save(ICONS / "amrita-192.png", optimize=True)
 icon(512, 460).save(ICONS / "amrita-512.png", optimize=True)
-icon(180, 160).save(ICONS / "amrita-apple-touch.png", optimize=True)
+icon(180, 160).save(ROOT / "public/apple-touch-icon.png", optimize=True)
 icon(512, 352).save(ICONS / "amrita-maskable-512.png", optimize=True)
 icon(48, 44).convert("RGBA").save(ROOT / "app/favicon.ico", sizes=[(16, 16), (32, 32), (48, 48)])
 print("App icons and favicon generated")
