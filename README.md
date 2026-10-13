@@ -41,28 +41,6 @@ ourAmrita is a role-aware campus operations portal for service requests, room bo
 - `npm run typecheck`: Run TypeScript type checking
 - `npm run test`: Run Vitest
 
-## Branches
-
-Work only on your assigned branch. Never push directly to `main`.
-- `feat/backend`: Dev 1
-- `feat/frontend`: Dev 2
-- `feat/service-requests`: Dev 3
-- `feat/e-governance`: Dev 4
-
-## Ownership Table
-
-| Path | Owner |
-| --- | --- |
-| `supabase/**` (core migrations, seed, policies) | Dev 1 |
-| `lib/db/**`, `lib/auth/**`, `lib/types/**`, `lib/constants/**`, `lib/supabase/**` | Dev 1 |
-| `middleware.ts`, `.env.example`, `package.json`, lockfile, `next.config.*`, `tsconfig.json` | Dev 1 |
-| `app/layout.tsx`, `app/globals.css`, `tailwind.config.*` | Dev 2 |
-| `app/(auth)/**`, `app/(app)/layout.tsx`, `app/(app)/dashboard/**`, `app/(app)/notifications/**`, `app/(app)/ui/**` | Dev 2 |
-| `components/ui/**`, `components/layout/**` | Dev 2 |
-| `app/(app)/service-requests/**`, `components/service-requests/**`, `lib/ai/**` | Dev 3 |
-| `app/(app)/requests/**`, `app/(app)/office/**`, `app/(app)/admin/reports/**`, `app/verify/**`, `components/admin-requests/**`, `lib/pdf/**` | Dev 4 |
-| `goals/0X-*.md` | only the developer whose number it is |
-
 ## Live demo
 
 https://ouramrita-bhargi777s-projects.vercel.app (Vercel, backed by the hosted Supabase project in ap-south-1). [Download the Android app](https://ouramrita-bhargi777s-projects.vercel.app/downloads/ouramrita.apk). The GitHub repository remains [Bhargi777/GEN26-A0H-H013-Nocturnals](https://github.com/Bhargi777/GEN26-A0H-H013-Nocturnals). Demo accounts use the password `password123`; never enable demo mode or load the seed against a real project.
@@ -89,7 +67,7 @@ Seeded accounts all use the password `password123`. With `NEXT_PUBLIC_DEMO_MODE=
 | --- | --- | --- |
 | Service requests | everyone, technicians, department staff | report issues with photo, AI-assisted triage and duplicate detection, queue, overdue tracking |
 | Rooms | faculty, class reps, department office | floor plans with live availability per date and period, "find me a room", approval queue, class cancellation frees the room |
-| Events | club presidents, student affairs, campus director, events department | request, review, approve, calendar, notified at every step |
+| Events | club presidents, student affairs, campus director, events department | request, review, approve, campus calendar and hourly-synced academic ICS feed, notified at every step |
 | Canteen | students, counter, kitchen, manager | menu, cart, 15 minute pickup slots (IST), tokens, realtime kitchen and counter screens, display board |
 | Campus pulse | admin, campus director | one page of service, room, canteen and event numbers |
 | Notifications | everyone | created by database triggers on every status change, live in the nav |
@@ -101,3 +79,4 @@ Seeded accounts all use the password `password123`. With `NEXT_PUBLIC_DEMO_MODE=
 - Double booking is prevented by a partial unique index; event hall clashes by an exclusion constraint; role changes by a trigger.
 - Notifications are inserted by triggers, never by the client.
 - `proxy.ts` redirects signed-out requests to `/sign-in`.
+- Set `ACADEMIC_CALENDAR_ICS_URL` to the hosted `.ics` feed URL for the Campus calendar; the server refreshes the feed hourly.

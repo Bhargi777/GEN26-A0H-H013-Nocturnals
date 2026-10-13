@@ -5,15 +5,19 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Badge, Button, Card, EmptyState, FieldError, PageHeader, Skeleton } from "@/components/ui";
 import { assignLanes, minutesOf } from "@/lib/algo/intervals";
 import { groupByDate, monthGrid, shiftMonth } from "@/lib/calendar-grid";
-import { listCalendar } from "@/lib/db/calendar";
+import { listAcademicCalendar, listCalendar } from "@/lib/db/calendar";
 import { formatClock, formatDay, istDate } from "@/lib/time";
-import type { CalendarEvent } from "@/lib/types/campus";
+import type { AcademicCalendarEvent, CalendarEvent } from "@/lib/types/campus";
 import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 const DAY_START = 7 * 60;
 const DAY_END = 23 * 60;
+
+type CalendarEntry =
+  | (CalendarEvent & { source: "campus" })
+  | (AcademicCalendarEvent & { source: "academic" });
 
 /** One day as a timeline. Overlapping events share the width: each gets a lane from interval partitioning. */
 function DayTimeline({ events }: { events: CalendarEvent[] }) {
@@ -38,7 +42,7 @@ export default function CampusCalendarPage() {
   const [year, setYear] = useState(Number(today.slice(0, 4)));
   const [month, setMonth] = useState(Number(today.slice(5, 7)));
   const [selected, setSelected] = useState(today);
-  const [events, setEvents] = useState<CalendarEvent[]>();
+  const [events, setEvents] = useState<CalendarEntry[]>();
   const [error, setError] = useState<string>();
 
   const grid = useMemo(() => monthGrid(year, month), [year, month]);
@@ -46,7 +50,16 @@ export default function CampusCalendarPage() {
   const to = grid[grid.length - 1].date;
 
   const load = useCallback(async () => {
-    try { setEvents(await listCalendar(from, to)); setError(undefined); }
+    try {
+      const [campusEvents, academicEvents] = await Promise.all([listCalendar(from, to), listAcademicCalendar(from, to)]);
+      setEvents([
+        ...academicEvents.map((event) => ({ ...event, source: "academic" as const })),
+        ...campusEvents.map((event) => ({ ...event, source: "campus" as const })),
+      ].sort((a, b) => a.event_date.localeCompare(b.event_date)
+        || (a.source === b.source ? 0 : a.source === "academic" ? -1 : 1)
+        || ("start_time" in a ? a.start_time : "").localeCompare("start_time" in b ? b.start_time : "")));
+      setError(undefined);
+    }
     catch { setError("The calendar could not be loaded. Try again."); }
   }, [from, to]);
 
@@ -66,9 +79,10 @@ export default function CampusCalendarPage() {
   if (error && !events) return <EmptyState message={error} action={<Button onClick={() => void load()}>Try again</Button>} />;
   if (!events) return <Skeleton label="Loading calendar" rows={5} />;
   const dayEvents = byDay.get(selected) ?? [];
+  const timedEvents = dayEvents.filter((event): event is CalendarEvent & { source: "campus" } => event.source === "campus");
 
   return <div className="space-y-6">
-    <PageHeader title="Campus calendar" context="Every event the campus director has approved. It updates for everyone as soon as an event is approved." />
+    <PageHeader title="Campus calendar" context="Campus-approved events and all-day academic calendar dates." />
     <FieldError>{error}</FieldError>
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -88,7 +102,7 @@ export default function CampusCalendarPage() {
             return <button key={day.date} type="button" role="gridcell" aria-selected={isSelected} aria-label={`${formatDay(day.date)}, ${list.length} events`} onClick={() => setSelected(day.date)}
               className={`min-h-24 space-y-1 bg-surface p-2 text-left align-top hover:bg-background ${day.inMonth ? "" : "text-secondary"} ${isSelected ? "outline outline-2 -outline-offset-2 outline-accent" : ""}`}>
               <span className={`inline-flex h-6 w-6 items-center justify-center rounded-full ${day.date === today ? "bg-accent text-surface" : ""}`}>{Number(day.date.slice(8))}</span>
-              {list.slice(0, 2).map((event) => <span key={event.id} className="block truncate rounded-control bg-accent-light px-1 text-accent">{event.title}</span>)}
+              {list.slice(0, 2).map((event) => <span key={`${event.source}:${event.id}`} className={`block truncate rounded-control px-1 ${event.source === "academic" ? "bg-status-blue-light text-status-blue-dark" : "bg-accent-light text-accent"}`}>{event.title}</span>)}
               {list.length > 2 && <span className="block text-secondary">+{list.length - 2} more</span>}
             </button>;
           })}
@@ -98,12 +112,16 @@ export default function CampusCalendarPage() {
 
     <section aria-labelledby="day-heading" className="space-y-3">
       <h2 id="day-heading">{formatDay(selected)}</h2>
-      {dayEvents.length === 0 ? <p className="text-secondary">No approved events on this day.</p> : <>
-        <ul className="space-y-2">{dayEvents.map((event) => <li key={event.id}><Card className="flex flex-wrap items-center justify-between gap-3">
-          <div className="min-w-0"><p className="font-medium">{event.title}</p><p className="text-secondary">{event.club_name} · {event.hall_name ?? "Hall to be confirmed"} · {formatClock(event.start_time)}–{formatClock(event.end_time)}</p></div>
-          <Badge tone={event.status === "CALENDARED" ? "green" : "blue"}>{event.status === "CALENDARED" ? "On the calendar" : "Approved"}</Badge>
+      {dayEvents.length === 0 ? <p className="text-secondary">No events on this day.</p> : <>
+        <ul className="space-y-2">{dayEvents.map((event) => <li key={`${event.source}:${event.id}`}><Card className="flex flex-wrap items-center justify-between gap-3">
+          <div className="min-w-0"><p className="font-medium">{event.title}</p>{event.source === "academic"
+            ? <p className="text-secondary">Academic calendar · All day</p>
+            : <p className="text-secondary">{event.club_name} · {event.hall_name ?? "Hall to be confirmed"} · {formatClock(event.start_time)}–{formatClock(event.end_time)}</p>}</div>
+          {event.source === "academic"
+            ? <Badge tone="blue">Academic date</Badge>
+            : <Badge tone={event.status === "CALENDARED" ? "green" : "blue"}>{event.status === "CALENDARED" ? "On the calendar" : "Approved"}</Badge>}
         </Card></li>)}</ul>
-        <DayTimeline events={dayEvents} />
+        {timedEvents.length > 0 && <DayTimeline events={timedEvents} />}
       </>}
     </section>
   </div>;

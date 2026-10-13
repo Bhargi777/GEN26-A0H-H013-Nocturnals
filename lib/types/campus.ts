@@ -59,3 +59,7 @@ export interface CalendarEvent {
   id: string; code: string; title: string; event_type: string; club_name: string; hall_name: string | null;
   event_date: string; start_time: string; end_time: string; status: "APPROVED" | "CALENDARED";
 }
+
+export interface AcademicCalendarEvent {
+  id: string; title: string; event_date: string;
+}
