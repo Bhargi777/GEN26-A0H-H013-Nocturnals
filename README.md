@@ -89,7 +89,7 @@ Seeded accounts all use the password `password123`. With `NEXT_PUBLIC_DEMO_MODE=
 | --- | --- | --- |
 | Service requests | everyone, technicians, department staff | report issues with photo, AI-assisted triage and duplicate detection, queue, overdue tracking |
 | Rooms | faculty, class reps, department office | floor plans with live availability per date and period, "find me a room", approval queue, class cancellation frees the room |
-| Events | club presidents, student affairs, campus director, events department | request, review, approve, calendar, notified at every step |
+| Events | club presidents, student affairs, campus director, events department | request, review, approve, campus calendar and hourly-synced academic ICS feed, notified at every step |
 | Canteen | students, counter, kitchen, manager | menu, cart, 15 minute pickup slots (IST), tokens, realtime kitchen and counter screens, display board |
 | Campus pulse | admin, campus director | one page of service, room, canteen and event numbers |
 | Notifications | everyone | created by database triggers on every status change, live in the nav |
@@ -101,3 +101,4 @@ Seeded accounts all use the password `password123`. With `NEXT_PUBLIC_DEMO_MODE=
 - Double booking is prevented by a partial unique index; event hall clashes by an exclusion constraint; role changes by a trigger.
 - Notifications are inserted by triggers, never by the client.
 - `proxy.ts` redirects signed-out requests to `/sign-in`.
+- Set `ACADEMIC_CALENDAR_ICS_URL` to the hosted `.ics` feed URL for the Campus calendar; the server refreshes the feed hourly.
