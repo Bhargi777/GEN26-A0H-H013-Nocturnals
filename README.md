@@ -41,6 +41,28 @@ ourAmrita is a role-aware campus operations portal for service requests, room bo
 - `npm run typecheck`: Run TypeScript type checking
 - `npm run test`: Run Vitest
 
+## Branches
+
+Work only on your assigned branch. Never push directly to `main`.
+- `feat/backend`: Dev 1
+- `feat/frontend`: Dev 2
+- `feat/service-requests`: Dev 3
+- `feat/e-governance`: Dev 4
+
+## Ownership Table
+
+| Path | Owner |
+| --- | --- |
+| `supabase/**` (core migrations, seed, policies) | Dev 1 |
+| `lib/db/**`, `lib/auth/**`, `lib/types/**`, `lib/constants/**`, `lib/supabase/**` | Dev 1 |
+| `middleware.ts`, `.env.example`, `package.json`, lockfile, `next.config.*`, `tsconfig.json` | Dev 1 |
+| `app/layout.tsx`, `app/globals.css`, `tailwind.config.*` | Dev 2 |
+| `app/(auth)/**`, `app/(app)/layout.tsx`, `app/(app)/dashboard/**`, `app/(app)/notifications/**`, `app/(app)/ui/**` | Dev 2 |
+| `components/ui/**`, `components/layout/**` | Dev 2 |
+| `app/(app)/service-requests/**`, `components/service-requests/**`, `lib/ai/**` | Dev 3 |
+| `app/(app)/requests/**`, `app/(app)/office/**`, `app/(app)/admin/reports/**`, `app/verify/**`, `components/admin-requests/**`, `lib/pdf/**` | Dev 4 |
+| `goals/0X-*.md` | only the developer whose number it is |
+
 ## Live demo
 
 https://ouramrita-bhargi777s-projects.vercel.app (Vercel, backed by the hosted Supabase project in ap-south-1). [Download the Android app](https://ouramrita-bhargi777s-projects.vercel.app/downloads/ouramrita.apk). The GitHub repository remains [Bhargi777/GEN26-A0H-H013-Nocturnals](https://github.com/Bhargi777/GEN26-A0H-H013-Nocturnals). Demo accounts use the password `password123`; never enable demo mode or load the seed against a real project.
