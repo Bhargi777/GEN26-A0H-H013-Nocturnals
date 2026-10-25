@@ -9,7 +9,7 @@ export type EventStatusValue = "SUBMITTED" | "CHANGES_REQUESTED" | "PENDING_DIRE
 
 export interface BlockRow { id: string; code: string; name: string; owner_department_id: string }
 export interface FloorRow { id: string; block_id: string; level: number; label: string; grid_cols: number; grid_rows: number }
-export interface RoomRow { id: string; floor_id: string; code: string; name: string; kind: string; capacity: number | null; bookable: boolean; grid_x: number | null; grid_y: number | null; grid_w: number | null; grid_h: number | null }
+export interface RoomRow { id: string; floor_id: string; code: string; name: string; kind: string; capacity: number | null; bookable: boolean; grid_x: number | null; grid_y: number | null; grid_w: number | null; grid_h: number | null; latitude: number | null; longitude: number | null }
 export interface PeriodRow { id: string; label: string; start_time: string; end_time: string }
 export interface SlotStatusRow { period_id: string; state: SlotState }
 
@@ -46,17 +46,17 @@ export interface DashboardData {
 }
 
 export interface ClubRow { id: string; code: string; name: string }
-export interface HallRow { id: string; name: string; capacity: number | null }
+export interface HallRow { id: string; name: string; capacity: number | null; latitude: number | null; longitude: number | null }
 export interface EventRow {
   id: string; code: string; title: string; event_type: string; description: string;
   event_date: string; start_time: string; end_time: string; expected_attendance: number; budget_estimate: number | null;
   faculty_coordinator: string; contact_phone: string; decision_note: string | null;
   status: EventStatusValue; created_at: string;
-  club?: { name: string } | null; hall?: { name: string } | null;
+  club?: { name: string } | null; hall?: { name: string; latitude: number | null; longitude: number | null } | null;
 }
 
 export interface CalendarEvent {
-  id: string; code: string; title: string; event_type: string; club_name: string; hall_name: string | null;
+  id: string; code: string; title: string; event_type: string; club_name: string; hall_name: string | null; hall_latitude: number | null; hall_longitude: number | null;
   event_date: string; start_time: string; end_time: string; status: "APPROVED" | "CALENDARED";
 }
 

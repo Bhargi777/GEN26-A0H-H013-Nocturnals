@@ -15,7 +15,7 @@ function fail(error: { message: string } | null): asserts error is null {
 
 const EVENT_COLUMNS =
   'id, code, title, event_type, description, event_date, start_time, end_time, expected_attendance, budget_estimate, ' +
-  'faculty_coordinator, contact_phone, decision_note, status, created_at, club:club_id(name), hall:hall_id(name)';
+  'faculty_coordinator, contact_phone, decision_note, status, created_at, club:club_id(name), hall:hall_id(name, latitude, longitude)';
 
 type EventQuery = PostgrestFilterBuilder<any, any, any, any, any, any, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -32,7 +32,7 @@ export async function listClubs(): Promise<ClubRow[]> {
 }
 
 export async function listHalls(): Promise<HallRow[]> {
-  const { data, error } = await getSupabase().from('rooms').select('id, name, capacity').eq('kind', 'hall').eq('bookable', true).order('name');
+  const { data, error } = await getSupabase().from('rooms').select('id, name, capacity, latitude, longitude').eq('kind', 'hall').eq('bookable', true).order('name');
   fail(error);
   return data ?? [];
 }
