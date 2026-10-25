@@ -5,7 +5,7 @@ import { RoleGate } from "@/components/layout/role-gate";
 import { useFrontend } from "@/components/layout/frontend-provider";
 import { Badge, Button, Card, EmptyState, FieldError, FormField, Input, PageHeader, Skeleton, useToast } from "@/components/ui";
 import { ROLES } from "@/lib/constants/roles";
-import { cancelClass, listCancellations, listMyClasses, type ClassEntry } from "@/lib/db/rooms";
+import { cancelClass, listCancellations, listMyClasses, restoreClass, type ClassEntry } from "@/lib/db/rooms";
 import { formatClock, formatDay, istDate } from "@/lib/time";
 import { useLiveRefresh } from "@/components/layout/live-sync";
 
@@ -59,6 +59,17 @@ function Classes() {
     finally { setBusy(false); }
   }
 
+  async function restore(entry: ClassEntry, date: string) {
+    if (busy) return;
+    setBusy(true); setError(undefined);
+    try {
+      await restoreClass(entry.id, date);
+      toast({ message: `${entry.course} on ${formatDay(date)} restored.` });
+      await load();
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "The class could not be restored. Try again."); }
+    finally { setBusy(false); }
+  }
+
   if (error && !entries) return <EmptyState message={error} action={<Button onClick={() => void load()}>Try again</Button>} />;
   if (!entries) return <Skeleton label="Loading your classes" />;
 
@@ -75,7 +86,7 @@ function Classes() {
         <div><h2>{entry.course}</h2><p className="text-secondary">{WEEKDAY[entry.weekday]}s · {entry.period ? `${entry.period.label}, ${formatClock(entry.period.start_time)}–${formatClock(entry.period.end_time)}` : ""} · {entry.room?.name} · Section {entry.section}</p></div>
         <ul className="flex flex-wrap gap-2" aria-label={`Upcoming dates for ${entry.course}`}>
           {upcoming(entry.weekday).map((date) => cancelled.has(`${entry.id}|${date}`)
-            ? <li key={date}><Badge tone="slate">{formatDay(date)} · cancelled</Badge></li>
+            ? <li key={date} className="flex flex-wrap items-center gap-2"><Badge tone="slate">{formatDay(date)} · cancelled</Badge><Button size="sm" variant="secondary" disabled={busy} onClick={() => void restore(entry, date)}>Restore</Button></li>
             : <li key={date}><Button size="sm" variant="secondary" aria-label={`Cancel ${entry.course} on ${formatDay(date)}`} onClick={() => { setAsking({ entry, date }); setReason(""); }}>Cancel {formatDay(date)}</Button></li>)}
         </ul>
       </Card></li>)}</ul>}

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import { EventMap } from "@/components/events/event-map";
 import { Badge, Button, Card, EmptyState, FieldError, PageHeader, Skeleton } from "@/components/ui";
 import { assignLanes, minutesOf } from "@/lib/algo/intervals";
 import { groupByDate, monthGrid, shiftMonth } from "@/lib/calendar-grid";
@@ -12,8 +13,8 @@ import { useLiveRefresh } from "@/components/layout/live-sync";
 
 const WEEKDAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-const DAY_START = 7 * 60;
-const DAY_END = 23 * 60;
+const DAY_START = 0;
+const DAY_END = 24 * 60;
 
 type CalendarEntry =
   | (CalendarEvent & { source: "campus" })
@@ -25,7 +26,7 @@ function DayTimeline({ events }: { events: CalendarEvent[] }) {
   const hours = Array.from({ length: (DAY_END - DAY_START) / 60 + 1 }, (_, index) => DAY_START / 60 + index);
   const height = 48 * (hours.length - 1);
   return <div className="relative ml-14 overflow-hidden rounded-control border bg-surface" style={{ height }} role="list" aria-label="Events of the day by time">
-    {hours.map((hour, index) => <div key={hour} aria-hidden="true" className="absolute left-0 right-0 border-t text-secondary" style={{ top: index * 48 }}><span className="absolute -left-14 -top-3 w-12 text-right">{formatClock(`${String(hour).padStart(2, "0")}:00`)}</span></div>)}
+    {hours.map((hour, index) => <div key={hour} aria-hidden="true" className="absolute left-0 right-0 border-t text-secondary" style={{ top: index * 48 }}><span className="absolute -left-14 -top-3 w-12 text-right">{index < hours.length - 1 && formatClock(`${String(hour % 24).padStart(2, "0")}:00`)}</span></div>)}
     {placed.map(({ item, lane }) => {
       const top = ((Math.max(item.start, DAY_START) - DAY_START) / 60) * 48;
       const blockHeight = Math.max(28, ((Math.min(item.end, DAY_END) - Math.max(item.start, DAY_START)) / 60) * 48);
@@ -44,6 +45,7 @@ export default function CampusCalendarPage() {
   const [selected, setSelected] = useState(today);
   const [events, setEvents] = useState<CalendarEntry[]>();
   const [error, setError] = useState<string>();
+  const [academicError, setAcademicError] = useState<string>();
 
   const grid = useMemo(() => monthGrid(year, month), [year, month]);
   const from = grid[0].date;
@@ -51,7 +53,11 @@ export default function CampusCalendarPage() {
 
   const load = useCallback(async () => {
     try {
-      const [campusEvents, academicEvents] = await Promise.all([listCalendar(from, to), listAcademicCalendar(from, to)]);
+      const [campusResult, academicResult] = await Promise.allSettled([listCalendar(from, to), listAcademicCalendar(from, to)]);
+      if (campusResult.status === "rejected") throw campusResult.reason;
+      const campusEvents = campusResult.value;
+      const academicEvents = academicResult.status === "fulfilled" ? academicResult.value : [];
+      setAcademicError(academicResult.status === "rejected" ? "Academic dates are temporarily unavailable. Campus events are still shown." : undefined);
       setEvents([
         ...academicEvents.map((event) => ({ ...event, source: "academic" as const })),
         ...campusEvents.map((event) => ({ ...event, source: "campus" as const })),
@@ -60,7 +66,7 @@ export default function CampusCalendarPage() {
         || ("start_time" in a ? a.start_time : "").localeCompare("start_time" in b ? b.start_time : "")));
       setError(undefined);
     }
-    catch { setError("The calendar could not be loaded. Try again."); }
+    catch { setError("The campus calendar could not be loaded. Try again."); }
   }, [from, to]);
 
   // Reload on a slow timer and whenever the tab regains focus, so a newly approved event shows up for everyone.
@@ -84,6 +90,7 @@ export default function CampusCalendarPage() {
   return <div className="space-y-6">
     <PageHeader title="Campus calendar" context="Campus-approved events and all-day academic calendar dates." />
     <FieldError>{error}</FieldError>
+    {academicError && <p role="status" className="rounded-control border border-status-amber-dark bg-status-amber-light p-3 text-status-amber-dark">{academicError}</p>}
     <Card className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 aria-live="polite">{MONTHS[month - 1]} {year}</h2>
@@ -121,7 +128,7 @@ export default function CampusCalendarPage() {
             ? <Badge tone="blue">Academic date</Badge>
             : <Badge tone={event.status === "CALENDARED" ? "green" : "blue"}>{event.status === "CALENDARED" ? "On the calendar" : "Approved"}</Badge>}
         </Card></li>)}</ul>
-        {timedEvents.length > 0 && <DayTimeline events={timedEvents} />}
+        {timedEvents.length > 0 && <><DayTimeline events={timedEvents} /><EventMap events={timedEvents} /></>}
       </>}
     </section>
   </div>;

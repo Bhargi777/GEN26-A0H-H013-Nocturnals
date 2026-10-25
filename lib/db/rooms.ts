@@ -27,7 +27,7 @@ export async function listFloors(blockId: string): Promise<FloorRow[]> {
 /** Every room on the floor, including closed ones, so the plan shows the whole layout. */
 export async function listFloorRooms(floorId: string): Promise<RoomRow[]> {
   const { data, error } = await getSupabase()
-    .from('rooms').select('id, floor_id, code, name, kind, capacity, bookable, grid_x, grid_y, grid_w, grid_h')
+    .from('rooms').select('id, floor_id, code, name, kind, capacity, bookable, grid_x, grid_y, grid_w, grid_h, latitude, longitude')
     .eq('floor_id', floorId).order('grid_y').order('grid_x');
   fail(error);
   return data ?? [];
@@ -148,5 +148,10 @@ export async function listCancellations(entryIds: string[]): Promise<{ timetable
 
 export async function cancelClass(entryId: string, date: string, reason: string): Promise<void> {
   const { error } = await getSupabase().rpc('cancel_class', { p_entry: entryId, p_date: date, p_reason: reason });
+  fail(error);
+}
+
+export async function restoreClass(entryId: string, date: string): Promise<void> {
+  const { error } = await getSupabase().rpc('restore_class', { p_entry: entryId, p_date: date });
   fail(error);
 }
