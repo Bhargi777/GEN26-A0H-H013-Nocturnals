@@ -45,7 +45,7 @@ const byRole: Record<Role, NavigationItem[]> = {
   [ROLES.STUDENT]: [...requester, canteen, myOrders],
   [ROLES.FACULTY]: [...requester, bookRoom, myBookings, myClasses, canteen, myOrders],
   [ROLES.CR]: [...requester, bookRoom, myBookings, canteen, myOrders],
-  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents, canteen, myOrders],
+  [ROLES.CLUB_PRESIDENT]: [...requester, newEvent, myEvents],
   [ROLES.TECHNICIAN]: [department],
   [ROLES.DEPT_OFFICE]: [department, roomQueue],
   [ROLES.DEPT_HEAD]: [department, roomQueue],

@@ -10,8 +10,8 @@ insert into public.departments (id, name, code) values
 
 -- Buildings
 insert into public.buildings (id, name, code) values
-  ('b0000000-0000-0000-0000-000000000001', 'Ramanujan Block', 'RB'),
-  ('b0000000-0000-0000-0000-000000000002', 'Faraday Hall', 'FH'),
+  ('b0000000-0000-0000-0000-000000000001', 'AB-3', 'AB-3'),
+  ('b0000000-0000-0000-0000-000000000002', 'AB-2', 'AB-2'),
   ('b0000000-0000-0000-0000-000000000003', 'Main Hostel', 'MH'),
   ('b0000000-0000-0000-0000-000000000004', 'Admin Block', 'AB'),
   ('b0000000-0000-0000-0000-000000000005', 'Auditorium', 'AUD'),
@@ -19,8 +19,8 @@ insert into public.buildings (id, name, code) values
 
 -- Blocks
 insert into public.blocks (id, code, name, owner_department_id) values
-  ('b1000000-0000-0000-0000-000000000001', 'RB-1', 'Ramanujan Block 1', 'd0000000-0000-0000-0000-000000000001'),
-  ('b1000000-0000-0000-0000-000000000002', 'FH-1', 'Faraday Hall 1', 'd0000000-0000-0000-0000-000000000002');
+  ('b1000000-0000-0000-0000-000000000001', 'AB-3', 'AB-3', 'd0000000-0000-0000-0000-000000000001'),
+  ('b1000000-0000-0000-0000-000000000002', 'AB-2', 'AB-2', 'd0000000-0000-0000-0000-000000000002');
 
 -- Floors
 insert into public.floors (id, block_id, level, label, grid_cols, grid_rows) values
@@ -53,7 +53,7 @@ insert into public.periods (id, label, start_time, end_time) values
 -- Clubs
 insert into public.clubs (id, code, name) values
   ('c0000000-0000-0000-0000-000000000001', 'ACM', 'ACM Student Chapter'),
-  ('c0000000-0000-0000-0000-000000000002', 'IEEE', 'IEEE Student Branch'),
+  ('c0000000-0000-0000-0000-000000000002', 'NATYA', 'Natya'),
   ('c0000000-0000-0000-0000-000000000003', 'DANCE', 'Dance Club'),
   ('c0000000-0000-0000-0000-000000000004', 'MUSIC', 'Music Club'),
   ('c0000000-0000-0000-0000-000000000005', 'SPORTS', 'Sports Club'),
@@ -64,8 +64,8 @@ insert into public.clubs (id, code, name) values
 -- Canteens
 insert into public.canteens (id, code, name, location) values
   ('c1000000-0000-0000-0000-000000000001', 'MAIN', 'Main Canteen', 'Building A, Ground Floor'),
-  ('c1000000-0000-0000-0000-000000000002', 'NORTH', 'North Canteen', 'Building B, Ground Floor'),
-  ('c1000000-0000-0000-0000-000000000003', 'SOUTH', 'South Canteen', 'Building C, First Floor');
+  ('c1000000-0000-0000-0000-000000000002', 'IT', 'IT Canteen', 'AB-4, Ground Floor'),
+  ('c1000000-0000-0000-0000-000000000003', 'MBA', 'MBA Canteen', 'MBA, Ground Floor');
 
 -- Menu Items
 insert into public.menu_items (id, canteen_id, name, price, category, veg, available) values
@@ -76,12 +76,12 @@ insert into public.menu_items (id, canteen_id, name, price, category, veg, avail
   ('3a000000-0000-0000-0000-000000000004', 'c1000000-0000-0000-0000-000000000001', 'Paneer Butter Masala', 160, 'curry', true, true),
   ('3a000000-0000-0000-0000-000000000005', 'c1000000-0000-0000-0000-000000000001', 'Dosa', 80, 'breakfast', true, true),
   ('3a000000-0000-0000-0000-000000000006', 'c1000000-0000-0000-0000-000000000001', 'Tea', 20, 'beverage', true, true),
-  -- North Canteen
+  -- IT Canteen
   ('3a000000-0000-0000-0000-000000000007', 'c1000000-0000-0000-0000-000000000002', 'Naan with Chole', 100, 'bread', true, true),
   ('3a000000-0000-0000-0000-000000000008', 'c1000000-0000-0000-0000-000000000002', 'Roti (3 pieces)', 90, 'bread', true, true),
   ('3a000000-0000-0000-0000-000000000009', 'c1000000-0000-0000-0000-000000000002', 'Vada Pav', 50, 'snack', true, true),
   ('3a000000-0000-0000-0000-000000000010', 'c1000000-0000-0000-0000-000000000002', 'Chai', 20, 'beverage', true, true),
-  -- South Canteen
+  -- MBA Canteen
   ('3a000000-0000-0000-0000-000000000011', 'c1000000-0000-0000-0000-000000000003', 'Pesarattu', 80, 'breakfast', true, true),
   ('3a000000-0000-0000-0000-000000000012', 'c1000000-0000-0000-0000-000000000003', 'Upma', 60, 'breakfast', true, true),
   ('3a000000-0000-0000-0000-000000000013', 'c1000000-0000-0000-0000-000000000003', 'Lemon Rice', 80, 'rice', true, true),
@@ -276,6 +276,26 @@ where o.token like 'MAIN-9%';
 
 select public.svc_seed_demo_story();
 
+-- Production names used by the room-booking and canteen screens.
+update public.canteens set code = 'IT', name = 'IT Canteen' where code = 'NORTH';
+update public.canteens set code = 'MBA', name = 'MBA Canteen' where code = 'SOUTH';
+update public.clubs set code = 'NATYA', name = 'Natya' where code = 'IEEE';
+update public.profiles set full_name = 'Natya President' where email = 'ieee.president@example.edu';
+update public.blocks set code = 'AB-3', name = 'AB-3' where code = 'RB-1';
+update public.blocks set code = 'AB-2', name = 'AB-2' where code = 'FH-1';
+insert into public.blocks (code, name, owner_department_id)
+select v.code, v.name, d.id from (values ('AB-1', 'AB-1', 'FAC'), ('AB-4', 'AB-4', 'IT'), ('MBA', 'MBA', 'SAO')) v(code, name, department_code)
+join public.departments d on d.code = v.department_code on conflict (code) do nothing;
+update public.floors set label = case when level = 0 then 'Ground Floor' else 'Floor ' || level end;
+insert into public.floors (block_id, level, label, grid_cols, grid_rows)
+select b.id, levels.level, case when levels.level = 0 then 'Ground Floor' else 'Floor ' || levels.level end, 13, 3
+from public.blocks b cross join generate_series(0, 3) levels(level) on conflict (block_id, level) do nothing;
+update public.rooms set latitude = 10.9036046, longitude = 76.899696 where latitude is null;
+update public.rooms set latitude = 10.90385, longitude = 76.89920 where code like 'RB-%' or code like 'AB-3-%';
+update public.rooms set latitude = 10.90335, longitude = 76.89920 where code like 'FH-%' or code like 'AB-2-%';
+update public.rooms set latitude = 10.90400, longitude = 76.90000 where code in ('AUD-MAIN', 'AUD-SEM-A', 'AUD-SEM-B');
+update public.rooms set latitude = 10.90320, longitude = 76.90000 where code = 'SC-HALL';
+
 
 -- ============================================================================
 -- Scoped staff: one kitchen, counter and manager per canteen, one president per club,
@@ -285,13 +305,13 @@ insert into auth.users (id, email, encrypted_password, email_confirmed_at, raw_u
 select v.id::uuid, v.email, v.pw, now(), v.meta::jsonb, '00000000-0000-0000-0000-000000000000', 'authenticated', 'authenticated',
   '{"provider":"email","providers":["email"]}'::jsonb, '', '', '', '', now(), now()
 from (values
-  ('a5000000-0000-0000-0000-000000000100', 'kitchen.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Kitchen"}'),
-  ('a5000000-0000-0000-0000-000000000101', 'counter.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Counter"}'),
-  ('a5000000-0000-0000-0000-000000000102', 'manager.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "North Manager"}'),
-  ('a5000000-0000-0000-0000-000000000103', 'kitchen.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Kitchen"}'),
-  ('a5000000-0000-0000-0000-000000000104', 'counter.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Counter"}'),
-  ('a5000000-0000-0000-0000-000000000105', 'manager.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "South Manager"}'),
-  ('a5000000-0000-0000-0000-000000000106', 'ieee.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Ieee Club President"}'),
+  ('a5000000-0000-0000-0000-000000000100', 'kitchen.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "IT Kitchen"}'),
+  ('a5000000-0000-0000-0000-000000000101', 'counter.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "IT Counter"}'),
+  ('a5000000-0000-0000-0000-000000000102', 'manager.north@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "IT Manager"}'),
+  ('a5000000-0000-0000-0000-000000000103', 'kitchen.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "MBA Kitchen"}'),
+  ('a5000000-0000-0000-0000-000000000104', 'counter.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "MBA Counter"}'),
+  ('a5000000-0000-0000-0000-000000000105', 'manager.south@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "MBA Manager"}'),
+  ('a5000000-0000-0000-0000-000000000106', 'ieee.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Natya President"}'),
   ('a5000000-0000-0000-0000-000000000107', 'dance.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Dance Club President"}'),
   ('a5000000-0000-0000-0000-000000000108', 'music.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Music Club President"}'),
   ('a5000000-0000-0000-0000-000000000109', 'sports.president@example.edu', crypt('password123', gen_salt('bf')), '{"full_name": "Sports Club President"}'),

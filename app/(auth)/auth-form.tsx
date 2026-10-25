@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { z } from "zod";
@@ -19,9 +18,9 @@ export const signUpSchema = signInSchema.extend({
 
 const DEMO_ACCOUNTS = [
   ["Student", "arjun.s@example.edu"], ["Class rep", "cr.cse@example.edu"], ["Faculty", "dr.rao@example.edu"],
-  ["CSE office (Ramanujan Block)", "office.cse@example.edu"], ["Electrical office (Faraday Hall)", "office.elec@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
+  ["CSE office (AB-3)", "office.cse@example.edu"], ["Electrical office (AB-2)", "office.elec@example.edu"], ["Club president", "club.president@example.edu"], ["Student affairs", "osa.staff@example.edu"],
   ["Campus director", "director.campus@example.edu"], ["Events dept", "events.dept@example.edu"], ["Main counter", "counter.main@example.edu"],
-  ["Main kitchen", "kitchen.main@example.edu"], ["Main manager", "canteen.manager@example.edu"], ["North kitchen", "kitchen.north@example.edu"], ["North manager", "manager.north@example.edu"], ["IT office", "office.it@example.edu"], ["IEEE president", "ieee.president@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
+  ["Main kitchen", "kitchen.main@example.edu"], ["Main manager", "canteen.manager@example.edu"], ["IT kitchen", "kitchen.north@example.edu"], ["IT manager", "manager.north@example.edu"], ["IT office", "office.it@example.edu"], ["Natya president", "ieee.president@example.edu"], ["Technician", "ramesh.t@example.edu"], ["Admin", "admin.sys@example.edu"],
 ] as const;
 const demoMode = process.env.NEXT_PUBLIC_DEMO_MODE === "true";
 

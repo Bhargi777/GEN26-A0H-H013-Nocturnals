@@ -23,7 +23,7 @@ export type Role = typeof ROLES[keyof typeof ROLES];
 export const NAVIGATION_BY_ROLE: Record<Role, string[]> = {
   [ROLES.STUDENT]: ['/service-requests', '/canteen'],
   [ROLES.CR]: ['/service-requests', '/canteen', '/rooms/book', '/rooms/my-requests'],
-  [ROLES.CLUB_PRESIDENT]: ['/service-requests', '/canteen', '/events/new', '/events/mine'],
+  [ROLES.CLUB_PRESIDENT]: ['/service-requests', '/events/new', '/events/mine'],
   [ROLES.FACULTY]: ['/service-requests', '/canteen'],
   [ROLES.TECHNICIAN]: ['/service-requests/queue'],
   [ROLES.DEPT_OFFICE]: ['/rooms/dept', '/service-requests/queue'],
